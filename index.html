@@ -356,7 +356,6 @@ let statsMonth=null,impD=[];
 // ── Phone fix ─────────────────────────────────────────────────
 function fixPhone(s){
   s=String(s||'').trim();
-  // Fix scientific notation e.g. "4.20722E+11"
   if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}
   return s;
 }
@@ -376,7 +375,6 @@ async function init(){
       const rawStav=c.stav||l.stav||'';
       return{...l,_id:l.id,
         stav:migrateStav(rawStav),
-        poz_override:c.poz_override||'',
         prodej_castka:c.prodej_castka||'',
         prodej_produkt:c.prodej_produkt||'',
         prodej_note:c.prodej_note||'',
@@ -396,7 +394,7 @@ async function saveToApi(lead){
     const idx=leads.findIndex(l=>l.email===lead.email);
     if(idx>=0)leads[idx]={...leads[idx],...lead};
     await sbPost('/rest/v1/crm_data',{
-      email:lead.email,stav:lead.stav,poz_override:lead.poz_override||'',
+      email:lead.email,stav:lead.stav,
       prodej_castka:lead.prodej_castka,prodej_produkt:lead.prodej_produkt,
       prodej_note:lead.prodej_note,followup:lead.followup,
       my_notes:lead.myNotes,updated_at:new Date().toISOString()
@@ -534,7 +532,6 @@ async function changeFaze(email,newStav){
 }
 async function changePoz(email,newPoz){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
-  // Set fáze to default for that category (only if current fáze doesn't match)
   const curPoz=getPoz(lead.stav);
   if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}
   await saveToApi(lead);
@@ -625,7 +622,6 @@ function renderStatsView(){
       <div class="kpi"><div class="kpi-val" style="color:#22c55e">${uz}</div><div class="kpi-label">Uzavřeno</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#ef4444">${ko}</div><div class="kpi-label">Konec</div></div>
     </div>`;
-    // Fáze breakdown
     const fazeCounts={};ml.forEach(l=>{fazeCounts[l.stav]=(fazeCounts[l.stav]||0)+1;});
     const maxF=Math.max(...FAZE.slice(1).map(f=>fazeCounts[f.id]||0),1);
     h+=`<div class="chart-box" style="margin-bottom:14px"><h3>Leady podle fáze</h3>`;
@@ -696,7 +692,6 @@ function openLead(id){
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
-  // Editable notes: show myNotes if exists, otherwise show original poznamka/notes from import
   document.getElementById('pNotes').value=l.myNotes||(l.poznamka||l.notes||'');
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
@@ -721,7 +716,6 @@ function savePanel(){
   currentLead.prodej_castka=document.getElementById('pCastka').value;
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
-  // Sync poz selector when faze changes
   document.getElementById('pPoz').value=getPoz(currentLead.stav);
   saveToApi(currentLead);
   renderStatsBar();
@@ -740,7 +734,6 @@ function savePozFromPanel(){
 }
 
 function closePanel(){
-  // Save before close
   if(currentLead){
     currentLead.stav=document.getElementById('pStage').value;
     currentLead.followup=document.getElementById('pFollowup').value;
@@ -798,7 +791,6 @@ function doFile(file){
         const ai=String(row[cm.ai_info]||'').trim();
         const sv=String(row[cm.stav]||'').trim().toLowerCase();
         const al=ai.toLowerCase(),pl=poz.toLowerCase();
-        // Map import status → new fáze system
         let stav='';
         if(sv.includes('konec')||sv.includes('nerelevant'))stav='nerelevantni';
         else if(sv.includes('uzavř')||sv.includes('uzavr')||sv.includes('schuzk')||sv.includes('schůzk'))stav='domluvena_schuzka';
@@ -814,7 +806,6 @@ function doFile(file){
         else if(rawSlz.includes('ai vid'))sluzba='tvorba_ai_videi';
         else if(rawSlz.includes('video'))sluzba='video_produkce';
         else if(rawSlz&&rawSlz!=='0')sluzba='jine';
-        // Fix phone
         let telefon=String(row[cm.telefon]||'').replace(/^p:/i,'').trim();
         telefon=fixPhone(telefon);
         return{
