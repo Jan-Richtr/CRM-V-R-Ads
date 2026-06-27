@@ -24,13 +24,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 select.flt{appearance:none;padding-right:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center}
 .btn-imp{background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0}
 .btn-imp:hover{background:var(--accent2)}
-/* STATS BAR */
 .stats-bar{display:flex;gap:8px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
 .stt{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;flex-shrink:0}
 .stt:hover,.stt.on{border-color:var(--accent);background:rgba(108,99,255,.12)}
 .stt-n{font-size:1.15rem;font-weight:700}
 .stt-l{font-size:.68rem;color:var(--text2)}
-/* TABLE */
 #view-table{overflow-x:auto;max-height:calc(100vh - 125px);overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:.78rem}
 thead{position:sticky;top:0;z-index:10}
@@ -41,32 +39,27 @@ th.sorted .si2{opacity:1;color:var(--accent2)}
 td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
-/* Fáze badge colors */
 .b-nz1{background:rgba(249,115,22,.2);color:#f97316}
 .b-nz2{background:rgba(251,146,60,.2);color:#fb923c}
 .b-nz3{background:rgba(253,186,116,.2);color:#fbbf24}
 .b-em{background:rgba(168,85,247,.2);color:#a855f7}
 .b-nr{background:rgba(100,116,139,.2);color:#94a3b8}
 .b-ds{background:rgba(34,197,94,.2);color:#22c55e}
-/* Poznámka category badges */
 .p-ot{background:rgba(234,179,8,.15);color:#eab308}
 .p-uz{background:rgba(34,197,94,.15);color:#22c55e}
 .p-ko{background:rgba(239,68,68,.15);color:#ef4444}
-/* Inline cell select */
 .cell-sel{background:transparent;border:none;color:inherit;font-size:.72rem;cursor:pointer;font-family:inherit;width:100%;padding:0;outline:none}
 .cell-sel:focus{outline:1px solid var(--accent);border-radius:3px}
 .link{color:var(--accent2);text-decoration:none}
 .link:hover{text-decoration:underline}
 .prodej-val{color:var(--green);font-weight:600}
-/* STATS VIEW */
 #view-stats{padding:20px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:20px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:15px 18px}
 .kpi-val{font-size:1.9rem;font-weight:700;margin-bottom:2px}
 .kpi-label{font-size:.72rem;color:var(--text2)}
 .kpi-sub{font-size:.75rem;color:var(--text3);margin-top:3px}
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
 .chart-box h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
 .bar-label{width:150px;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -76,8 +69,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
-@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
-/* VOLAT VIEW */
 #view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:18px}
 .vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -90,7 +81,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .vl-acts{display:flex;gap:5px;flex-shrink:0}
 .btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.75rem;transition:all .15s}
 .btn-ic:hover{border-color:var(--accent);color:var(--accent2)}
-/* PANEL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
 .overlay.open{display:block}
 .panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;overflow:hidden}
@@ -120,7 +110,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .prodej-sec .sec-t{font-size:.68rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:9px}
 .prodej-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .ps{padding:10px 15px;border-top:1px solid var(--border)}
-/* IMPORT */
 .imp-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center}
 .imp-ov.open{display:flex}
 .imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;width:480px;max-width:95vw}
@@ -207,7 +196,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <div id="view-stats"></div>
 <div id="view-volat"></div>
 
-<!-- PANEL -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="panel" id="panel">
   <div class="ph">
@@ -286,7 +274,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </div>
 </div>
 
-<!-- IMPORT -->
 <div class="imp-ov" id="impOv">
   <div class="imp-modal">
     <h3>📥 Import leadů z XLS / CSV</h3>
@@ -312,7 +299,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 </div>
 
 <script>
-// ── Supabase ──────────────────────────────────────────────────
 const SB='https://tvokxlkxnevlstavtibf.supabase.co';
 const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
 const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
@@ -320,7 +306,6 @@ const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/js
 async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
 async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
 
-// ── Fáze system ───────────────────────────────────────────────
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
   {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#f97316'},
@@ -332,19 +317,14 @@ const FAZE=[
 ];
 const FAZE_MAP={};FAZE.forEach(f=>FAZE_MAP[f.id]=f);
 
-// Migrate old stav values
 const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_email','volat':'nezvedan1','uzavren':'domluvena_schuzka','konec':'nerelevantni'};
 function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
-
 function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
 function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
 
-// Poznámka (category) display
 const POZ_LABEL={'otevreno':'🟡 otevřeno','uzavreno':'🟢 uzavřeno','konec':'🔴 konec','':''};
 const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
-// When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'nerelevantni','konec':'domluvena_schuzka','':''};
-
 const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
@@ -353,7 +333,6 @@ let sortCol='datum',sortDir=1;
 let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
 let statsMonth=null,impD=[];
 
-// ── Phone fix ─────────────────────────────────────────────────
 function fixPhone(s){
   s=String(s||'').trim();
   if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}
@@ -361,7 +340,6 @@ function fixPhone(s){
 }
 function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
 
-// ── Data ──────────────────────────────────────────────────────
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
@@ -393,7 +371,7 @@ async function saveToApi(lead){
   try{
     const idx=leads.findIndex(l=>l.email===lead.email);
     if(idx>=0)leads[idx]={...leads[idx],...lead};
-    await sbPost('/rest/v1/crm_data',{
+    await sbPost('/rest/v1/crm_data?on_conflict=email',{
       email:lead.email,stav:lead.stav,
       prodej_castka:lead.prodej_castka,prodej_produkt:lead.prodej_produkt,
       prodej_note:lead.prodej_note,followup:lead.followup,
@@ -410,7 +388,6 @@ function showLoading(on){
 }
 function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.textContent=msg;el.style.color=color;}}
 
-// ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
   return leads.filter(l=>{
     const poz=getPoz(l.stav);
@@ -435,7 +412,6 @@ function applyFilters(){
 }
 function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 
-// ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat'][i]===t));
@@ -460,7 +436,6 @@ function render(){
   else renderVolat();
 }
 
-// ── Stats bar ─────────────────────────────────────────────────
 function renderStatsBar(){
   const bar=document.getElementById('statsBar');
   const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length;
@@ -477,7 +452,6 @@ function renderStatsBar(){
   `;
 }
 
-// ── Table ─────────────────────────────────────────────────────
 function renderTable(){
   const filtered=getFiltered();
   const sorted=[...filtered].sort((a,b)=>{
@@ -495,15 +469,10 @@ function renderTable(){
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
     const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
-    
-    // Inline Poznámka select
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
-
-    // Inline Fáze select
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
     const fazeCell=`<select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select>`;
-
     const phoneDisplay=fixPhone(l.telefon||'');
     return`<tr onclick="openLead(${l._id})">
       <td style="color:var(--text3);min-width:55px">${l.datum||'—'}</td>
@@ -523,7 +492,6 @@ function renderTable(){
   }).join('');
 }
 
-// Inline change handlers
 async function changeFaze(email,newStav){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
   lead.stav=newStav;
@@ -538,14 +506,12 @@ async function changePoz(email,newPoz){
   renderStatsBar();renderTable();
 }
 
-// ── Stats view ────────────────────────────────────────────────
 function getLeadMonth(l){return l.mesic||null;}
 function getMonths(){const m=new Set();leads.forEach(l=>{const x=getLeadMonth(l);if(x)m.add(x);});return[...m].sort((a,b)=>a-b);}
 
 function renderStatsView(){
   const sv=document.getElementById('view-stats');
   const months=getMonths();
-  const today=new Date().toISOString().slice(0,10);
   const allProd=leads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
   const totalYear=allProd.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
   const monthData=months.map(m=>{
@@ -570,8 +536,8 @@ function renderStatsView(){
   });
   h+=`</div></div><div style="padding:18px">`;
   if(!statsMonth){
-    const maxO=Math.max(...monthData.map(m=>m.obrat),1),maxL=Math.max(...monthData.map(m=>m.leads),1);
-    h+=`<div class="chart-box" style="margin-bottom:14px"><h3>💰 Obrat po měsících</h3>
+    const maxO=Math.max(...monthData.map(m=>m.obrat),1);
+    h+=`<div class="chart-box"><h3>💰 Obrat po měsících</h3>
     <div style="display:flex;align-items:flex-end;gap:7px;height:140px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px">`;
     monthData.forEach(md=>{const barH=Math.max(Math.round(md.obrat/maxO*120),md.obrat>0?7:2);
       h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
@@ -624,7 +590,7 @@ function renderStatsView(){
     </div>`;
     const fazeCounts={};ml.forEach(l=>{fazeCounts[l.stav]=(fazeCounts[l.stav]||0)+1;});
     const maxF=Math.max(...FAZE.slice(1).map(f=>fazeCounts[f.id]||0),1);
-    h+=`<div class="chart-box" style="margin-bottom:14px"><h3>Leady podle fáze</h3>`;
+    h+=`<div class="chart-box"><h3>Leady podle fáze</h3>`;
     FAZE.slice(1).forEach(f=>{const cnt=fazeCounts[f.id]||0;const pct=Math.round(cnt/maxF*100);
       h+=`<div class="bar-row"><div class="bar-label">${f.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${f.color}">${cnt>0?cnt:''}</div></div><div class="bar-count">${cnt}</div></div>`;
     });
@@ -641,7 +607,6 @@ function renderStatsView(){
   h+=`</div>`;sv.innerHTML=h;
 }
 
-// ── Volat view ────────────────────────────────────────────────
 function renderVolat(){
   const vv=document.getElementById('view-volat');
   const today=new Date().toISOString().slice(0,10);
@@ -680,7 +645,6 @@ function renderVolat(){
   vv.innerHTML=h;
 }
 
-// ── Panel ─────────────────────────────────────────────────────
 function openLead(id){
   const l=leads.find(x=>x._id===id);if(!l)return;
   currentLead=l;
@@ -750,7 +714,6 @@ function closePanel(){
   currentLead=null;
 }
 
-// ── Import ────────────────────────────────────────────────────
 function openImport(){document.getElementById('impOv').classList.add('open');}
 function closeImport(){
   document.getElementById('impOv').classList.remove('open');
@@ -834,7 +797,7 @@ async function doImport(){
   const prog=document.getElementById('progF'),st=document.getElementById('impSt');let done=0;
   for(let i=0;i<impD.length;i+=100){
     try{
-      await sbPost('/rest/v1/leads',impD.slice(i,i+100));
+      await sbPost('/rest/v1/leads?on_conflict=email',impD.slice(i,i+100));
       done+=Math.min(100,impD.length-i);
       prog.style.width=Math.round(done/impD.length*100)+'%';
       st.textContent='Importováno '+done+' / '+impD.length;
