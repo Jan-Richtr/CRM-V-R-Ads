@@ -6,374 +6,810 @@
 <title>V&R Ads CRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0f18;color:#e2e8f0;min-height:100vh;font-size:13px}
-.header{background:#131520;border-bottom:1px solid #1e2235;padding:0 14px;display:flex;align-items:center;gap:8px;height:46px;position:sticky;top:0;z-index:200}
-.logo{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;margin-right:4px}
-.tab-btn{padding:5px 12px;border:none;background:transparent;color:#64748b;cursor:pointer;border-radius:6px;font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap}
-.tab-btn.active{background:#6366f1;color:#fff}
-.tab-btn:hover:not(.active){background:#1e2235;color:#e2e8f0}
-.search-box{background:#1e2235;border:1px solid #2d3458;color:#e2e8f0;padding:5px 10px;border-radius:7px;font-size:12px;outline:none;width:200px}
-.search-box::placeholder{color:#64748b}
-.flt{background:#1e2235;border:1px solid #2d3458;color:#e2e8f0;padding:5px 22px 5px 8px;border-radius:7px;font-size:12px;outline:none;cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center}
-.ml{margin-left:auto}
-.import-btn{padding:5px 12px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap}
-.import-btn:hover{background:#818cf8}
-#syncEl{font-size:11px;padding:2px 8px;border-radius:8px;white-space:nowrap}
-.stats-bar{display:flex;gap:5px;padding:7px 14px;background:#131520;border-bottom:1px solid #1e2235;overflow-x:auto;scrollbar-width:none}
-.stats-bar::-webkit-scrollbar{display:none}
-.sp{padding:4px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
-.sp .n{font-size:15px;font-weight:700}
-.sp-all{background:#1e2235;color:#94a3b8}.sp-all.on{border-color:#94a3b8}
-.sp-novy{background:rgba(96,165,250,.1);color:#60a5fa}.sp-novy.on{border-color:#60a5fa}
-.sp-volat{background:rgba(251,146,60,.1);color:#fb923c}.sp-volat.on{border-color:#fb923c}
-.sp-er{background:rgba(250,204,21,.1);color:#facc15}.sp-er.on{border-color:#facc15}
-.sp-kt{background:rgba(245,158,11,.1);color:#f59e0b}.sp-kt.on{border-color:#f59e0b}
-.sp-uz{background:rgba(74,222,128,.1);color:#4ade80}.sp-uz.on{border-color:#4ade80}
-.sp-kn{background:rgba(248,113,113,.1);color:#f87171}.sp-kn.on{border-color:#f87171}
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:1100px}
-thead tr{background:#131520;position:sticky;top:46px;z-index:100}
-th{padding:7px 10px;text-align:left;color:#64748b;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #1e2235;white-space:nowrap;cursor:pointer;user-select:none}
-th:hover{color:#c7d2fe}
-td{padding:7px 10px;border-bottom:1px solid #13161f;vertical-align:middle}
-tr:hover td{background:rgba(99,102,241,.04)}
-.c-date{color:#64748b;font-size:11px;white-space:nowrap}
-.c-name{font-weight:600;color:#f1f5f9;white-space:nowrap}
-.c-sub{color:#64748b;font-size:11px}
-.c-phone a{color:#818cf8;text-decoration:none;font-size:12px}
-.c-email{color:#94a3b8;font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.c-trunc{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;font-size:12px}
-.c-loc{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8;font-size:11px}
-.c-note{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8;font-size:11px}
-.c-eur{font-weight:700;color:#4ade80;white-space:nowrap;font-size:12px}
-.c-dash{color:#2d3458}
-.faze{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;transition:opacity .1s}
-.faze:hover{opacity:.8}
-.f-novy{background:rgba(96,165,250,.15);color:#60a5fa}
-.f-volat{background:rgba(251,146,60,.15);color:#fb923c}
-.f-er{background:rgba(250,204,21,.15);color:#facc15}
-.f-kt{background:rgba(245,158,11,.15);color:#f59e0b}
-.f-uz{background:rgba(74,222,128,.15);color:#4ade80}
-.f-kn{background:rgba(248,113,113,.15);color:#f87171}
-.slz{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:500;background:#1e2235;color:#94a3b8;white-space:nowrap}
-.loading{display:flex;align-items:center;justify-content:center;padding:80px;gap:10px;color:#64748b}
-.spin{width:18px;height:18px;border:2px solid #1e2235;border-top-color:#6366f1;border-radius:50%;animation:s .7s linear infinite}
-@keyframes s{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:80px;color:#64748b}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center}
-.overlay.open{display:flex}
-.modal{background:#131520;border:1px solid #1e2235;border-radius:12px;padding:22px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
-.modal h3{font-size:14px;font-weight:700;margin-bottom:14px;color:#f1f5f9}
-.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.f label{display:block;font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.f input,.f select,.f textarea{width:100%;background:#1e2235;border:1px solid #2d3458;color:#e2e8f0;padding:6px 9px;border-radius:6px;font-size:12px;outline:none}
-.f input:focus,.f select:focus,.f textarea:focus{border-color:#6366f1}
-.f textarea{resize:vertical;min-height:60px}
-.f.full{grid-column:1/-1}
-.info-box{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#1e2235;border-radius:7px;padding:10px;margin-bottom:12px;font-size:12px}
-.ib label{color:#64748b;display:block;font-size:10px;text-transform:uppercase;margin-bottom:1px}
-.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-.btn{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none}
-.btn-p{background:#6366f1;color:#fff}.btn-p:hover{background:#818cf8}
-.btn-s{background:#1e2235;color:#e2e8f0;border:1px solid #2d3458}.btn-s:hover{background:#252a3d}
-.drop{border:2px dashed #2d3458;border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
-.drop:hover,.drop.drag{border-color:#6366f1;background:rgba(99,102,241,.05)}
-.drop .ic{font-size:30px;margin-bottom:6px}
-.prog{height:4px;background:#1e2235;border-radius:2px;overflow:hidden;margin-top:8px}
-.prog-f{height:100%;background:#6366f1;transition:width .3s}
-.s-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:14px}
-.s-card{background:#131520;border:1px solid #1e2235;border-radius:9px;padding:14px}
-.s-card h4{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
-.s-card .big{font-size:26px;font-weight:700;color:#f1f5f9}
-.s-card .sub{font-size:11px;color:#64748b;margin-top:2px}
-.mnav{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#131520;border-bottom:1px solid #1e2235}
-.mnav h3{font-size:14px;font-weight:700;flex:1;text-align:center}
-.mnav button{background:#1e2235;border:1px solid #2d3458;color:#e2e8f0;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px}
-.bar-sec{background:#131520;border:1px solid #1e2235;border-radius:9px;padding:14px;margin:0 14px 12px}
-.bar-sec h4{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.bar-lbl{width:44px;color:#64748b;text-align:right;font-size:11px;flex-shrink:0}
-.bar-track{flex:1;background:#1e2235;border-radius:3px;height:18px;overflow:hidden}
-.bar-fill{height:100%;background:#6366f1;border-radius:3px;display:flex;align-items:center;padding-left:5px;font-size:10px;font-weight:700;color:#fff;min-width:20px}
-.bar-val{width:70px;color:#94a3b8;font-size:11px}
-.v-page{padding:10px 14px}
-.v-card{background:#131520;border:1px solid #1e2235;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:7px}
-.avatar{width:32px;height:32px;border-radius:50%;background:#6366f1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
-.call-a{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.25);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
+:root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--card:#1e2235;--card2:#252a42;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--r:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:12px;height:52px;position:sticky;top:0;z-index:100;flex-wrap:nowrap}
+.logo{font-size:1rem;font-weight:700;color:var(--accent2);flex-shrink:0}
+.tabs{display:flex;gap:2px;flex-shrink:0}
+.tab{background:none;border:none;color:var(--text2);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500;transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){background:var(--bg3);color:var(--text)}
+.search-wrap{flex:1;max-width:280px;position:relative}
+.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px 6px 30px;color:var(--text);font-size:.82rem;outline:none}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.8rem}
+.filter-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;margin-left:auto}
+.flt{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 10px;color:var(--text2);font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .15s}
+.flt.active,.flt:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+select.flt{appearance:none;-webkit-appearance:none;padding-right:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center}
+.stats-bar{display:flex;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.stt{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.stt:hover,.stt.active{border-color:var(--accent);background:rgba(108,99,255,.12)}
+.stt-n{font-size:1.2rem;font-weight:700}
+.stt-l{font-size:.7rem;color:var(--text2)}
+.cn{color:var(--blue)}.cv{color:var(--orange)}.ce{color:var(--purple)}.ck{color:var(--yellow)}.cu{color:var(--green)}.cq{color:var(--red)}.ca{color:var(--text)}
+#view-table{overflow-x:auto;max-height:calc(100vh - 130px);overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead{position:sticky;top:0;z-index:10}
+th{background:var(--bg2);color:var(--text2);font-weight:600;padding:9px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid var(--border)}
+th:hover{color:var(--accent2)}
+th .sort-icon{margin-left:4px;opacity:.4;font-size:.7rem}
+th.sorted .sort-icon{opacity:1;color:var(--accent2)}
+td{padding:8px 10px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td.wrap{white-space:normal;word-break:break-word}
+tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.b-novy{background:rgba(59,130,246,.18);color:var(--blue)}
+.b-volat{background:rgba(249,115,22,.18);color:var(--orange)}
+.b-email_ready{background:rgba(168,85,247,.18);color:var(--purple)}
+.b-kontaktovan{background:rgba(234,179,8,.18);color:var(--yellow)}
+.b-uzavren{background:rgba(34,197,94,.18);color:var(--green)}
+.b-konec{background:rgba(239,68,68,.13);color:var(--red)}
+.prodej-val{color:var(--green);font-weight:600}
+.link{color:var(--accent2);text-decoration:none}
+.link:hover{text-decoration:underline}
+#view-stats{padding:20px;display:none;overflow-y:auto;max-height:calc(100vh - 130px)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+.kpi-val{font-size:2rem;font-weight:700;margin-bottom:2px}
+.kpi-label{font-size:.75rem;color:var(--text2)}
+.kpi-sub{font-size:.8rem;color:var(--text3);margin-top:4px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-box h3{font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:.78rem}
+.bar-label{width:140px;color:var(--text);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:var(--bg3);border-radius:4px;height:18px;position:relative;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s;display:flex;align-items:center;padding-left:6px;font-size:.7rem;font-weight:600;color:#fff}
+.bar-count{width:36px;text-align:right;color:var(--text2);flex-shrink:0}
+.prodej-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.prodej-table th{background:var(--bg3);color:var(--text2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.prodej-table td{padding:7px 10px;border-bottom:1px solid rgba(46,52,84,.3)}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+#view-volat{padding:16px;display:none;overflow-y:auto;max-height:calc(100vh - 130px)}
+.vl-section h3{font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.vl-section{margin-bottom:20px}
+.vl-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s}
+.vl-card:hover{border-color:var(--accent)}
+.vl-date{font-size:.95rem;font-weight:700;min-width:60px;flex-shrink:0}
+.vl-info{flex:1;min-width:0}
+.vl-name{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vl-sub{font-size:.75rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vl-acts{display:flex;gap:6px;flex-shrink:0}
+.btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 8px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.8rem;transition:all .15s;white-space:nowrap}
+.btn-ic:hover{border-color:var(--accent);color:var(--accent2)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200}
+.overlay.open{display:block}
+.panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;overflow:hidden}
+.panel.open{transform:translateX(0)}
+.ph{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ph-name{font-size:1rem;font-weight:700}
+.ph-firma{font-size:.8rem;color:var(--text2);margin-top:2px}
+.ph-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;line-height:1;padding:2px}
+.ph-close:hover{color:var(--text)}
+.pb{overflow-y:auto;flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.p-actions{display:flex;gap:7px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:7px;font-size:.78rem;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-pri:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn-imp{background:var(--accent);border-color:var(--accent);color:#fff;padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0}
+.btn-imp:hover{background:var(--accent2)}
+.p-label{font-size:.72rem;color:var(--text2);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.4px}
+.p-select,.p-input,.p-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:.82rem;outline:none;font-family:inherit}
+.p-select:focus,.p-input:focus,.p-textarea:focus{border-color:var(--accent)}
+.p-textarea{resize:vertical;min-height:70px}
+.p-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.p-full{grid-column:1/-1}
+.info-box{background:var(--bg3);border-radius:6px;padding:9px 11px}
+.info-box .lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.info-box .val{font-size:.82rem;word-break:break-word}
+.info-box .val a{color:var(--accent2);text-decoration:none}
+.info-box .val a:hover{text-decoration:underline}
+.static-note{background:var(--bg3);border-radius:6px;padding:9px 11px;font-size:.78rem;color:var(--text2);white-space:pre-wrap;max-height:100px;overflow-y:auto}
+.ps{padding:10px 16px;border-top:1px solid var(--border)}
+.prodej-section{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:12px}
+.prodej-section .sec-title{font-size:.72rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:10px}
+.prodej-input{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Import modal */
+.imp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center}
+.imp-overlay.open{display:flex}
+.imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:500px;max-width:95vw}
+.imp-modal h3{font-size:1rem;font-weight:700;margin-bottom:14px}
+.drop-zone{border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(108,99,255,.06)}
+.drop-zone .ic{font-size:32px;margin-bottom:8px}
+.imp-prog{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:10px}
+.imp-prog-f{height:100%;background:var(--accent);transition:width .3s}
+.imp-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.imp-btn{padding:7px 14px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:none}
+.imp-btn-p{background:var(--accent);color:#fff}
+.imp-btn-p:hover{background:var(--accent2)}
+.imp-btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="logo">V&amp;R Ads CRM</div>
-  <button class="tab-btn active" id="tb-tabulka" onclick="showTab('tabulka')">🗒 Tabulka</button>
-  <button class="tab-btn" id="tb-statistiky" onclick="showTab('statistiky')">📊 Statistiky</button>
-  <button class="tab-btn" id="tb-volat" onclick="showTab('volat')">📞 Volat</button>
-  <input class="search-box" id="search" placeholder="Hledat..." oninput="render()">
-  <select class="flt" id="ffaze" onchange="render()">
-    <option value="">Všechny fáze</option>
-    <option value="novy">Nový</option>
-    <option value="volat">Volat</option>
-    <option value="email_ready">Odeslat email</option>
-    <option value="kontaktovan">Email odeslán</option>
-    <option value="uzavren">Uzavřen</option>
-    <option value="konec">Konec</option>
-  </select>
-  <select class="flt" id="fsluzba" onchange="render()">
-    <option value="">Vše – služby</option>
-    <option value="reklama_marketing">Reklama</option>
-    <option value="tvorba_ai_videi">AI videa</option>
-    <option value="video_produkce">Video</option>
-    <option value="jine">Jiné</option>
-  </select>
-  <select class="flt ml" id="fprodej" onchange="render()">
-    <option value="">Prodej – vše</option>
-    <option value="yes">S prodejem</option>
-    <option value="no">Bez prodeje</option>
-  </select>
-  <button class="import-btn" onclick="openImport()">📥 Import</button>
-  <span id="syncEl"></span>
+
+<div class="topbar">
+  <div class="logo">V&R Ads CRM</div>
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
+    <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
+    <button class="tab" onclick="setTab('volat')">📞 Volat</button>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Hledat…" oninput="applyFilters()">
+  </div>
+  <span id="syncLbl" style="font-size:.72rem;color:#64748b;flex-shrink:0;white-space:nowrap"></span>
+  <button title="Obnovit data" onclick="init()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.82rem;flex-shrink:0">🔄</button>
+  <div class="filter-row">
+    <select class="flt" id="stavFilter" onchange="applyFilters()">
+      <option value="">Všechny fáze</option>
+      <option value="novy">🆕 Nový</option>
+      <option value="volat">📞 Volat</option>
+      <option value="email_ready">📧 Odeslat email</option>
+      <option value="kontaktovan">✉️ Email odeslán</option>
+      <option value="uzavren">✅ Uzavřen</option>
+      <option value="konec">🚫 Konec</option>
+    </select>
+    <select class="flt" id="sluzbaFilter" onchange="applyFilters()">
+      <option value="">Vše – služby</option>
+      <option value="tvorba_ai_videi">🎬 AI videa</option>
+      <option value="reklama_marketing">📢 Reklama</option>
+      <option value="video_produkce">📹 Video</option>
+      <option value="jine">🔧 Jiné</option>
+    </select>
+    <select class="flt" id="prodejFilter" onchange="applyFilters()">
+      <option value="">Prodej – vše</option>
+      <option value="yes">✅ Prodáno</option>
+      <option value="no">❌ Neprodáno</option>
+    </select>
+    <button class="btn-imp" onclick="openImport()">📥 Import XLS</button>
+  </div>
 </div>
-<div class="stats-bar" id="sbar"></div>
-<div id="pg-tabulka">
-  <div id="loadEl" class="loading"><div class="spin"></div> Načítám...</div>
-  <div class="tbl-wrap" id="tblWrap" style="display:none">
-    <table>
-      <thead><tr>
-        <th onclick="srt('mesic')">Datum ↕</th>
-        <th onclick="srt('jmeno')">Jméno ↕</th>
-        <th>Firma</th>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div id="view-table">
+  <table id="mainTable">
+    <thead>
+      <tr>
+        <th onclick="sortBy('datum')" data-col="datum">Datum <span class="sort-icon">▲</span></th>
+        <th onclick="sortBy('jmeno')" data-col="jmeno">Jméno <span class="sort-icon">▲</span></th>
+        <th onclick="sortBy('firma')" data-col="firma">Firma <span class="sort-icon">▲</span></th>
         <th>Telefon</th>
         <th>Email</th>
-        <th onclick="srt('problem')">Problém ↕</th>
+        <th onclick="sortBy('problem')" data-col="problem">Problém <span class="sort-icon">▲</span></th>
         <th>Lokalita</th>
         <th>Služba</th>
-        <th onclick="srt('stav')">Fáze ↕</th>
+        <th onclick="sortBy('stav')" data-col="stav">Fáze <span class="sort-icon">▲</span></th>
         <th>Poznámka</th>
-        <th onclick="srt('castka')">Prodej (€) ↕</th>
-        <th>Produkt</th>
-        <th>Follow-up</th>
-        <th></th>
-      </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div id="emptyEl" class="empty" style="display:none"><div style="font-size:36px">📭</div><div style="margin-top:6px">Žádné leady</div></div>
-  </div>
+        <th onclick="sortBy('prodej_castka')" data-col="prodej_castka">💰 Prodej (€) <span class="sort-icon">▲</span></th>
+        <th onclick="sortBy('prodej_produkt')" data-col="prodej_produkt">📦 Produkt <span class="sort-icon">▲</span></th>
+        <th onclick="sortBy('followup')" data-col="followup">📅 Follow-up <span class="sort-icon">▲</span></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 </div>
-<div id="pg-statistiky" style="display:none">
-  <div class="mnav">
-    <button onclick="chM(-1)">← Předchozí</button>
-    <h3 id="stTitle">Přehled roku 2026</h3>
-    <button onclick="chM(1)">Další →</button>
-    <button onclick="stM=null;renderSt()" style="margin-left:6px">Celý rok</button>
-  </div>
-  <div id="stContent"></div>
-</div>
-<div id="pg-volat" style="display:none">
-  <div class="v-page" id="vList"></div>
-</div>
-<div class="overlay" id="detModal">
-  <div class="modal">
-    <h3 id="mTitle">Detail</h3>
-    <div class="info-box" id="mInfo"></div>
-    <div class="mg">
-      <div class="f full"><label>Fáze</label>
-        <select id="mStav">
-          <option value="novy">🖥 Nový</option>
-          <option value="email_ready">✉ Odeslat email</option>
-          <option value="kontaktovan">📧 Email odeslán</option>
-          <option value="volat">📞 Volat</option>
-          <option value="uzavren">✅ Uzavřen</option>
-          <option value="konec">🚫 Konec</option>
-        </select>
-      </div>
-      <div class="f"><label>Prodej (€)</label><input type="number" id="mCastka" placeholder="0"></div>
-      <div class="f"><label>Produkt</label>
-        <select id="mProdukt">
-          <option value="">— Vybrat —</option>
-          <option value="reklama_marketing">📢 Reklama</option>
-          <option value="tvorba_ai_videi">🎬 AI videa</option>
-          <option value="video_produkce">🎥 Video</option>
-          <option value="jine">🔧 Jiné</option>
-        </select>
-      </div>
-      <div class="f"><label>Follow-up</label><input type="date" id="mFollowup"></div>
-      <div class="f"><label>Poznámka k prodeji</label><input type="text" id="mPNote" placeholder="..."></div>
-      <div class="f full"><label>Moje poznámky</label><textarea id="mNotes" rows="3"></textarea></div>
+
+<div id="view-stats"></div>
+<div id="view-volat"></div>
+
+<!-- DETAIL PANEL -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <div class="ph">
+    <div>
+      <div class="ph-name" id="pName"></div>
+      <div class="ph-firma" id="pFirma"></div>
     </div>
-    <div class="mf">
-      <button class="btn btn-s" onclick="closeDet()">Zrušit</button>
-      <button class="btn btn-p" onclick="saveLead()">💾 Uložit</button>
+    <button class="ph-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="pb">
+    <div class="p-actions" id="pActions"></div>
+    <div>
+      <span class="p-label">Fáze</span>
+      <select class="p-select" id="pStage" onchange="savePanel()">
+        <option value="novy">🆕 Nový lead</option>
+        <option value="volat">📞 Volat</option>
+        <option value="email_ready">📧 Odeslat email</option>
+        <option value="kontaktovan">✉️ Email odeslán</option>
+        <option value="uzavren">✅ Uzavřen</option>
+        <option value="konec">🚫 Konec</option>
+      </select>
+    </div>
+    <div class="p-grid">
+      <div class="info-box"><div class="lbl">Email</div><div class="val" id="pEmail"></div></div>
+      <div class="info-box"><div class="lbl">Telefon</div><div class="val" id="pTel"></div></div>
+      <div class="info-box p-full"><div class="lbl">Problém / Zájem</div><div class="val" id="pProblem"></div></div>
+      <div class="info-box"><div class="lbl">Lokalita</div><div class="val" id="pLokace"></div></div>
+      <div class="info-box"><div class="lbl">Služba</div><div class="val" id="pSluzba"></div></div>
+      <div class="info-box"><div class="lbl">Datum kontaktu</div><div class="val" id="pDatum"></div></div>
+      <div class="info-box"><div class="lbl">Naplánováno volat</div><div class="val" id="pVolatDate"></div></div>
+    </div>
+    <div class="prodej-section">
+      <div class="sec-title">💰 Prodej</div>
+      <div class="prodej-input">
+        <div>
+          <span class="p-label">Částka (€)</span>
+          <input class="p-input" type="number" id="pCastka" placeholder="0" oninput="savePanel()">
+        </div>
+        <div>
+          <span class="p-label">Produkt</span>
+          <select class="p-select" id="pProdukt" onchange="savePanel()">
+            <option value="">— nevybráno —</option>
+            <option value="tvorba_ai_videi">🎬 Tvorba AI videí</option>
+            <option value="reklama_marketing">📢 Reklama / Marketing</option>
+            <option value="video_produkce">📹 Video produkce</option>
+            <option value="jine">🔧 Jiné</option>
+          </select>
+        </div>
+        <div class="p-full">
+          <span class="p-label">Poznámka k prodeji</span>
+          <input class="p-input" id="pProdejNote" placeholder="Datum podpisu, podmínky…" oninput="savePanel()">
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="p-label">📅 Follow-up datum</span>
+      <input class="p-input" type="date" id="pFollowup" onchange="savePanel()">
+    </div>
+    <div>
+      <span class="p-label">📝 Moje poznámky</span>
+      <textarea class="p-textarea" id="pNotes" oninput="savePanel()"></textarea>
+    </div>
+    <div>
+      <span class="p-label">📋 Poznámka z hovoru</span>
+      <div class="static-note" id="pPoznamka"></div>
+    </div>
+    <div>
+      <span class="p-label">📋 Ostatní poznámky</span>
+      <div class="static-note" id="pNotesSheet"></div>
     </div>
   </div>
+  <div class="ps">
+    <button class="btn btn-pri" style="width:100%" onclick="closePanel()">Zavřít a uložit</button>
+  </div>
 </div>
-<div class="overlay" id="impModal">
-  <div class="modal">
+
+<!-- IMPORT MODAL -->
+<div class="imp-overlay" id="impOverlay">
+  <div class="imp-modal">
     <h3>📥 Import leadů z XLS / CSV</h3>
-    <div class="drop" id="dropZ" onclick="document.getElementById('fInput').click()"
+    <div class="drop-zone" id="dropZ" onclick="document.getElementById('fInput').click()"
       ondragover="event.preventDefault();this.classList.add('drag')"
       ondragleave="this.classList.remove('drag')"
       ondrop="doDrop(event)">
       <div class="ic">📂</div>
-      <div style="font-weight:600">Přetáhni soubor nebo klikni</div>
-      <p style="color:#64748b;font-size:11px;margin-top:3px">.xlsx .xls .csv</p>
+      <div style="font-weight:600">Přetáhni soubor nebo klikni pro výběr</div>
+      <p style="color:var(--text3);font-size:.78rem;margin-top:4px">.xlsx .xls .csv</p>
       <input type="file" id="fInput" style="display:none" accept=".xlsx,.xls,.csv" onchange="doFile(this.files[0])">
     </div>
     <div id="impPrev" style="display:none">
-      <div id="impInfo" style="font-size:12px;margin-bottom:6px"></div>
-      <div class="prog"><div class="prog-f" id="progF" style="width:0%"></div></div>
-      <div id="impSt" style="font-size:11px;color:#64748b;margin-top:5px;text-align:center"></div>
+      <div id="impInfo" style="font-size:.82rem;margin-bottom:6px"></div>
+      <div class="imp-prog"><div class="imp-prog-f" id="progF" style="width:0%"></div></div>
+      <div id="impSt" style="font-size:.75rem;color:var(--text3);margin-top:5px;text-align:center"></div>
     </div>
-    <div class="mf">
-      <button class="btn btn-s" onclick="closeImp()">Zrušit</button>
-      <button class="btn btn-p" id="impBtn" style="display:none" onclick="doImport()">✅ Importovat</button>
+    <div class="imp-footer">
+      <button class="imp-btn imp-btn-s" onclick="closeImport()">Zrušit</button>
+      <button class="imp-btn imp-btn-p" id="impBtn" style="display:none" onclick="doImport()">✅ Importovat leady</button>
     </div>
   </div>
 </div>
+
 <script>
-const SB='https://tvokxlkxnevlstavtibf.supabase.co';
-const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
-const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
-let leads=[],crm={},actF='',sCol='mesic',sDir=1,editE=null,stM=null,impD=[];
-const MN=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
-const FZ={novy:{l:'Nový',i:'🖥',c:'f-novy'},email_ready:{l:'Odeslat email',i:'✉',c:'f-er'},kontaktovan:{l:'Email odeslán',i:'📧',c:'f-kt'},volat:{l:'Volat',i:'📞',c:'f-volat'},uzavren:{l:'Uzavřen',i:'✅',c:'f-uz'},konec:{l:'Konec',i:'🚫',c:'f-kn'}};
-const SLZ={reklama_marketing:'📢 Reklama',tvorba_ai_videi:'🎬 AI videa',video_produkce:'🎥 Video',jine:'🔧 Jiné'};
-const FZ_ORD=['novy','email_ready','kontaktovan','volat','uzavren','konec'];
-async function get(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
-async function post(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
-async function init(){
-  sy('⏳','#64748b');
-  try{
-    const [ls,cs]=await Promise.all([get('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),get('/rest/v1/crm_data?limit=5000')]);
-    leads=ls||[];crm={};(cs||[]).forEach(r=>{crm[r.email]=r;});
-    sy('✅ '+leads.length,'#22c55e');
-    document.getElementById('loadEl').style.display='none';
-    document.getElementById('tblWrap').style.display='';
-    render();renderSt();renderV();
-  }catch(e){sy('❌','#ef4444');document.getElementById('loadEl').innerHTML='<div style="color:#ef4444">❌ '+e.message+'</div>';}
+// ── Supabase ──────────────────────────────────────────────────
+const SB = 'https://tvokxlkxnevlstavtibf.supabase.co';
+const SK = 'sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
+const H  = {'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
+
+async function sbGet(p){
+  const r=await fetch(SB+p,{headers:H});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):[];
 }
-function cd(l){const c=crm[l.email]||{};return{stav:c.stav||l.stav||'novy',castka:c.prodej_castka||'',produkt:c.prodej_produkt||l.sluzba||'',note:c.prodej_note||'',followup:c.followup||'',notes:c.my_notes||''};}
-function render(){
-  const q=(document.getElementById('search').value||'').toLowerCase();
-  const ff=document.getElementById('ffaze').value;
-  const fs=document.getElementById('fsluzba').value;
-  const fp=document.getElementById('fprodej').value;
-  let fl=leads.filter(l=>{
-    const d=cd(l);
-    if(actF&&d.stav!==actF)return false;
-    if(ff&&d.stav!==ff)return false;
-    if(fs&&(l.sluzba||'')!==fs)return false;
-    if(fp==='yes'&&!d.castka)return false;
-    if(fp==='no'&&d.castka)return false;
-    if(q&&![l.jmeno,l.firma,l.email,l.telefon,l.problem,l.lokace].join(' ').toLowerCase().includes(q))return false;
+async function sbPost(p,b){
+  const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});
+  if(!r.ok)throw new Error(await r.text());
+}
+
+// ── Config ────────────────────────────────────────────────────
+const STAGES = [
+  {id:'novy',label:'🆕 Nový',cls:'b-novy',color:'#3b82f6'},
+  {id:'volat',label:'📞 Volat',cls:'b-volat',color:'#f97316'},
+  {id:'email_ready',label:'📧 Odeslat email',cls:'b-email_ready',color:'#a855f7'},
+  {id:'kontaktovan',label:'✉️ Email odeslán',cls:'b-kontaktovan',color:'#eab308'},
+  {id:'uzavren',label:'✅ Uzavřen',cls:'b-uzavren',color:'#22c55e'},
+  {id:'konec',label:'🚫 Konec',cls:'b-konec',color:'#ef4444'},
+];
+const SLUZBA = {
+  'tvorba_ai_videi':'🎬 AI videa',
+  'reklama_marketing':'📢 Reklama',
+  'video_produkce':'📹 Video',
+  'jine':'🔧 Jiné',
+  '':''
+};
+const CNT_CLS = {novy:'cn',volat:'cv',email_ready:'ce',kontaktovan:'ck',uzavren:'cu',konec:'cq'};
+const MONTH_NAMES = ['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+let leads = [], currentLead = null, currentTab = 'table';
+let sortCol = 'datum', sortDir = 1;
+let filterStav = '', filterSluzba = '', filterSearch = '', filterProdej = '';
+let statsMonth = null;
+let impD = [];
+
+// ── Data loading ──────────────────────────────────────────────
+async function init() {
+  showLoading(true);
+  showSync('⏳ Načítám…','#64748b');
+  try {
+    const [ls,cs] = await Promise.all([
+      sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
+      sbGet('/rest/v1/crm_data?limit=5000')
+    ]);
+    const crmMap = {};
+    (cs||[]).forEach(r => { crmMap[r.email] = r; });
+    leads = (ls||[]).map(l => {
+      const c = crmMap[l.email] || {};
+      return {
+        ...l,
+        _id: l.id,
+        stav:           c.stav           || l.stav           || 'novy',
+        prodej_castka:  c.prodej_castka  || '',
+        prodej_produkt: c.prodej_produkt || '',
+        prodej_note:    c.prodej_note    || '',
+        followup:       c.followup       || '',
+        myNotes:        c.my_notes       || '',
+      };
+    });
+    showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
+    render();
+  } catch(e) {
+    showSync('❌ '+e.message,'#dc2626');
+  }
+  showLoading(false);
+}
+
+async function saveToApi(lead) {
+  showSync('💾 Ukládám…','#d97706');
+  try {
+    const idx = leads.findIndex(l=>l.email===lead.email);
+    if(idx>=0) leads[idx]={...leads[idx],...lead};
+    await sbPost('/rest/v1/crm_data',{
+      email:          lead.email,
+      stav:           lead.stav,
+      prodej_castka:  lead.prodej_castka,
+      prodej_produkt: lead.prodej_produkt,
+      prodej_note:    lead.prodej_note,
+      followup:       lead.followup,
+      my_notes:       lead.myNotes,
+      updated_at:     new Date().toISOString()
+    });
+    showSync('✅ Uloženo','#16a34a');
+  } catch(e) {
+    showSync('⚠️ '+e.message,'#d97706');
+  }
+}
+
+// ── UI helpers ────────────────────────────────────────────────
+function showLoading(on) {
+  let el=document.getElementById('loadBar');
+  if(!el){el=document.createElement('div');el.id='loadBar';
+    el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';
+    document.body.prepend(el);}
+  el.style.display=on?'block':'none';
+}
+function showSync(msg,color) {
+  const el=document.getElementById('syncLbl');if(el){el.textContent=msg;el.style.color=color;}
+}
+
+function getFiltered() {
+  return leads.filter(l => {
+    if (filterStav && l.stav !== filterStav) return false;
+    if (filterSluzba && l.sluzba !== filterSluzba) return false;
+    if (filterProdej === 'yes' && !l.prodej_castka) return false;
+    if (filterProdej === 'no' && l.prodej_castka) return false;
+    if (filterSearch) {
+      const q = filterSearch.toLowerCase();
+      if (!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q))) return false;
+    }
     return true;
   });
-  fl.sort((a,b)=>{
-    let av,bv;
-    if(sCol==='stav'){av=cd(a).stav;bv=cd(b).stav;}
-    else if(sCol==='castka'){av=parseFloat(cd(a).castka)||0;bv=parseFloat(cd(b).castka)||0;}
-    else{av=a[sCol]||0;bv=b[sCol]||0;}
-    return av>bv?sDir:av<bv?-sDir:0;
+}
+
+function applyFilters() {
+  filterSearch = document.getElementById('searchInput').value.trim();
+  filterStav   = document.getElementById('stavFilter').value;
+  filterSluzba = document.getElementById('sluzbaFilter').value;
+  filterProdej = document.getElementById('prodejFilter').value;
+  render();
+}
+
+function setTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', ['table','stats','volat'][i] === t));
+  document.getElementById('view-table').style.display = t==='table' ? '' : 'none';
+  document.getElementById('view-stats').style.display = t==='stats' ? 'block' : 'none';
+  document.getElementById('view-volat').style.display = t==='volat' ? 'block' : 'none';
+  render();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.col === col);
+    const ico = th.querySelector('.sort-icon');
+    if (ico) ico.textContent = th.dataset.col === col ? (sortDir===1?'▲':'▼') : '▲';
   });
-  const cnt={all:leads.length};
-  leads.forEach(l=>{const s=cd(l).stav;cnt[s]=(cnt[s]||0)+1;});
-  document.getElementById('sbar').innerHTML=
-    mksp('all','sp-all','','Celkem',cnt.all)+mksp('novy','sp-novy','🖥','Nový',cnt.novy||0)+mksp('volat','sp-volat','📞','Volat',cnt.volat||0)+mksp('email_ready','sp-er','✉','Odeslat email',cnt.email_ready||0)+mksp('kontaktovan','sp-kt','📧','Email odeslán',cnt.kontaktovan||0)+mksp('uzavren','sp-uz','✅','Uzavřen',cnt.uzavren||0)+mksp('konec','sp-kn','🚫','Konec',cnt.konec||0);
-  const tb=document.getElementById('tbody');
-  const emp=document.getElementById('emptyEl');
-  if(!fl.length){tb.innerHTML='';emp.style.display='';return;}
-  emp.style.display='none';
-  tb.innerHTML=fl.map(l=>{
-    const d=cd(l);const fz=FZ[d.stav]||FZ.novy;
-    const tel=(l.telefon||'').trim();
-    const slz=SLZ[l.sluzba]||'';const prd=SLZ[d.produkt]||d.produkt||'';
-    const note=(l.poznamka||d.notes||'').slice(0,30);
-    return`<tr><td class="c-date">${e(l.datum||'')}</td><td class="c-name">${e(l.jmeno||'')}</td><td class="c-sub">${e(l.firma||'')}</td><td class="c-phone">${tel?`<a href="tel:${tel}">${tel}</a>`:''}</td><td><span class="c-email" title="${e(l.email||'')}">${e(l.email||'')}</span></td><td><span class="c-trunc" title="${e(l.problem||'')}">${e((l.problem||'').slice(0,55))}${(l.problem||'').length>55?'…':''}</span></td><td><span class="c-loc">${e((l.lokace||'').slice(0,25))}</span></td><td>${slz?`<span class="slz">${slz}</span>`:''}</td><td><span class="faze ${fz.c}" onclick="cycleF('${l.email}','${d.stav}')">${fz.i} ${fz.l}</span></td><td><span class="c-note">${e(note)}${(l.poznamka||d.notes||'').length>30?'…':''}</span></td><td>${d.castka?`<span class="c-eur">${d.castka} €</span>`:'<span class="c-dash">—</span>'}</td><td>${prd?`<span class="c-sub">${prd}</span>`:'<span class="c-dash">—</span>'}</td><td class="c-sub">${d.followup||'<span class="c-dash">—</span>'}</td><td><button class="btn btn-s" style="padding:2px 7px;font-size:11px" onclick="openDet('${l.email}')">✏️</button></td></tr>`;
+  renderTable();
+}
+
+function render() {
+  renderStats();
+  if (currentTab === 'table') renderTable();
+  else if (currentTab === 'stats') renderStatsView();
+  else renderVolat();
+}
+
+function renderStats() {
+  const bar = document.getElementById('statsBar');
+  const counts = {};
+  leads.forEach(l => { counts[l.stav] = (counts[l.stav]||0)+1; });
+  let h = `<div class="stt${!filterStav?' active':''}" onclick="clearStavFilter()"><span class="stt-n ca">${leads.length}</span><span class="stt-l">Celkem</span></div>`;
+  STAGES.forEach(s => {
+    const c = counts[s.id]||0;
+    h += `<div class="stt${filterStav===s.id?' active':''}" onclick="toggleStav('${s.id}')"><span class="stt-n ${CNT_CLS[s.id]}">${c}</span><span class="stt-l">${s.label}</span></div>`;
+  });
+  bar.innerHTML = h;
+}
+
+function clearStavFilter() { filterStav=''; document.getElementById('stavFilter').value=''; render(); }
+function toggleStav(s) { filterStav = filterStav===s ? '' : s; document.getElementById('stavFilter').value = filterStav; render(); }
+
+function renderTable() {
+  const filtered = getFiltered();
+  const sorted = [...filtered].sort((a,b) => {
+    let va = a[sortCol]||'', vb = b[sortCol]||'';
+    if (sortCol==='prodej_castka') { va=parseFloat(va)||0; vb=parseFloat(vb)||0; return (va-vb)*sortDir; }
+    return String(va).localeCompare(String(vb), 'cs')*sortDir;
+  });
+  const tb = document.getElementById('tableBody');
+  if (sorted.length===0) { tb.innerHTML=`<tr><td colspan="13" style="text-align:center;color:var(--text3);padding:40px">Žádné výsledky</td></tr>`; return; }
+  tb.innerHTML = sorted.map(l => {
+    const st = STAGES.find(s=>s.id===l.stav)||STAGES[0];
+    const tel = (l.telefon||'').replace(/[^+0-9]/g,'');
+    const castka = l.prodej_castka ? `<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>` : '<span style="color:var(--text3)">—</span>';
+    const produkt = l.prodej_produkt ? `<span style="font-size:.72rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>` : '<span style="color:var(--text3)">—</span>';
+    const slzBadge = l.sluzba && SLUZBA[l.sluzba] ? `<span style="font-size:.72rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 6px;border-radius:4px">${SLUZBA[l.sluzba]}</span>` : '';
+    const today = new Date().toISOString().slice(0,10);
+    return `<tr onclick="openLead(${l._id})">
+      <td style="color:var(--text3)">${l.datum||''}</td>
+      <td style="font-weight:600;max-width:140px">${esc(l.jmeno||'')}</td>
+      <td style="color:var(--text2);max-width:130px">${esc(l.firma||'')}</td>
+      <td><a class="link" href="tel:${tel}" onclick="event.stopPropagation()">${esc(l.telefon||'')}</a></td>
+      <td style="max-width:160px"><a class="link" href="mailto:${esc(l.email||'')}" onclick="event.stopPropagation()">${esc(l.email||'')}</a></td>
+      <td style="color:var(--text2)">${esc(l.problem||'')}</td>
+      <td style="color:var(--text3)">${esc(l.lokace||'')}</td>
+      <td>${slzBadge}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td style="max-width:180px;color:var(--text2)">${esc(l.poznamka||'')}</td>
+      <td>${castka}</td>
+      <td>${produkt}</td>
+      <td style="color:${l.followup && l.followup < today ? 'var(--red)' : 'var(--text2)'}">${l.followup||'—'}</td>
+    </tr>`;
   }).join('');
 }
-function mksp(k,cls,ic,lb,n){const on=(actF===k)||(k==='all'&&!actF);return`<span class="sp ${cls}${on?' on':''}" onclick="setF('${k}')"><span class="n">${n}</span>${ic?` ${ic} `:' '}${lb}</span>`;}
-function setF(k){actF=k==='all'?'':k;render();}
-function srt(c){if(sCol===c)sDir*=-1;else{sCol=c;sDir=1;}render();}
-function e(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-async function cycleF(email,cur){const next=FZ_ORD[(FZ_ORD.indexOf(cur)+1)%FZ_ORD.length];await upsert(email,{stav:next});render();renderV();}
-async function upsert(email,upd){
-  if(!email)return;crm[email]={...(crm[email]||{}),email,...upd};sy('💾','#f59e0b');
-  try{await post('/rest/v1/crm_data',{email,...upd,updated_at:new Date().toISOString()});sy('✅','#22c55e');}
-  catch(err){sy('❌','#ef4444');}
+
+function getLeadMonth(l) { return l.mesic || null; }
+function getMonths() {
+  const m = new Set(); leads.forEach(l => { const x=getLeadMonth(l); if(x) m.add(x); }); return [...m].sort((a,b)=>a-b);
 }
-function openDet(email){
-  const l=leads.find(x=>x.email===email);if(!l)return;
-  editE=email;const d=cd(l);
-  document.getElementById('mTitle').textContent=l.jmeno||email;
-  document.getElementById('mInfo').innerHTML=`<div class="ib"><label>Firma</label>${e(l.firma||'—')}</div><div class="ib"><label>Telefon</label>${e(l.telefon||'—')}</div><div class="ib"><label>Datum</label>${e(l.datum||'—')}</div><div class="ib"><label>Lokalita</label>${e(l.lokace||'—')}</div><div class="ib" style="grid-column:1/-1"><label>Problém</label>${e(l.problem||'—')}</div><div class="ib" style="grid-column:1/-1"><label>Poznámka z hovoru</label><span style="color:#94a3b8">${e(l.poznamka||'—')}</span></div>`;
-  document.getElementById('mStav').value=d.stav;document.getElementById('mCastka').value=d.castka;document.getElementById('mProdukt').value=d.produkt;document.getElementById('mFollowup').value=d.followup;document.getElementById('mPNote').value=d.note;document.getElementById('mNotes').value=d.notes;
-  document.getElementById('detModal').classList.add('open');
+function statsLeads(month) { return month ? leads.filter(l=>getLeadMonth(l)===month) : leads; }
+
+function renderStatsView() {
+  const sv = document.getElementById('view-stats');
+  const months = getMonths();
+  const today = new Date().toISOString().slice(0,10);
+  const allProdano = leads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
+  const totalYear = allProdano.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
+  const monthData = months.map(m => {
+    const ml=leads.filter(l=>getLeadMonth(l)===m);
+    const mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
+    return {month:m,name:MONTH_NAMES[m],leads:ml.length,prodano:mp.length,obrat:mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0),uzavren:ml.filter(l=>l.stav==='uzavren').length};
+  });
+  let h = `<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px 0;position:sticky;top:0;z-index:5">`;
+  h += `<div style="display:flex;align-items:center;gap:20px;margin-bottom:10px;flex-wrap:wrap">
+    <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">2026 celkem</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <span style="font-size:1.3rem;font-weight:700;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</span>
+      <span style="color:var(--text2);font-size:.85rem;align-self:center">${allProdano.length} prodejů z ${leads.length} leadů</span>
+    </div>
+  </div>`;
+  h += `<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:1px">
+    <button onclick="statsMonth=null;renderStatsView()" style="background:${!statsMonth?'var(--accent)':'var(--bg3)'};border:1px solid ${!statsMonth?'var(--accent)':'var(--border)'};color:${!statsMonth?'#fff':'var(--text2)'};border-radius:6px 6px 0 0;padding:6px 14px;cursor:pointer;font-size:.8rem;font-weight:500;white-space:nowrap;border-bottom:none">📊 Srovnání</button>`;
+  monthData.forEach(md => {
+    const active = statsMonth===md.month;
+    h += `<button onclick="statsMonth=${md.month};renderStatsView()" style="background:${active?'var(--accent)':'var(--bg3)'};border:1px solid ${active?'var(--accent)':'var(--border)'};color:${active?'#fff':'var(--text2)'};border-radius:6px 6px 0 0;padding:6px 14px;cursor:pointer;font-size:.8rem;font-weight:500;white-space:nowrap;border-bottom:none;position:relative">
+      ${md.name}${md.obrat>0?`<span style="position:absolute;top:-6px;right:-4px;background:var(--green);color:#fff;border-radius:8px;padding:0 5px;font-size:.6rem;font-weight:700">${Number(md.obrat).toLocaleString('cs')} €</span>`:''}
+    </button>`;
+  });
+  h += `</div></div><div style="padding:20px">`;
+  if (!statsMonth) {
+    const maxObrat=Math.max(...monthData.map(m=>m.obrat),1);
+    const maxLeads2=Math.max(...monthData.map(m=>m.leads),1);
+    h+=`<div class="chart-box" style="margin-bottom:16px"><h3>💰 Obrat po měsících (€)</h3>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:10px">`;
+    monthData.forEach(md=>{const pct=Math.round(md.obrat/maxObrat*100);const barH=Math.max(pct*1.4,md.obrat>0?8:2);
+      h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
+        <div style="font-size:.7rem;color:var(--green);font-weight:600">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+' €':''}</div>
+        <div style="width:100%;background:${md.obrat>0?'var(--green)':'var(--border)'};border-radius:4px 4px 0 0;height:${barH}px;opacity:${md.obrat>0?1:.4}"></div>
+        <div style="font-size:.72rem;color:var(--text2);text-align:center">${md.name}</div>
+        <div style="font-size:.65rem;color:var(--text3)">${md.prodano} prod.</div>
+      </div>`;
+    });
+    h+=`</div><h3 style="margin-top:16px">👥 Leady po měsících</h3>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:10px">`;
+    monthData.forEach(md=>{const pct=Math.round(md.leads/maxLeads2*100);const barH=Math.max(pct,4);
+      h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
+        <div style="font-size:.7rem;color:var(--accent2);font-weight:600">${md.leads}</div>
+        <div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;height:${barH}px;opacity:.7"></div>
+        <div style="font-size:.72rem;color:var(--text2)">${md.name}</div>
+      </div>`;
+    });
+    h+=`</div></div>`;
+    h+=`<div class="chart-box"><h3>📋 Přehled po měsících</h3>
+    <table class="prodej-table"><thead><tr><th>Měsíc</th><th style="text-align:right">Leady</th><th style="text-align:right">Prodáno</th><th style="text-align:right">Konverze</th><th style="text-align:right">Uzavřeno</th><th style="text-align:right">Obrat</th></tr></thead><tbody>`;
+    monthData.forEach(md=>{const konv=md.leads?Math.round(md.prodano/md.leads*100):0;
+      h+=`<tr style="cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
+        <td style="font-weight:600">${md.name}</td><td style="text-align:right">${md.leads}</td>
+        <td style="text-align:right;color:var(--accent2)">${md.prodano}</td>
+        <td style="text-align:right;color:${konv>10?'var(--green)':konv>5?'var(--yellow)':'var(--text2)'}">${konv}%</td>
+        <td style="text-align:right;color:var(--green)">${md.uzavren}</td>
+        <td style="text-align:right;color:var(--green);font-weight:600">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+' €':'—'}</td>
+      </tr>`;
+    });
+    const totKonv=leads.length?Math.round(allProdano.length/leads.length*100):0;
+    const totUzav=leads.filter(l=>l.stav==='uzavren').length;
+    h+=`<tr style="border-top:2px solid var(--border);font-weight:700">
+      <td>CELKEM 2026</td><td style="text-align:right">${leads.length}</td>
+      <td style="text-align:right;color:var(--accent2)">${allProdano.length}</td>
+      <td style="text-align:right;color:var(--green)">${totKonv}%</td>
+      <td style="text-align:right;color:var(--green)">${totUzav}</td>
+      <td style="text-align:right;color:var(--green);font-size:1rem">${Number(totalYear).toLocaleString('cs')} €</td>
+    </tr></tbody></table></div>`;
+  } else {
+    const ml=statsLeads(statsMonth);
+    const mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
+    const mTotal=mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
+    const mAvg=mp.length?mTotal/mp.length:0;
+    const stavCounts={};ml.forEach(l=>{stavCounts[l.stav]=(stavCounts[l.stav]||0)+1;});
+    const sluzbaCounts={};ml.forEach(l=>{if(l.sluzba)sluzbaCounts[l.sluzba]=(sluzbaCounts[l.sluzba]||0)+1;});
+    const prodejByProdukt={};mp.forEach(l=>{const k=l.prodej_produkt||'neurčeno';prodejByProdukt[k]=(prodejByProdukt[k]||0)+(parseFloat(l.prodej_castka)||0);});
+    const aktivni=ml.filter(l=>!['konec'].includes(l.stav)).length;
+    const konverze=ml.length?Math.round(mp.length/ml.length*100):0;
+    const fuOverdue=ml.filter(l=>l.followup&&l.followup<today).length;
+    const volatBrzy=ml.filter(l=>l.stav==='volat').length;
+    const mths=getMonths();const idx=mths.indexOf(statsMonth);
+    const prev=idx>0?mths[idx-1]:null;const nxt=idx<mths.length-1?mths[idx+1]:null;
+    h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      ${prev?`<button onclick="statsMonth=${prev};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.8rem">← ${MONTH_NAMES[prev]}</button>`:'<div></div>'}
+      <h2 style="flex:1;text-align:center;font-size:1.1rem">${MONTH_NAMES[statsMonth]} 2026</h2>
+      ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.8rem">${MONTH_NAMES[nxt]} →</button>`:'<div></div>'}
+    </div>`;
+    h+=`<div class="stats-grid">
+      <div class="kpi"><div class="kpi-val" style="color:var(--green)">${Number(mTotal).toLocaleString('cs')} €</div><div class="kpi-label">Obrat – ${MONTH_NAMES[statsMonth]}</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${mp.length}</div><div class="kpi-label">Prodaných obchodů</div><div class="kpi-sub">z ${ml.length} leadů (${konverze}%)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--yellow)">${mp.length?Math.round(mAvg).toLocaleString('cs'):0} €</div><div class="kpi-label">Průměrná hodnota</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--blue)">${aktivni}</div><div class="kpi-label">Aktivních leadů</div><div class="kpi-sub">${stavCounts['uzavren']||0} uzavřeno, ${stavCounts['konec']||0} konec</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--orange)">${volatBrzy}</div><div class="kpi-label">Naplánovaných volání</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:${fuOverdue?'var(--red)':'var(--text2)'}">${fuOverdue}</div><div class="kpi-label">Prošlých follow-upů</div></div>
+    </div>`;
+    h+=`<div class="charts-row">`;
+    const maxStav=Math.max(...STAGES.map(s=>stavCounts[s.id]||0),1);
+    h+=`<div class="chart-box"><h3>Leady podle fáze</h3>`;
+    STAGES.forEach(s=>{const cnt=stavCounts[s.id]||0;const pct=Math.round(cnt/maxStav*100);h+=`<div class="bar-row"><div class="bar-label">${s.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${s.color}">${cnt>0?cnt:''}</div></div><div class="bar-count">${cnt}</div></div>`;});
+    h+=`</div>`;
+    const sluzbaList=Object.entries(sluzbaCounts).sort((a,b)=>b[1]-a[1]);
+    const maxSl=Math.max(...sluzbaList.map(x=>x[1]),1);
+    h+=`<div class="chart-box"><h3>Leady podle služby</h3>`;
+    sluzbaList.forEach(([sl,cnt])=>{const pct=Math.round(cnt/maxSl*100);h+=`<div class="bar-row"><div class="bar-label">${SLUZBA[sl]||sl}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--accent)">${cnt}</div></div><div class="bar-count">${cnt}</div></div>`;});
+    h+=`</div></div>`;
+    if(mp.length>0){
+      const sorted=[...mp].sort((a,b)=>(parseFloat(b.prodej_castka)||0)-(parseFloat(a.prodej_castka)||0));
+      h+=`<div class="chart-box" style="margin-bottom:16px"><h3>💰 Prodané obchody – ${MONTH_NAMES[statsMonth]} (${mp.length})</h3>
+      <table class="prodej-table"><thead><tr><th>Jméno</th><th>Firma</th><th>Produkt</th><th>Poznámka</th><th style="text-align:right">Částka</th></tr></thead><tbody>`;
+      sorted.forEach(l=>{h+=`<tr style="cursor:pointer" onclick="openLead(${l._id})"><td style="font-weight:600">${esc(l.jmeno||'')}</td><td style="color:var(--text2)">${esc(l.firma||'')}</td><td>${SLUZBA[l.prodej_produkt]||l.prodej_produkt||'—'}</td><td style="color:var(--text2)">${esc(l.prodej_note||'')}</td><td style="text-align:right;color:var(--green);font-weight:600">${Number(l.prodej_castka).toLocaleString('cs')} €</td></tr>`;});
+      h+=`<tr style="border-top:2px solid var(--border)"><td colspan="4" style="font-weight:600;color:var(--text2)">CELKEM ${MONTH_NAMES[statsMonth]}</td><td style="text-align:right;font-weight:700;color:var(--green);font-size:1rem">${Number(mTotal).toLocaleString('cs')} €</td></tr></tbody></table></div>`;
+    }else{h+=`<div class="chart-box" style="text-align:center;padding:30px;color:var(--text3);margin-bottom:16px">V ${MONTH_NAMES[statsMonth]} zatím žádné zaznamenané prodeje.</div>`;}
+    if(Object.keys(prodejByProdukt).length>0){const maxP=Math.max(...Object.values(prodejByProdukt),1);h+=`<div class="chart-box"><h3>Obrat podle produktu – ${MONTH_NAMES[statsMonth]}</h3>`;Object.entries(prodejByProdukt).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const pct=Math.round(v/maxP*100);h+=`<div class="bar-row"><div class="bar-label">${SLUZBA[k]||k}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--green)">${Number(v).toLocaleString('cs')} €</div></div></div>`;});h+=`</div>`;}
+  }
+  h+=`</div>`;
+  sv.innerHTML=h;
 }
-function closeDet(){document.getElementById('detModal').classList.remove('open');editE=null;}
-async function saveLead(){
-  if(!editE)return;
-  await upsert(editE,{stav:document.getElementById('mStav').value,prodej_castka:document.getElementById('mCastka').value,prodej_produkt:document.getElementById('mProdukt').value,prodej_note:document.getElementById('mPNote').value,followup:document.getElementById('mFollowup').value,my_notes:document.getElementById('mNotes').value});
-  closeDet();render();renderSt();
+
+function renderVolat() {
+  const vv=document.getElementById('view-volat');
+  const today=new Date().toISOString().slice(0,10);
+  const emailReady=leads.filter(l=>l.stav==='email_ready');
+  const volatLeads=leads.filter(l=>l.stav==='volat').sort((a,b)=>(a.volat_date||'').localeCompare(b.volat_date||''));
+  const fuAll=leads.filter(l=>l.followup).sort((a,b)=>a.followup.localeCompare(b.followup));
+  const fuOv=fuAll.filter(l=>l.followup<today);
+  const fuTd=fuAll.filter(l=>l.followup===today);
+  const fuUp=fuAll.filter(l=>l.followup>today);
+  let h='';
+  const sec=(title,arr,color)=>{
+    if(!arr.length)return'';
+    let s=`<div class="vl-section"><h3 style="color:${color}">${title} <span style="opacity:.6;font-size:.72rem">(${arr.length})</span></h3>`;
+    arr.forEach(l=>{
+      const tel=(l.telefon||'').replace(/[^+0-9]/g,'');
+      s+=`<div class="vl-card" onclick="openLead(${l._id})">
+        <div class="vl-date" style="color:${color}">${l.volat_date||l.followup||'📧'}</div>
+        <div class="vl-info">
+          <div class="vl-name">${esc(l.jmeno||'')}${l.firma?' · <span style="color:var(--text2)">'+esc(l.firma)+'</span>':''}</div>
+          <div class="vl-sub">${esc(l.poznamka||l.problem||'')}${l.lokace?' · 📍'+esc(l.lokace):''}</div>
+        </div>
+        <div class="vl-acts">
+          ${tel?`<a class="btn-ic" href="tel:${tel}" onclick="event.stopPropagation()">📞</a>`:''}
+          ${l.email?`<a class="btn-ic" href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">✉️</a>`:''}
+        </div>
+      </div>`;
+    });
+    s+='</div>';return s;
+  };
+  h+=sec('📧 Odeslat email',emailReady,'#a855f7');
+  h+=sec('📞 Naplánovaná volání',volatLeads,'#f97316');
+  h+=sec('⚠️ Prošlé follow-upy',fuOv,'#ef4444');
+  h+=sec('✅ Dnes',fuTd,'#22c55e');
+  h+=sec('📅 Nadcházející',fuUp,'#3b82f6');
+  if(!h)h='<div style="color:var(--text3);text-align:center;padding:40px">Žádné naplánované aktivity.</div>';
+  vv.innerHTML=h;
 }
-function chM(d){if(stM===null)stM=new Date().getMonth()+1;stM=((stM-1+d+12)%12)+1;renderSt();}
-function renderSt(){
-  document.getElementById('stTitle').textContent=stM?MN[stM]+' 2026':'Přehled roku 2026';
-  const fl=stM?leads.filter(l=>l.mesic==stM):leads;
-  const uz=fl.filter(l=>cd(l).stav==='uzavren');
-  const eur=uz.reduce((s,l)=>s+(parseFloat(cd(l).castka)||0),0);
-  const conv=fl.length?((uz.length/fl.length)*100).toFixed(1):0;
-  const sc={};fl.forEach(l=>{const s=cd(l).stav;sc[s]=(sc[s]||0)+1;});
-  let bars='';
-  if(!stM){const md={};leads.forEach(l=>{const m=l.mesic;if(!m)return;if(!md[m])md[m]={t:0,e:0};md[m].t++;if(cd(l).stav==='uzavren')md[m].e+=parseFloat(cd(l).castka)||0;});const mx=Math.max(...Object.values(md).map(d=>d.t),1);bars=`<div class="bar-sec"><h4>Leady po měsících</h4>`+[1,2,3,4,5,6,7,8,9,10,11,12].filter(m=>md[m]).map(m=>`<div class="bar-row"><div class="bar-lbl">${MN[m].slice(0,3)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(md[m].t/mx*100,5)}%">${md[m].t}</div></div><div class="bar-val">${md[m].e>0?'💰 '+Math.round(md[m].e)+'€':''}</div></div>`).join('')+'</div>';}
-  document.getElementById('stContent').innerHTML=`<div class="s-cards"><div class="s-card"><h4>Celkem leadů</h4><div class="big">${fl.length}</div><div class="sub">${stM?MN[stM]:'Celý rok'}</div></div><div class="s-card"><h4>Uzavřeno</h4><div class="big" style="color:#4ade80">${uz.length}</div><div class="sub">Konverze: ${conv}%</div></div><div class="s-card"><h4>Celkový prodej</h4><div class="big" style="color:#4ade80">${Math.round(eur).toLocaleString('cs')} €</div><div class="sub">${uz.length} obchodů</div></div><div class="s-card"><h4>Průměr/obchod</h4><div class="big" style="color:#818cf8">${uz.length?Math.round(eur/uz.length).toLocaleString('cs'):0} €</div></div></div><div class="s-cards">${Object.entries(FZ).map(([k,f])=>`<div class="s-card"><h4>${f.i} ${f.l}</h4><div class="big">${sc[k]||0}</div></div>`).join('')}</div>${bars}`;
+
+function openLead(id) {
+  const l=leads.find(x=>x._id===id);if(!l)return;
+  currentLead=l;
+  document.getElementById('pName').textContent=l.jmeno||'Neznámý';
+  document.getElementById('pFirma').textContent=l.firma||'';
+  document.getElementById('pStage').value=l.stav;
+  document.getElementById('pFollowup').value=l.followup||'';
+  document.getElementById('pNotes').value=l.myNotes||'';
+  document.getElementById('pCastka').value=l.prodej_castka||'';
+  document.getElementById('pProdukt').value=l.prodej_produkt||'';
+  document.getElementById('pProdejNote').value=l.prodej_note||'';
+  document.getElementById('pPoznamka').textContent=l.poznamka||'—';
+  document.getElementById('pNotesSheet').textContent=l.notes||'—';
+  const tel=(l.telefon||'').replace(/[^+0-9]/g,'');
+  document.getElementById('pEmail').innerHTML=l.email?`<a class="link" href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—';
+  document.getElementById('pTel').innerHTML=tel?`<a class="link" href="tel:${tel}">${esc(l.telefon)}</a>`:'—';
+  document.getElementById('pProblem').textContent=l.problem||'—';
+  document.getElementById('pLokace').textContent=l.lokace||'—';
+  document.getElementById('pSluzba').textContent=SLUZBA[l.sluzba]||l.sluzba||'—';
+  document.getElementById('pDatum').textContent=l.datum||'—';
+  document.getElementById('pVolatDate').textContent=l.volat_date||'—';
+  let acts='';
+  if(tel)acts+=`<a class="btn" href="tel:${tel}">📞 Volat</a>`;
+  if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
+  document.getElementById('pActions').innerHTML=acts;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('panel').classList.add('open');
 }
-function renderV(){
-  const vl=leads.filter(l=>cd(l).stav==='volat');
-  const el=document.getElementById('vList');
-  if(!vl.length){el.innerHTML='<div class="empty" style="padding:60px"><div style="font-size:36px">📞</div><div style="margin-top:6px;color:#64748b">Žádné leady ke kontaktování</div></div>';return;}
-  el.innerHTML=vl.map(l=>{const d=cd(l);const ini=(l.jmeno||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const tel=(l.telefon||'').trim();return`<div class="v-card"><div class="avatar">${ini}</div><div style="flex:1;min-width:0"><div style="font-weight:600;color:#f1f5f9">${e(l.jmeno||'')} <span style="color:#64748b;font-size:11px">${e(l.firma||'')}</span></div>${d.followup?`<div style="font-size:11px;color:#facc15;margin-top:1px">📅 ${d.followup}</div>`:''}${l.poznamka?`<div style="font-size:11px;color:#94a3b8;margin-top:1px">${e(l.poznamka)}</div>`:''}${d.notes?`<div style="font-size:11px;color:#94a3b8">${e(d.notes)}</div>`:''}</div>${tel?`<a href="tel:${tel}" class="call-a">📞 Zavolat</a>`:''}<button class="btn btn-s" style="font-size:11px;padding:3px 7px" onclick="openDet('${l.email}')">Detail</button></div>`;}).join('');
+
+function savePanel() {
+  if(!currentLead)return;
+  currentLead.stav=document.getElementById('pStage').value;
+  currentLead.followup=document.getElementById('pFollowup').value;
+  currentLead.myNotes=document.getElementById('pNotes').value;
+  currentLead.prodej_castka=document.getElementById('pCastka').value;
+  currentLead.prodej_produkt=document.getElementById('pProdukt').value;
+  currentLead.prodej_note=document.getElementById('pProdejNote').value;
+  saveToApi(currentLead);
+  renderStats();
+  if(currentTab==='table')renderTable();
+  else if(currentTab==='stats')renderStatsView();
+  else renderVolat();
 }
-function showTab(t){['tabulka','statistiky','volat'].forEach(id=>{document.getElementById('pg-'+id).style.display=id===t?'':'none';document.getElementById('tb-'+id).classList.toggle('active',id===t);});if(t==='statistiky')renderSt();if(t==='volat')renderV();}
-function openImport(){document.getElementById('impModal').classList.add('open');}
-function closeImp(){document.getElementById('impModal').classList.remove('open');document.getElementById('impPrev').style.display='none';document.getElementById('impBtn').style.display='none';impD=[];document.getElementById('progF').style.width='0%';}
+
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('panel').classList.remove('open');
+  currentLead=null;
+}
+
+// ── Import ────────────────────────────────────────────────────
+function openImport(){document.getElementById('impOverlay').classList.add('open');}
+function closeImport(){
+  document.getElementById('impOverlay').classList.remove('open');
+  document.getElementById('impPrev').style.display='none';
+  document.getElementById('impBtn').style.display='none';
+  impD=[];document.getElementById('progF').style.width='0%';
+}
 function doDrop(ev){ev.preventDefault();document.getElementById('dropZ').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)doFile(f);}
+
 function doFile(file){
-  if(!file)return;const r=new FileReader();
+  if(!file)return;
+  const r=new FileReader();
   r.onload=function(ev){
     try{
-      const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];
+      const wb=XLSX.read(ev.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
       if(!rows.length)return alert('Soubor je prázdný');
       const hdr=rows[0].map(h=>String(h).toLowerCase().trim());
       const fi=terms=>{for(const t of terms){const i=hdr.findIndex(h=>h.includes(t));if(i>=0)return i;}return-1;};
-      const cm={jmeno:fi(['jmén','jmeno','name'])>=0?fi(['jmén','jmeno','name']):0,firma:fi(['web','firma','company'])>=0?fi(['web','firma','company']):1,telefon:fi(['tel','phone','číslo'])>=0?fi(['tel','phone','číslo']):2,problem:fi(['problém','problem'])>=0?fi(['problém','problem']):3,email:fi(['email','mail'])>=0?fi(['email','mail']):4,datum:fi(['datum','date'])>=0?fi(['datum','date']):5,poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):6,lokace:fi(['lok','schůzky'])>=0?fi(['lok','schůzky']):7,sluzba:fi(['služba','sluzba','schuzka'])>=0?fi(['služba','sluzba','schuzka']):8,ai_info:fi(['ai info','ai_info'])>=0?fi(['ai info','ai_info']):9,stav:fi(['stav','status','fáze','faze'])>=0?fi(['stav','status','fáze','faze']):10,notes:fi(['notes'])>=0?fi(['notes']):11};
+      const cm={
+        jmeno:fi(['jmén','jmeno','name'])>=0?fi(['jmén','jmeno','name']):0,
+        firma:fi(['web','firma','company'])>=0?fi(['web','firma','company']):1,
+        telefon:fi(['tel','phone','číslo'])>=0?fi(['tel','phone','číslo']):2,
+        problem:fi(['problém','problem'])>=0?fi(['problém','problem']):3,
+        email:fi(['email','mail'])>=0?fi(['email','mail']):4,
+        datum:fi(['datum','date'])>=0?fi(['datum','date']):5,
+        poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):6,
+        lokace:fi(['lok','schůzky'])>=0?fi(['lok','schůzky']):7,
+        sluzba:fi(['služba','sluzba','schuzka'])>=0?fi(['služba','sluzba','schuzka']):8,
+        ai_info:fi(['ai info','ai_info'])>=0?fi(['ai info','ai_info']):9,
+        stav:fi(['stav','status','fáze','faze'])>=0?fi(['stav','status','fáze','faze']):10,
+        notes:fi(['notes'])>=0?fi(['notes']):11,
+      };
       impD=rows.slice(1).filter(r=>r.some(c=>c!='')).map(row=>{
-        const datum=String(row[cm.datum]||'').trim();const poz=String(row[cm.poznamka]||'').trim();const ai=String(row[cm.ai_info]||'').trim();const sv=String(row[cm.stav]||'').trim();
+        const datum=String(row[cm.datum]||'').trim();
+        const poz=String(row[cm.poznamka]||'').trim();
+        const ai=String(row[cm.ai_info]||'').trim();
+        const sv=String(row[cm.stav]||'').trim();
         const s=sv.toLowerCase(),a=ai.toLowerCase(),p=poz.toLowerCase();
         let stav='novy';
-        if(s.includes('konec'))stav='konec';else if(s.includes('uzavř')||s.includes('uzavr'))stav='uzavren';else if(a.includes('odesláno')||a.includes('odeslano'))stav='kontaktovan';else if(a.includes('odeslat email'))stav='email_ready';else if(p.includes('volat:'))stav='volat';
-        const dc=datum.replace(/\s+/g,'');const dm=dc.match(/^(\d{1,2})\.(\d{1,2})/);const mesic=dm?parseInt(dm[2]):null;
-        const rawSlz=String(row[cm.sluzba]||'').trim().toLowerCase();let sluzba='';
-        if(rawSlz.includes('reklam')||rawSlz.includes('marketing'))sluzba='reklama_marketing';else if(rawSlz.includes('ai vid'))sluzba='tvorba_ai_videi';else if(rawSlz.includes('video'))sluzba='video_produkce';else if(rawSlz&&rawSlz!=='0')sluzba='jine';
-        return{jmeno:String(row[cm.jmeno]||'').trim(),firma:String(row[cm.firma]||'').trim(),telefon:String(row[cm.telefon]||'').replace(/^p:/i,'').trim(),problem:String(row[cm.problem]||'').trim(),email:String(row[cm.email]||'').trim().toLowerCase(),datum,mesic,poznamka:poz,lokace:String(row[cm.lokace]||'').trim(),sluzba,ai_info:ai,stav,notes:String(row[cm.notes]||'').trim()};
+        if(s.includes('konec'))stav='konec';
+        else if(s.includes('uzavř')||s.includes('uzavr'))stav='uzavren';
+        else if(a.includes('odesláno')||a.includes('odeslano'))stav='kontaktovan';
+        else if(a.includes('odeslat email'))stav='email_ready';
+        else if(p.includes('volat:'))stav='volat';
+        const dc=datum.replace(/\s+/g,'');
+        const dm=dc.match(/^(\d{1,2})\.(\d{1,2})/);
+        const mesic=dm?parseInt(dm[2]):null;
+        const rawSlz=String(row[cm.sluzba]||'').trim().toLowerCase();
+        let sluzba='';
+        if(rawSlz.includes('reklam')||rawSlz.includes('marketing'))sluzba='reklama_marketing';
+        else if(rawSlz.includes('ai vid'))sluzba='tvorba_ai_videi';
+        else if(rawSlz.includes('video'))sluzba='video_produkce';
+        else if(rawSlz&&rawSlz!=='0')sluzba='jine';
+        const vm=poz.match(/Volat:\s*([\d\.]+)/i);
+        return{jmeno:String(row[cm.jmeno]||'').trim(),firma:String(row[cm.firma]||'').trim(),telefon:String(row[cm.telefon]||'').replace(/^p:/i,'').trim(),problem:String(row[cm.problem]||'').trim(),email:String(row[cm.email]||'').trim().toLowerCase(),datum,mesic,poznamka:poz,lokace:String(row[cm.lokace]||'').trim(),sluzba,ai_info:ai,stav,volat_date:vm?vm[1]:'',notes:String(row[cm.notes]||'').trim()};
       }).filter(r=>r.jmeno||r.email);
-      document.getElementById('impPrev').style.display='';document.getElementById('impInfo').innerHTML=`<b style="color:#4ade80">✅ Nalezeno ${impD.length} řádků</b> — "${e(file.name)}"`;document.getElementById('impBtn').style.display='';
+      document.getElementById('impPrev').style.display='';
+      document.getElementById('impInfo').innerHTML=`<b style="color:var(--green)">✅ Nalezeno ${impD.length} řádků</b> v souboru "${esc(file.name)}"`;
+      document.getElementById('impBtn').style.display='';
     }catch(err){alert('Chyba: '+err.message);}
-  };r.readAsArrayBuffer(file);
+  };
+  r.readAsArrayBuffer(file);
 }
+
 async function doImport(){
-  if(!impD.length)return;const btn=document.getElementById('impBtn');btn.disabled=true;btn.textContent='⏳ Importuji...';
+  if(!impD.length)return;
+  const btn=document.getElementById('impBtn');btn.disabled=true;btn.textContent='⏳ Importuji…';
   const prog=document.getElementById('progF');const st=document.getElementById('impSt');let done=0;
   for(let i=0;i<impD.length;i+=100){
-    try{await post('/rest/v1/leads',impD.slice(i,i+100));done+=Math.min(100,impD.length-i);prog.style.width=Math.round(done/impD.length*100)+'%';st.textContent='Importováno '+done+' / '+impD.length;}
-    catch(err){st.textContent='❌ '+err.message;btn.disabled=false;btn.textContent='✅ Importovat';return;}
+    try{
+      await sbPost('/rest/v1/leads',impD.slice(i,i+100));
+      done+=Math.min(100,impD.length-i);
+      prog.style.width=Math.round(done/impD.length*100)+'%';
+      st.textContent='Importováno '+done+' / '+impD.length;
+    }catch(err){st.textContent='❌ '+err.message;btn.disabled=false;btn.textContent='✅ Importovat leady';return;}
   }
-  st.textContent='✅ Hotovo!';setTimeout(()=>{closeImp();init();},900);
+  st.textContent='✅ Import dokončen!';
+  setTimeout(()=>{closeImport();init();},1000);
 }
-function sy(m,c){const el=document.getElementById('syncEl');el.textContent=m;el.style.background=c+'22';el.style.color=c;}
-document.getElementById('detModal').addEventListener('click',ev=>{if(ev.target===ev.currentTarget)closeDet();});
-document.getElementById('impModal').addEventListener('click',ev=>{if(ev.target===ev.currentTarget)closeImp();});
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 init();
+setTab('table');
 </script>
 </body>
 </html>
