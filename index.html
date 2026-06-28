@@ -386,14 +386,11 @@ async function deleteSelected(){
   showSync('🗑️ Mažu…','#dc2626');
   try{
     const emails=[...selected];
-    // Delete in batches of 50
     for(let i=0;i<emails.length;i+=50){
       const batch=emails.slice(i,i+50);
       const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
-      // Delete from crm_data first
       const r1=await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});
       if(!r1.ok)throw new Error(await r1.text());
-      // Delete from leads
       const r2=await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
       if(!r2.ok)throw new Error(await r2.text());
     }
@@ -408,7 +405,6 @@ async function deleteSelected(){
 // ── Phone fix ─────────────────────────────────────────────────
 function fixPhone(s){
   s=String(s||'').trim();
-  // Fix scientific notation e.g. "4.20722E+11"
   if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}
   return s;
 }
@@ -456,7 +452,6 @@ async function saveToApi(lead){
       updated_at:new Date().toISOString()
     };
     const enc=encodeURIComponent(lead.email);
-    // PATCH first — return=representation gives us the updated rows as JSON (CORS-safe)
     const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{
       method:'PATCH',
       headers:{...H,'Prefer':'return=representation'},
@@ -464,7 +459,6 @@ async function saveToApi(lead){
     });
     if(!pr.ok)throw new Error(await pr.text());
     const updated=await pr.json();
-    // If PATCH updated 0 rows → row doesn't exist yet, INSERT it
     if(!updated||updated.length===0){
       const ir=await fetch(SB+'/rest/v1/crm_data',{
         method:'POST',
@@ -569,15 +563,10 @@ function renderTable(){
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
     const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
-    
-    // Inline Poznámka select
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
-
-    // Inline Fáze select
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
     const fazeCell=`<select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select>`;
-
     const phoneDisplay=fixPhone(l.telefon||'');
     return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
@@ -598,7 +587,6 @@ function renderTable(){
   }).join('');
 }
 
-// Inline change handlers
 async function changeFaze(email,newStav){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
   lead.stav=newStav;
@@ -607,7 +595,6 @@ async function changeFaze(email,newStav){
 }
 async function changePoz(email,newPoz){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
-  // Set fáze to default for that category (only if current fáze doesn't match)
   const curPoz=getPoz(lead.stav);
   if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}
   await saveToApi(lead);
@@ -646,7 +633,7 @@ function renderStatsView(){
   });
   h+=`</div></div><div style="padding:18px">`;
   if(!statsMonth){
-    const maxO=Math.max(...monthData.map(m=>m.obrat),1),maxL=Math.max(...monthData.map(m=>m.leads),1);
+    const maxO=Math.max(...monthData.map(m=>m.obrat),1);
     h+=`<div class="chart-box" style="margin-bottom:14px"><h3>💰 Obrat po měsících</h3>
     <div style="display:flex;align-items:flex-end;gap:7px;height:140px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px">`;
     monthData.forEach(md=>{const barH=Math.max(Math.round(md.obrat/maxO*120),md.obrat>0?7:2);
@@ -698,7 +685,6 @@ function renderStatsView(){
       <div class="kpi"><div class="kpi-val" style="color:#22c55e">${uz}</div><div class="kpi-label">Uzavřeno</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#ef4444">${ko}</div><div class="kpi-label">Konec</div></div>
     </div>`;
-    // Fáze breakdown
     const fazeCounts={};ml.forEach(l=>{fazeCounts[l.stav]=(fazeCounts[l.stav]||0)+1;});
     const maxF=Math.max(...FAZE.slice(1).map(f=>fazeCounts[f.id]||0),1);
     h+=`<div class="chart-box" style="margin-bottom:14px"><h3>Leady podle fáze</h3>`;
@@ -769,7 +755,6 @@ function openLead(id){
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
-  // Editable notes: show myNotes if exists, otherwise show original poznamka/notes from import
   document.getElementById('pNotes').value=l.myNotes||(l.poznamka||l.notes||'');
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
@@ -794,7 +779,6 @@ function savePanel(){
   currentLead.prodej_castka=document.getElementById('pCastka').value;
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
-  // Sync poz selector when faze changes
   document.getElementById('pPoz').value=getPoz(currentLead.stav);
   saveToApi(currentLead);
   renderStatsBar();
@@ -813,7 +797,6 @@ function savePozFromPanel(){
 }
 
 function closePanel(){
-  // Save before close
   if(currentLead){
     currentLead.stav=document.getElementById('pStage').value;
     currentLead.followup=document.getElementById('pFollowup').value;
@@ -880,30 +863,29 @@ function doFile(file){
         }
         const poz=String(row[cm.poznamka]||'').trim();
         const ai=String(row[cm.ai_info]||'').trim();
-        const gv=poz.toLowerCase(); // col G
-        const sv=String(row[cm.stav]||'').trim().toLowerCase(); // col K
+        const gv=poz.toLowerCase(); // col G - poznámka hovoru
+        const sv=String(row[cm.stav]||'').trim().toLowerCase(); // col K - stav
         const al=ai.toLowerCase();
         // ── Mapování stavu z G + K na nový systém ──
         function mapStavStr(s){
           if(!s)return null;
           if(s.includes('nezved')){if(s.includes('3'))return'nezvedan3';if(s.includes('2'))return'nezvedan2';return'nezvedan1';}
           if(s.includes('nerelevant'))return'nerelevantni';
-          if(s.includes('konec'))return'nerelevantni';
+          // 'konec' samo = jen konec hovoru, ne status → ignorovat
           if(s.includes('domluvena')||s.includes('schuzk')||s.includes('schůzk'))return'domluvena_schuzka';
           if(s.includes('uzavř')||s.includes('uzavr'))return'domluvena_schuzka';
           if(s.includes('odeslat email')||s.includes('email odeslán')||s.includes('odesláno')||s.includes('odeslano'))return'odeslat_email';
           if(s.includes('volat'))return'nezvedan1';
           return null;
         }
-        // K (stav) má prioritu, pak G (poznamka hovoru), pak AI info
-        const stav=mapStavStr(sv)||mapStavStr(gv)||mapStavStr(al)||'';
+        // G (poznámka hovoru) má prioritu — specifičtější, pak K (stav), pak AI info
+        const stav=mapStavStr(gv)||mapStavStr(sv)||mapStavStr(al)||'';
         const rawSlz=String(row[cm.sluzba]||'').trim().toLowerCase();
         let sluzba='';
         if(rawSlz.includes('reklam')||rawSlz.includes('marketing'))sluzba='reklama_marketing';
         else if(rawSlz.includes('ai vid'))sluzba='tvorba_ai_videi';
         else if(rawSlz.includes('video'))sluzba='video_produkce';
         else if(rawSlz&&rawSlz!=='0')sluzba='jine';
-        // Fix phone
         let telefon=String(row[cm.telefon]||'').replace(/^p:/i,'').trim();
         telefon=fixPhone(telefon);
         return{
@@ -933,13 +915,11 @@ async function doImport(){
   for(let i=0;i<impD.length;i+=100){
     try{
       const batch=impD.slice(i,i+100);
-      // Delete existing records with same emails first (avoids duplicate key errors)
       const emails=batch.map(r=>r.email).filter(Boolean);
       if(emails.length){
         const filter=emails.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
         await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
       }
-      // Insert fresh records
       await sbPost('/rest/v1/leads',batch);
       done+=Math.min(100,impD.length-i);
       prog.style.width=Math.round(done/impD.length*100)+'%';
