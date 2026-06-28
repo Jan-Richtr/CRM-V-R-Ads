@@ -61,7 +61,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .kpi-val{font-size:1.9rem;font-weight:700;margin-bottom:2px}
 .kpi-label{font-size:.72rem;color:var(--text2)}
 .kpi-sub{font-size:.75rem;color:var(--text3);margin-top:3px}
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
 .chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
 .chart-box h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
@@ -72,7 +71,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
-@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
 #view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:18px}
 .vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -336,7 +334,6 @@ const FAZE_MAP={};FAZE.forEach(f=>FAZE_MAP[f.id]=f);
 
 const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_email','volat':'nezvedan1','uzavren':'domluvena_schuzka','konec':'nerelevantni'};
 function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
-
 function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
 function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
 
@@ -358,7 +355,6 @@ function getMesicLabel(m){
   return MONTH_NAMES[m]||'';
 }
 function getMesicYear(m){return m>100?Math.floor(m/100):null;}
-function getMesicMonth(m){return m>100?m%100:m;}
 
 let leads=[],currentLead=null,currentTab='table';
 let sortCol='datum',sortDir=1;
@@ -519,7 +515,6 @@ function renderTable(){
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
     const fazeCell=`<select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select>`;
     const phoneDisplay=fixPhone(l.telefon||'');
-    const notesText=l.myNotes||l.notes||'';
     return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
       <td style="color:var(--text3);min-width:55px">${formatDatum(l.datum)}</td>
@@ -535,7 +530,7 @@ function renderTable(){
       <td>${castka}</td>
       <td>${produkt}</td>
       <td style="color:${l.followup&&l.followup<today?'var(--red)':'var(--text2)'}">${l.followup||'—'}</td>
-      <td style="color:var(--text2);max-width:220px;white-space:normal;font-size:.72rem;line-height:1.4">${esc(notesText)}</td>
+      <td style="color:var(--text2);max-width:220px;font-size:.72rem">${esc(l.myNotes||l.notes||'')}</td>
     </tr>`;
   }).join('');
 }
