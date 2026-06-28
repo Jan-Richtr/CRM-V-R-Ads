@@ -59,7 +59,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .kpi-val{font-size:1.9rem;font-weight:700;margin-bottom:2px}
 .kpi-label{font-size:.72rem;color:var(--text2)}
 .kpi-sub{font-size:.75rem;color:var(--text3);margin-top:3px}
-.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
 .chart-box h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
 .bar-label{width:150px;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -69,6 +70,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
 #view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:18px}
 .vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -143,6 +145,11 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </div>
   <span id="syncLbl" style="font-size:.7rem;color:#64748b;flex-shrink:0;white-space:nowrap"></span>
   <button onclick="init()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:.8rem;flex-shrink:0">🔄</button>
+  <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
+    <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
+    <button onclick="deleteSelected()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">🗑️ Smazat vybrané</button>
+    <button onclick="clearSel()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.78rem">✕ Zrušit</button>
+  </div>
   <div class="filter-row">
     <select class="flt" id="fazeFilter" onchange="applyFilters()">
       <option value="">Všechny fáze</option>
@@ -175,6 +182,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <table>
     <thead>
       <tr>
+        <th style="width:36px;text-align:center"><input type="checkbox" id="selAll" onclick="toggleSelAll(this.checked)" style="cursor:pointer;accent-color:var(--accent)"></th>
         <th onclick="sortBy('datum')" data-col="datum">Datum <span class="si2">▲</span></th>
         <th onclick="sortBy('jmeno')" data-col="jmeno">Jméno <span class="si2">▲</span></th>
         <th onclick="sortBy('firma')" data-col="firma">Firma <span class="si2">▲</span></th>
@@ -316,12 +324,10 @@ const FAZE=[
   {id:'domluvena_schuzka',label:'Domluvena schuzka ✅',poz:'konec',cls:'b-ds',color:'#22c55e'},
 ];
 const FAZE_MAP={};FAZE.forEach(f=>FAZE_MAP[f.id]=f);
-
 const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_email','volat':'nezvedan1','uzavren':'domluvena_schuzka','konec':'nerelevantni'};
 function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
 function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
 function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
-
 const POZ_LABEL={'otevreno':'🟡 otevřeno','uzavreno':'🟢 uzavřeno','konec':'🔴 konec','':''};
 const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'nerelevantni','konec':'domluvena_schuzka','':''};
@@ -332,6 +338,49 @@ let leads=[],currentLead=null,currentTab='table';
 let sortCol='datum',sortDir=1;
 let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
 let statsMonth=null,impD=[];
+let selected=new Set();
+
+function toggleSel(email,checked){
+  if(checked)selected.add(email);else selected.delete(email);
+  updateSelBar();
+}
+function toggleSelAll(checked){
+  const filtered=getFiltered();
+  filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});
+  updateSelBar();
+  renderTable();
+}
+function clearSel(){selected.clear();updateSelBar();renderTable();}
+function updateSelBar(){
+  const n=selected.size;
+  const bar=document.getElementById('selBar');
+  const cnt=document.getElementById('selCount');
+  bar.style.display=n>0?'flex':'none';
+  cnt.textContent=n+' vybraných';
+  const sa=document.getElementById('selAll');
+  if(sa){const f=getFiltered();sa.checked=f.length>0&&f.every(l=>selected.has(l.email));sa.indeterminate=!sa.checked&&f.some(l=>selected.has(l.email));}
+}
+async function deleteSelected(){
+  if(!selected.size)return;
+  if(!confirm('Opravdu smazat '+selected.size+' leadů? Tato akce je nevratná.'))return;
+  showSync('🗑️ Mažu…','#dc2626');
+  try{
+    const emails=[...selected];
+    for(let i=0;i<emails.length;i+=50){
+      const batch=emails.slice(i,i+50);
+      const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
+      const r1=await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});
+      if(!r1.ok)throw new Error(await r1.text());
+      const r2=await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
+      if(!r2.ok)throw new Error(await r2.text());
+    }
+    leads=leads.filter(l=>!selected.has(l.email));
+    selected.clear();
+    updateSelBar();
+    showSync('✅ Smazáno','#16a34a');
+    render();
+  }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
+}
 
 function fixPhone(s){
   s=String(s||'').trim();
@@ -381,16 +430,14 @@ async function saveToApi(lead){
       updated_at:new Date().toISOString()
     };
     const enc=encodeURIComponent(lead.email);
-    // PATCH first (update existing row)
     const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{
       method:'PATCH',
-      headers:{...H,'Prefer':'return=minimal,count=exact'},
+      headers:{...H,'Prefer':'return=representation'},
       body:JSON.stringify(data)
     });
     if(!pr.ok)throw new Error(await pr.text());
-    // If 0 rows updated → INSERT new row
-    const range=pr.headers.get('content-range')||'';
-    if(!range||range.endsWith('/0')){
+    const updated=await pr.json();
+    if(!updated||updated.length===0){
       const ir=await fetch(SB+'/rest/v1/crm_data',{
         method:'POST',
         headers:{...H,'Prefer':'return=minimal'},
@@ -481,7 +528,7 @@ function renderTable(){
     return String(va).localeCompare(String(vb),'cs')*sortDir;
   });
   const tb=document.getElementById('tableBody');
-  if(!sorted.length){tb.innerHTML=`<tr><td colspan="13" style="text-align:center;color:var(--text3);padding:36px">Žádné výsledky</td></tr>`;return;}
+  if(!sorted.length){tb.innerHTML=`<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:36px">Žádné výsledky</td></tr>`;return;}
   const today=new Date().toISOString().slice(0,10);
   tb.innerHTML=sorted.map(l=>{
     const finfo=getFazeInfo(l.stav);
@@ -495,7 +542,9 @@ function renderTable(){
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
     const fazeCell=`<select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select>`;
     const phoneDisplay=fixPhone(l.telefon||'');
-    return`<tr onclick="openLead(${l._id})">
+    const isSel=selected.has(l.email);
+    return`<tr onclick="openLead(${l._id})" style="${isSel?'background:rgba(220,38,38,.08)':''}">
+      <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${isSel?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
       <td style="color:var(--text3);min-width:55px">${l.datum||'—'}</td>
       <td style="font-weight:600;max-width:130px">${esc(l.jmeno||'')}</td>
       <td style="color:var(--text2);max-width:120px">${esc(l.firma||'')}</td>
@@ -558,7 +607,7 @@ function renderStatsView(){
   h+=`</div></div><div style="padding:18px">`;
   if(!statsMonth){
     const maxO=Math.max(...monthData.map(m=>m.obrat),1);
-    h+=`<div class="chart-box"><h3>💰 Obrat po měsících</h3>
+    h+=`<div class="chart-box" style="margin-bottom:14px"><h3>💰 Obrat po měsících</h3>
     <div style="display:flex;align-items:flex-end;gap:7px;height:140px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px">`;
     monthData.forEach(md=>{const barH=Math.max(Math.round(md.obrat/maxO*120),md.obrat>0?7:2);
       h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
@@ -611,7 +660,7 @@ function renderStatsView(){
     </div>`;
     const fazeCounts={};ml.forEach(l=>{fazeCounts[l.stav]=(fazeCounts[l.stav]||0)+1;});
     const maxF=Math.max(...FAZE.slice(1).map(f=>fazeCounts[f.id]||0),1);
-    h+=`<div class="chart-box"><h3>Leady podle fáze</h3>`;
+    h+=`<div class="chart-box" style="margin-bottom:14px"><h3>Leady podle fáze</h3>`;
     FAZE.slice(1).forEach(f=>{const cnt=fazeCounts[f.id]||0;const pct=Math.round(cnt/maxF*100);
       h+=`<div class="bar-row"><div class="bar-label">${f.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${f.color}">${cnt>0?cnt:''}</div></div><div class="bar-count">${cnt}</div></div>`;
     });
