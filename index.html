@@ -59,7 +59,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .kpi-val{font-size:1.9rem;font-weight:700;margin-bottom:2px}
 .kpi-label{font-size:.72rem;color:var(--text2)}
 .kpi-sub{font-size:.75rem;color:var(--text3);margin-top:3px}
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
 .chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
 .chart-box h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
@@ -70,7 +69,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
-@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
 #view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:18px}
 .vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -312,7 +310,7 @@ const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
 const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
 
 async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
-async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
+async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
 
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
@@ -867,7 +865,15 @@ async function doImport(){
   const prog=document.getElementById('progF'),st=document.getElementById('impSt');let done=0;
   for(let i=0;i<impD.length;i+=100){
     try{
-      await sbPost('/rest/v1/leads?on_conflict=email',impD.slice(i,i+100));
+      const batch=impD.slice(i,i+100);
+      // Delete existing records with same emails first (avoids duplicate key errors)
+      const emails=batch.map(r=>r.email).filter(Boolean);
+      if(emails.length){
+        const filter=emails.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
+        await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
+      }
+      // Insert fresh records
+      await sbPost('/rest/v1/leads',batch);
       done+=Math.min(100,impD.length-i);
       prog.style.width=Math.round(done/impD.length*100)+'%';
       st.textContent='Importováno '+done+' / '+impD.length;
