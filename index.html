@@ -24,11 +24,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 select.flt{appearance:none;padding-right:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center}
 .btn-imp{background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0}
 .btn-imp:hover{background:var(--accent2)}
+/* STATS BAR */
 .stats-bar{display:flex;gap:8px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
 .stt{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;flex-shrink:0}
 .stt:hover,.stt.on{border-color:var(--accent);background:rgba(108,99,255,.12)}
 .stt-n{font-size:1.15rem;font-weight:700}
 .stt-l{font-size:.68rem;color:var(--text2)}
+/* TABLE */
 #view-table{overflow-x:auto;max-height:calc(100vh - 125px);overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:.78rem}
 thead{position:sticky;top:0;z-index:10}
@@ -39,6 +41,7 @@ th.sorted .si2{opacity:1;color:var(--accent2)}
 td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
+/* Fáze badge colors */
 .b-nz1{background:rgba(249,115,22,.2);color:#f97316}
 .b-nz2{background:rgba(251,146,60,.2);color:#fb923c}
 .b-nz3{background:rgba(253,186,116,.2);color:#fbbf24}
@@ -47,20 +50,24 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .b-ds{background:rgba(34,197,94,.2);color:#22c55e}
 .b-uz{background:rgba(34,197,94,.25);color:#16a34a}
 .b-of{background:rgba(59,130,246,.2);color:#3b82f6}
+/* Poznámka category badges */
 .p-ot{background:rgba(234,179,8,.15);color:#eab308}
 .p-uz{background:rgba(34,197,94,.15);color:#22c55e}
 .p-ko{background:rgba(239,68,68,.15);color:#ef4444}
+/* Inline cell select */
 .cell-sel{background:transparent;border:none;color:inherit;font-size:.72rem;cursor:pointer;font-family:inherit;width:100%;padding:0;outline:none}
 .cell-sel:focus{outline:1px solid var(--accent);border-radius:3px}
 .link{color:var(--accent2);text-decoration:none}
 .link:hover{text-decoration:underline}
 .prodej-val{color:var(--green);font-weight:600}
+/* STATS VIEW */
 #view-stats{padding:20px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:20px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:15px 18px}
 .kpi-val{font-size:1.9rem;font-weight:700;margin-bottom:2px}
 .kpi-label{font-size:.72rem;color:var(--text2)}
 .kpi-sub{font-size:.75rem;color:var(--text3);margin-top:3px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
 .chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
 .chart-box h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
@@ -71,6 +78,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+/* VOLAT VIEW */
 #view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:18px}
 .vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -83,6 +92,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .vl-acts{display:flex;gap:5px;flex-shrink:0}
 .btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.75rem;transition:all .15s}
 .btn-ic:hover{border-color:var(--accent);color:var(--accent2)}
+/* PANEL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
 .overlay.open{display:block}
 .panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;overflow:hidden}
@@ -112,6 +122,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .prodej-sec .sec-t{font-size:.68rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:9px}
 .prodej-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .ps{padding:10px 15px;border-top:1px solid var(--border)}
+/* IMPORT */
 .imp-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center}
 .imp-ov.open{display:flex}
 .imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;width:480px;max-width:95vw}
@@ -207,6 +218,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <div id="view-stats"></div>
 <div id="view-volat"></div>
 
+<!-- PANEL -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="panel" id="panel">
   <div class="ph">
@@ -277,9 +289,13 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <span class="p-label">📅 Follow-up datum</span>
       <input class="p-input" type="date" id="pFollowup" onchange="savePanel()">
     </div>
+    <div id="pImportedNotesWrap" style="display:none">
+      <span class="p-label">📋 Poznámky z importu (Excel)</span>
+      <div id="pImportedNotes" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;color:var(--text2);white-space:pre-wrap;word-break:break-word;line-height:1.5"></div>
+    </div>
     <div>
-      <span class="p-label">📝 Poznámky (editovatelné)</span>
-      <textarea class="p-textarea" id="pNotes" onblur="savePanel()" style="min-height:100px"></textarea>
+      <span class="p-label">📝 Moje poznámky (editovatelné)</span>
+      <textarea class="p-textarea" id="pNotes" onblur="savePanel()" style="min-height:80px"></textarea>
     </div>
   </div>
   <div class="ps">
@@ -287,6 +303,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </div>
 </div>
 
+<!-- IMPORT -->
 <div class="imp-ov" id="impOv">
   <div class="imp-modal">
     <h3>📥 Import leadů z XLS / CSV</h3>
@@ -312,6 +329,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 </div>
 
 <script>
+// ── Supabase ──────────────────────────────────────────────────
 const SB='https://tvokxlkxnevlstavtibf.supabase.co';
 const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
 const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
@@ -319,6 +337,7 @@ const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/js
 async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
 async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
 
+// ── Fáze system ───────────────────────────────────────────────
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
   {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#f97316'},
@@ -332,29 +351,37 @@ const FAZE=[
 ];
 const FAZE_MAP={};FAZE.forEach(f=>FAZE_MAP[f.id]=f);
 
+// Migrate old stav values
 const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_email','volat':'nezvedan1','uzavren':'domluvena_schuzka','konec':'nerelevantni'};
 function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
+
 function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
 function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
 
+// Poznámka (category) display
 const POZ_LABEL={'otevreno':'🟡 otevřeno','uzavreno':'🟢 uzavřeno','konec':'🔴 konec','':''};
 const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
+// When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'domluvena_schuzka','konec':'nerelevantni','':''};
+
 const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
+// Datum: ukládáme jako ISO "YYYY-MM-DD", zobrazujeme jako "21.7.2025"
 function formatDatum(d){
   if(!d)return'—';
   const m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if(m)return parseInt(m[3])+'.'+parseInt(m[2])+'.'+m[1];
   return d||'—';
 }
+// Mesic: ukládáme jako YYYYMM (202507), label = "Červenec 2025"
 function getMesicLabel(m){
   if(!m)return'';
   if(m>100){const yr=Math.floor(m/100),mo=m%100;return(MONTH_NAMES[mo]||'')+' '+yr;}
   return MONTH_NAMES[m]||'';
 }
 function getMesicYear(m){return m>100?Math.floor(m/100):null;}
+function getMesicMonth(m){return m>100?m%100:m;}
 
 let leads=[],currentLead=null,currentTab='table';
 let sortCol='datum',sortDir=1;
@@ -362,8 +389,16 @@ let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
 let statsMonth=null,impD=[];
 let selected=new Set();
 
-function toggleSel(email,checked){if(checked)selected.add(email);else selected.delete(email);updateSelBar();}
-function toggleSelAll(checked){const filtered=getFiltered();filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});updateSelBar();renderTable();}
+function toggleSel(email,checked){
+  if(checked)selected.add(email);else selected.delete(email);
+  updateSelBar();
+}
+function toggleSelAll(checked){
+  const filtered=getFiltered();
+  filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});
+  updateSelBar();
+  renderTable();
+}
 function clearSel(){selected.clear();updateSelBar();renderTable();}
 function updateSelBar(){
   const n=selected.size;
@@ -389,11 +424,14 @@ async function deleteSelected(){
       if(!r2.ok)throw new Error(await r2.text());
     }
     leads=leads.filter(l=>!selected.has(l.email));
-    selected.clear();updateSelBar();
-    showSync('✅ Smazáno','#16a34a');render();
+    selected.clear();
+    updateSelBar();
+    showSync('✅ Smazáno','#16a34a');
+    render();
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
 
+// ── Phone fix ─────────────────────────────────────────────────
 function fixPhone(s){
   s=String(s||'').trim();
   if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}
@@ -401,6 +439,7 @@ function fixPhone(s){
 }
 function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
 
+// ── Data ──────────────────────────────────────────────────────
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
@@ -411,8 +450,9 @@ async function init(){
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
+      const rawStav=c.stav||l.stav||'';
       return{...l,_id:l.id,
-        stav:migrateStav(c.stav||l.stav||''),
+        stav:migrateStav(rawStav),
         prodej_castka:c.prodej_castka||'',
         prodej_produkt:c.prodej_produkt||'',
         prodej_note:c.prodej_note||'',
@@ -431,22 +471,43 @@ async function saveToApi(lead){
   try{
     const idx=leads.findIndex(l=>l.email===lead.email);
     if(idx>=0)leads[idx]={...leads[idx],...lead};
-    const data={stav:lead.stav,prodej_castka:lead.prodej_castka||null,prodej_produkt:lead.prodej_produkt||null,prodej_note:lead.prodej_note||null,followup:lead.followup||null,my_notes:lead.myNotes||null,updated_at:new Date().toISOString()};
+    const data={
+      stav:lead.stav,
+      prodej_castka:lead.prodej_castka||null,
+      prodej_produkt:lead.prodej_produkt||null,
+      prodej_note:lead.prodej_note||null,
+      followup:lead.followup||null,
+      my_notes:lead.myNotes||null,
+      updated_at:new Date().toISOString()
+    };
     const enc=encodeURIComponent(lead.email);
-    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(data)});
+    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{
+      method:'PATCH',
+      headers:{...H,'Prefer':'return=representation'},
+      body:JSON.stringify(data)
+    });
     if(!pr.ok)throw new Error(await pr.text());
     const updated=await pr.json();
     if(!updated||updated.length===0){
-      const ir=await fetch(SB+'/rest/v1/crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({email:lead.email,...data})});
+      const ir=await fetch(SB+'/rest/v1/crm_data',{
+        method:'POST',
+        headers:{...H,'Prefer':'return=minimal'},
+        body:JSON.stringify({email:lead.email,...data})
+      });
       if(!ir.ok)throw new Error(await ir.text());
     }
     showSync('✅ Uloženo','#16a34a');
   }catch(e){showSync('⚠️ '+e.message,'#d97706');}
 }
 
-function showLoading(on){let el=document.getElementById('loadBar');if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';document.body.prepend(el);}el.style.display=on?'block':'none';}
+function showLoading(on){
+  let el=document.getElementById('loadBar');
+  if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';document.body.prepend(el);}
+  el.style.display=on?'block':'none';
+}
 function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.textContent=msg;el.style.color=color;}}
 
+// ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
   return leads.filter(l=>{
     const poz=getPoz(l.stav);
@@ -455,13 +516,23 @@ function getFiltered(){
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
     if(filterProdej==='yes'&&!l.prodej_castka)return false;
     if(filterProdej==='no'&&l.prodej_castka)return false;
-    if(filterSearch){const q=filterSearch.toLowerCase();if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;}
+    if(filterSearch){
+      const q=filterSearch.toLowerCase();
+      if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;
+    }
     return true;
   });
 }
-function applyFilters(){filterSearch=document.getElementById('searchInput').value.trim();filterFaze=document.getElementById('fazeFilter').value;filterSluzba=document.getElementById('sluzbaFilter').value;filterProdej=document.getElementById('prodejFilter').value;render();}
+function applyFilters(){
+  filterSearch=document.getElementById('searchInput').value.trim();
+  filterFaze=document.getElementById('fazeFilter').value;
+  filterSluzba=document.getElementById('sluzbaFilter').value;
+  filterProdej=document.getElementById('prodejFilter').value;
+  render();
+}
 function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 
+// ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat'][i]===t));
@@ -472,11 +543,21 @@ function setTab(t){
 }
 function sortBy(col){
   if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
-  document.querySelectorAll('th[data-col]').forEach(th=>{th.classList.toggle('sorted',th.dataset.col===col);const ico=th.querySelector('.si2');if(ico)ico.textContent=th.dataset.col===col?(sortDir===1?'▲':'▼'):'▲';});
+  document.querySelectorAll('th[data-col]').forEach(th=>{
+    th.classList.toggle('sorted',th.dataset.col===col);
+    const ico=th.querySelector('.si2');
+    if(ico)ico.textContent=th.dataset.col===col?(sortDir===1?'▲':'▼'):'▲';
+  });
   renderTable();
 }
-function render(){renderStatsBar();if(currentTab==='table')renderTable();else if(currentTab==='stats')renderStatsView();else renderVolat();}
+function render(){
+  renderStatsBar();
+  if(currentTab==='table')renderTable();
+  else if(currentTab==='stats')renderStatsView();
+  else renderVolat();
+}
 
+// ── Stats bar ─────────────────────────────────────────────────
 function renderStatsBar(){
   const bar=document.getElementById('statsBar');
   const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length;
@@ -493,6 +574,7 @@ function renderStatsBar(){
   `;
 }
 
+// ── Table ─────────────────────────────────────────────────────
 function renderTable(){
   const filtered=getFiltered();
   const sorted=[...filtered].sort((a,b)=>{
@@ -535,9 +617,22 @@ function renderTable(){
   }).join('');
 }
 
-async function changeFaze(email,newStav){const lead=leads.find(l=>l.email===email);if(!lead)return;lead.stav=newStav;await saveToApi(lead);renderStatsBar();renderTable();}
-async function changePoz(email,newPoz){const lead=leads.find(l=>l.email===email);if(!lead)return;const curPoz=getPoz(lead.stav);if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}await saveToApi(lead);renderStatsBar();renderTable();}
+// Inline change handlers
+async function changeFaze(email,newStav){
+  const lead=leads.find(l=>l.email===email);if(!lead)return;
+  lead.stav=newStav;
+  await saveToApi(lead);
+  renderStatsBar();renderTable();
+}
+async function changePoz(email,newPoz){
+  const lead=leads.find(l=>l.email===email);if(!lead)return;
+  const curPoz=getPoz(lead.stav);
+  if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}
+  await saveToApi(lead);
+  renderStatsBar();renderTable();
+}
 
+// ── Stats view ────────────────────────────────────────────────
 function getLeadMonth(l){return l.mesic||null;}
 function getMonths(){const m=new Set();leads.forEach(l=>{const x=getLeadMonth(l);if(x)m.add(x);});return[...m].sort((a,b)=>a-b);}
 
@@ -641,6 +736,7 @@ function renderStatsView(){
   h+=`</div>`;sv.innerHTML=h;
 }
 
+// ── Volat view ────────────────────────────────────────────────
 function renderVolat(){
   const vv=document.getElementById('view-volat');
   const today=new Date().toISOString().slice(0,10);
@@ -660,7 +756,7 @@ function renderVolat(){
         <div class="vl-date" style="color:${color}">${formatDatum(l.datum)}</div>
         <div class="vl-info">
           <div class="vl-name">${esc(l.jmeno||'')}${l.firma?` · <span style="color:var(--text2)">${esc(l.firma)}</span>`:''}</div>
-          <div class="vl-sub">${esc(l.myNotes||l.notes||l.problem||'')}${l.lokace?` · 📍${esc(l.lokace)}`:''}</div>
+          <div class="vl-sub">${esc(l.myNotes||l.problem||'')}${l.lokace?` · 📍${esc(l.lokace)}`:''}</div>
         </div>
         <div class="vl-acts">
           ${tel?`<a class="btn-ic" href="tel:${tel}" onclick="event.stopPropagation()">📞</a>`:''}
@@ -679,6 +775,7 @@ function renderVolat(){
   vv.innerHTML=h;
 }
 
+// ── Panel ─────────────────────────────────────────────────────
 function openLead(id){
   const l=leads.find(x=>x._id===id);if(!l)return;
   currentLead=l;
@@ -690,7 +787,13 @@ function openLead(id){
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
-  document.getElementById('pNotes').value=l.myNotes||(l.poznamka||l.notes||'');
+  // Importované poznámky z Excelu (read-only, vždy viditelné celé)
+  const importedNote=l.notes||l.poznamka||'';
+  const inWrap=document.getElementById('pImportedNotesWrap');
+  const inBox=document.getElementById('pImportedNotes');
+  if(importedNote){inBox.textContent=importedNote;inWrap.style.display='';}else{inWrap.style.display='none';}
+  // Editovatelné poznámky = jen myNotes
+  document.getElementById('pNotes').value=l.myNotes||'';
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
   document.getElementById('pEmail').innerHTML=l.email?`<a class="link" href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—';
@@ -715,16 +818,22 @@ function savePanel(){
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
   document.getElementById('pPoz').value=getPoz(currentLead.stav);
-  saveToApi(currentLead);renderStatsBar();
+  saveToApi(currentLead);
+  renderStatsBar();
   if(currentTab==='table')renderTable();
 }
+
 function savePozFromPanel(){
   if(!currentLead)return;
   const newPoz=document.getElementById('pPoz').value;
   const curPoz=getPoz(currentLead.stav);
-  if(curPoz!==newPoz){currentLead.stav=POZ_DEFAULT[newPoz]||'';document.getElementById('pStage').value=currentLead.stav;}
+  if(curPoz!==newPoz){
+    currentLead.stav=POZ_DEFAULT[newPoz]||'';
+    document.getElementById('pStage').value=currentLead.stav;
+  }
   savePanel();
 }
+
 function closePanel(){
   if(currentLead){
     currentLead.stav=document.getElementById('pStage').value;
@@ -733,7 +842,8 @@ function closePanel(){
     currentLead.prodej_castka=document.getElementById('pCastka').value;
     currentLead.prodej_produkt=document.getElementById('pProdukt').value;
     currentLead.prodej_note=document.getElementById('pProdejNote').value;
-    saveToApi(currentLead);renderStatsBar();
+    saveToApi(currentLead);
+    renderStatsBar();
     if(currentTab==='table')renderTable();
   }
   document.getElementById('overlay').classList.remove('open');
@@ -741,8 +851,14 @@ function closePanel(){
   currentLead=null;
 }
 
+// ── Import ────────────────────────────────────────────────────
 function openImport(){document.getElementById('impOv').classList.add('open');}
-function closeImport(){document.getElementById('impOv').classList.remove('open');document.getElementById('impPrev').style.display='none';document.getElementById('impBtn').style.display='none';impD=[];document.getElementById('progF').style.width='0%';}
+function closeImport(){
+  document.getElementById('impOv').classList.remove('open');
+  document.getElementById('impPrev').style.display='none';
+  document.getElementById('impBtn').style.display='none';
+  impD=[];document.getElementById('progF').style.width='0%';
+}
 function doDrop(ev){ev.preventDefault();document.getElementById('dropZ').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)doFile(f);}
 
 function doFile(file){
@@ -811,7 +927,8 @@ function doFile(file){
         return{
           jmeno:String(row[cm.jmeno]||'').trim(),
           firma:String(row[cm.firma]||'').trim(),
-          telefon,problem:String(row[cm.problem]||'').trim(),
+          telefon,
+          problem:String(row[cm.problem]||'').trim(),
           email:String(row[cm.email]||'').trim().toLowerCase(),
           datum,mesic,poznamka:poz,
           lokace:String(row[cm.lokace]||'').trim(),
