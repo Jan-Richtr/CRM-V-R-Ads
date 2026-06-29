@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="V&R CRM">
 <title>V&R Ads CRM</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230d1340'/%3E%3Ctext x='32' y='26' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EV%26R%3C/text%3E%3Ctext x='32' y='50' font-family='Arial,sans-serif' font-size='16' font-weight='800' fill='%2322c55e' text-anchor='middle' letter-spacing='2'%3EADS%3C/text%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--safe-bottom:env(safe-area-inset-bottom,0px)}
@@ -164,7 +165,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-/* ── LOGIN SCREEN ── */
 #loginScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
 .login-logo{font-size:2rem;font-weight:800;color:var(--accent2);text-align:center;margin-bottom:4px;letter-spacing:-1px}
@@ -207,8 +207,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 </style>
 </head>
 <body>
-
-<!-- LOGIN SCREEN -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">V&R Ads</div>
@@ -225,8 +223,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <div class="login-err" id="loginErr"></div>
   </div>
 </div>
-
-<!-- TOP BAR -->
 <div class="topbar">
   <div class="logo">V&R Ads</div>
   <div class="tabs">
@@ -240,7 +236,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <input type="text" id="searchInput" placeholder="Hledat…" oninput="applyFilters()">
   </div>
   <span id="syncLbl" style="font-size:.68rem;color:#64748b;flex-shrink:0;white-space:nowrap;display:none"></span>
-  <button class="icon-btn" onclick="openFltSheet()" id="fltBtn" title="Filtry">⚙️</button>
   <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
   <button class="icon-btn" onclick="doLogout()" title="Odhlásit" style="font-size:.7rem;color:var(--text3);border-color:transparent;background:none">🚪</button>
   <button class="icon-btn" onclick="openImport()" title="Import" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
@@ -285,12 +280,9 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
         <th onclick="sortBy('datum')" data-col="datum">Datum <span class="si2">▲</span></th>
         <th onclick="sortBy('jmeno')" data-col="jmeno">Jméno <span class="si2">▲</span></th>
         <th onclick="sortBy('firma')" data-col="firma">Firma <span class="si2">▲</span></th>
-        <th>Telefon</th>
-        <th>Email</th>
+        <th>Telefon</th><th>Email</th>
         <th onclick="sortBy('problem')" data-col="problem">Problém <span class="si2">▲</span></th>
-        <th>Lokalita</th>
-        <th>Služba</th>
-        <th>Poznámka</th>
+        <th>Lokalita</th><th>Služba</th><th>Poznámka</th>
         <th onclick="sortBy('stav')" data-col="stav">Fáze <span class="si2">▲</span></th>
         <th onclick="sortBy('prodej_castka')" data-col="prodej_castka">💰 € <span class="si2">▲</span></th>
         <th>📦 Produkt</th>
@@ -355,8 +347,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <div class="pb">
     <div class="p-actions" id="pActions"></div>
     <div class="p-grid">
-      <div>
-        <span class="p-label">Kategorie</span>
+      <div><span class="p-label">Kategorie</span>
         <select class="p-select" id="pPoz" onchange="savePozFromPanel()">
           <option value="">— nevybráno —</option>
           <option value="otevreno">🟡 Otevřeno</option>
@@ -364,8 +355,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
           <option value="konec">🔴 Konec</option>
         </select>
       </div>
-      <div>
-        <span class="p-label">Fáze</span>
+      <div><span class="p-label">Fáze</span>
         <select class="p-select" id="pStage" onchange="savePanel()">
           <option value="">— nevybráno —</option>
           <option value="nezvedan1">Nezvedá 1 ☎️</option>
@@ -390,8 +380,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <div class="sec-t">💰 Prodej</div>
       <div class="prodej-grid">
         <div><span class="p-label">Částka (€)</span><input class="p-input" type="number" id="pCastka" placeholder="0" onblur="savePanel()"></div>
-        <div>
-          <span class="p-label">Produkt</span>
+        <div><span class="p-label">Produkt</span>
           <select class="p-select" id="pProdukt" onchange="savePanel()">
             <option value="">— nevybráno —</option>
             <option value="tvorba_ai_videi">🎬 AI videa</option>
@@ -442,7 +431,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </div>
 </div>
 <script>
-/* ── AUTH ── */
 const AUTH_USER='VargaRichtr',AUTH_PASS='RolexDubaj1M',AUTH_KEY='vrads_auth';
 function checkAuth(){if(sessionStorage.getItem(AUTH_KEY)==='1'){document.getElementById('loginScreen').style.display='none';}else{document.getElementById('loginScreen').style.display='flex';setTimeout(()=>document.getElementById('loginUser').focus(),100);}}
 function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value,err=document.getElementById('loginErr');if(u===AUTH_USER&&p===AUTH_PASS){sessionStorage.setItem(AUTH_KEY,'1');document.getElementById('loginScreen').style.display='none';init();setTab('table');}else{err.textContent='❌ Špatné jméno nebo heslo';document.getElementById('loginPass').value='';setTimeout(()=>{err.textContent='';},3000);}}
@@ -523,7 +511,7 @@ function showLoading(on){let el=document.getElementById('loadBar');if(!el){el=do
 function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.style.display='';el.textContent=msg;el.style.color=color;}}
 function getFiltered(){return leads.filter(l=>{const poz=getPoz(l.stav);if(filterPoz&&poz!==filterPoz)return false;if(filterFaze&&l.stav!==filterFaze)return false;if(filterSluzba&&l.sluzba!==filterSluzba)return false;if(filterProdej==='yes'&&!l.prodej_castka)return false;if(filterProdej==='no'&&l.prodej_castka)return false;if(filterSearch){const q=filterSearch.toLowerCase();if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;}return true;});}
 function applyFilters(){filterSearch=document.getElementById('searchInput').value.trim();filterFaze=document.getElementById('fazeFilter').value||document.getElementById('fazeFilterM').value;filterSluzba=document.getElementById('sluzbaFilter').value;filterProdej=document.getElementById('prodejFilter').value||document.getElementById('prodejFilterM').value;render();}
-function syncFilters(){filterFaze=document.getElementById('fazeFilterM').value;filterProdej=document.getElementById('prodejFilterM').value;document.getElementById('fazeFilter').value=filterFaze;document.getElementById('prodejFilter').value=filterProdej;const btn=document.getElementById('fltBtn');btn.style.background=(filterFaze||filterProdej)?'var(--accent)':'var(--bg3)';btn.style.color=(filterFaze||filterProdej)?'#fff':'var(--text2)';btn.style.borderColor=(filterFaze||filterProdej)?'var(--accent)':'var(--border)';render();}
+function syncFilters(){filterFaze=document.getElementById('fazeFilterM').value;filterProdej=document.getElementById('prodejFilterM').value;document.getElementById('fazeFilter').value=filterFaze;document.getElementById('prodejFilter').value=filterProdej;render();}
 function resetFilters(){filterFaze='';filterProdej='';filterSearch='';document.getElementById('fazeFilterM').value='';document.getElementById('prodejFilterM').value='';document.getElementById('fazeFilter').value='';document.getElementById('prodejFilter').value='';document.getElementById('searchInput').value='';syncFilters();}
 function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 function setTab(t){
@@ -568,8 +556,7 @@ function renderTable(){
       <td>${slzBadge}</td>
       <td style="min-width:110px"><select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select></td>
       <td style="min-width:160px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select></td>
-      <td>${castka}</td>
-      <td>${produkt}</td>
+      <td>${castka}</td><td>${produkt}</td>
       <td style="color:${l.followup&&l.followup<today?'var(--red)':'var(--text2)'}">${l.followup||'—'}</td>
       <td style="color:var(--text2);max-width:220px;font-size:.72rem">${esc(l.myNotes||l.notes||'')}</td>
       <td style="max-width:160px;white-space:nowrap">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span> `:''}${l.campaign_name?`<span class="camp-tag" title="${esc(l.campaign_name)}">${esc(l.campaign_name)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
@@ -588,18 +575,11 @@ function renderCards(){
     const fu=l.followup?`<span style="font-size:.7rem;color:${l.followup<today?'var(--red)':'var(--text3)'}">📅 ${l.followup}</span>`:'';
     return`<div class="lead-card" onclick="openLead(${l._id})">
       <div class="lead-card-top">
-        <div>
-          <div class="lead-card-name">${esc(l.jmeno||'Neznámý')}</div>
-          ${l.firma?`<div class="lead-card-firma">${esc(l.firma)}</div>`:''}
-          ${l.campaign_name?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:''}<span class="camp-tag" title="${esc(l.campaign_name)}">${esc(l.campaign_name)}</span></div>`:''}
-        </div>
+        <div><div class="lead-card-name">${esc(l.jmeno||'Neznámý')}</div>${l.firma?`<div class="lead-card-firma">${esc(l.firma)}</div>`:''}${l.campaign_name?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:''}<span class="camp-tag" title="${esc(l.campaign_name)}">${esc(l.campaign_name)}</span></div>`:''}</div>
         <div class="lead-card-badges"><span class="badge ${finfo.cls}" style="color:${finfo.color}">${finfo.label}</span>${castka}</div>
       </div>
       ${l.problem||fu?`<div class="lead-card-mid">${l.problem?`<span style="font-size:.75rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.problem)}</span>`:''}${fu}</div>`:''}
-      <div class="lead-card-bottom">
-        <div class="lead-card-note">${note?'📝 '+esc(note):''}</div>
-        <div class="lead-card-acts" onclick="event.stopPropagation()">${tel?`<a class="card-act" href="tel:${tel}">📞</a>`:''}${l.email?`<a class="card-act" href="mailto:${esc(l.email)}">✉️</a>`:''}</div>
-      </div>
+      <div class="lead-card-bottom"><div class="lead-card-note">${note?'📝 '+esc(note):''}</div><div class="lead-card-acts" onclick="event.stopPropagation()">${tel?`<a class="card-act" href="tel:${tel}">📞</a>`:''}${l.email?`<a class="card-act" href="mailto:${esc(l.email)}">✉️</a>`:''}</div></div>
     </div>`;
   }).join('');
 }
@@ -790,10 +770,7 @@ function renderKampane(){
     <div class="kpi"><div class="kpi-val" style="color:var(--green)">${totalObrat?Number(totalObrat).toLocaleString('cs')+' €':'—'}</div><div class="kpi-label">Obrat z kampaní</div></div>
     ${totalSpend&&totalObrat?`<div class="kpi"><div class="kpi-val" style="color:${totalObrat>=totalSpend?'var(--green)':'var(--red)'}">${Math.round((totalObrat-totalSpend)/totalSpend*100)}%</div><div class="kpi-label">ROI celkem</div></div>`:''}
   </div>`;
-  h+=`<div class="chart-box"><h3>📣 Výsledky kampaní</h3>
-    <p style="font-size:.7rem;color:var(--text3);margin-bottom:10px">Investici zadej ručně — uloží se automaticky při odchodu z pole.</p>
-    <div style="overflow-x:auto"><table class="pt">
-      <thead><tr><th>Kampaň</th><th style="text-align:center">Platf.</th><th style="text-align:right">Leady</th><th style="text-align:right">Investice (€)</th><th style="text-align:right">Cena/lead</th><th style="text-align:right">Uzavřeno</th><th style="text-align:right">Obrat (€)</th><th style="text-align:right">ROI</th></tr></thead><tbody>`;
+  h+=`<div class="chart-box"><h3>📣 Výsledky kampaní</h3><p style="font-size:.7rem;color:var(--text3);margin-bottom:10px">Investici zadej ručně — uloží se automaticky při odchodu z pole.</p><div style="overflow-x:auto"><table class="pt"><thead><tr><th>Kampaň</th><th style="text-align:center">Platf.</th><th style="text-align:right">Leady</th><th style="text-align:right">Investice (€)</th><th style="text-align:right">Cena/lead</th><th style="text-align:right">Uzavřeno</th><th style="text-align:right">Obrat (€)</th><th style="text-align:right">ROI</th></tr></thead><tbody>`;
   camps.forEach(c=>{
     const spend=parseFloat(fbSpend[c.name])||0,cpl=spend&&c.leads.length?spend/c.leads.length:0;
     const roi=spend?((c.obrat-spend)/spend*100):null,roiColor=roi===null?'var(--text3)':roi>=0?'var(--green)':'var(--red)';
