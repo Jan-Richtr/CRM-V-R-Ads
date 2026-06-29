@@ -13,8 +13,6 @@
 :root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--safe-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
-
-/* ── TOPBAR ── */
 .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px;display:flex;align-items:center;gap:8px;height:52px;position:sticky;top:0;z-index:100;padding-top:env(safe-area-inset-top,0)}
 .logo{font-size:.95rem;font-weight:700;color:var(--accent2);flex-shrink:0}
 .tabs{display:flex;gap:2px;flex-shrink:0}
@@ -31,16 +29,12 @@ select.flt{appearance:none;padding-right:18px;background-image:url("data:image/s
 .btn-imp{background:var(--accent);color:#fff;padding:6px 11px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0;height:36px}
 .btn-imp:hover{background:var(--accent2)}
 .icon-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0;cursor:pointer;font-size:1rem;flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center}
-
-/* ── STATS BAR ── */
 .stats-bar{display:flex;gap:6px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .stats-bar::-webkit-scrollbar{display:none}
 .stt{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 12px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all .15s;flex-shrink:0;touch-action:manipulation}
 .stt:hover,.stt.on{border-color:var(--accent);background:rgba(108,99,255,.12)}
 .stt-n{font-size:1.1rem;font-weight:700}
 .stt-l{font-size:.65rem;color:var(--text2)}
-
-/* ── TABLE (desktop) ── */
 #view-table{overflow-x:auto;max-height:calc(100vh - 125px);overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:.78rem}
 thead{position:sticky;top:0;z-index:10}
@@ -50,10 +44,8 @@ th .si2{margin-left:3px;opacity:.4;font-size:.65rem}
 th.sorted .si2{opacity:1;color:var(--accent2)}
 td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
-
-/* ── MOBILE CARDS ── */
 #view-cards{display:none;padding:8px;overflow-y:auto;padding-bottom:calc(70px + var(--safe-bottom))}
-.lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s;active:scale(.98)}
+.lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
 .lead-card:active{transform:scale(.98);border-color:var(--accent)}
 .lead-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
 .lead-card-name{font-weight:700;font-size:.9rem;line-height:1.2}
@@ -65,8 +57,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .lead-card-acts{display:flex;gap:6px;flex-shrink:0}
 .card-act{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-decoration:none;color:var(--text2);font-size:.8rem;display:flex;align-items:center;gap:4px;cursor:pointer;touch-action:manipulation}
 .card-act:active{background:var(--accent);border-color:var(--accent);color:#fff}
-
-/* ── BADGES ── */
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
 .b-nz1{background:rgba(249,115,22,.2);color:#f97316}
 .b-nz2{background:rgba(251,146,60,.2);color:#fb923c}
@@ -84,8 +74,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .link{color:var(--accent2);text-decoration:none}
 .link:hover{text-decoration:underline}
 .prodej-val{color:var(--green);font-weight:600}
-
-/* ── STATS VIEW ── */
 #view-stats{padding:16px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
@@ -102,8 +90,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
-
-/* ── VOLAT VIEW ── */
 #view-volat{padding:12px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:16px}
 .vl-section h3{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -116,8 +102,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .vl-acts{display:flex;gap:5px;flex-shrink:0}
 .btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.8rem;transition:all .15s;touch-action:manipulation}
 .btn-ic:active{border-color:var(--accent);color:var(--accent2)}
-
-/* ── PANEL ── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
 .overlay.open{display:block}
 .panel{position:fixed;right:0;top:0;bottom:0;width:420px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);overflow:hidden}
@@ -147,16 +131,12 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .prodej-sec .sec-t{font-size:.67rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:9px}
 .prodej-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ps{padding:10px 15px;border-top:1px solid var(--border);padding-bottom:calc(10px + var(--safe-bottom))}
-
-/* ── BOTTOM NAV (mobile only) ── */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:100;padding-bottom:var(--safe-bottom)}
 .bn-inner{display:flex;height:56px}
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text3);transition:all .15s;border:none;background:none;touch-action:manipulation;font-family:inherit}
 .bn-item.active{color:var(--accent2)}
 .bn-item .bn-ic{font-size:1.25rem;line-height:1}
 .bn-item .bn-lbl{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-
-/* ── MOBILE FILTER SHEET ── */
 .flt-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);border-radius:16px 16px 0 0;z-index:300;padding:0 16px;padding-bottom:calc(16px + var(--safe-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
 .flt-sheet.open{transform:translateY(0)}
 .flt-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 14px}
@@ -166,8 +146,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .flt-sel{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit;height:44px}
 .flt-sel:focus{border-color:var(--accent)}
 .flt-sheet-acts{display:flex;gap:8px;margin-top:14px}
-
-/* ── IMPORT MODAL ── */
 .imp-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:flex-end;justify-content:center}
 .imp-ov.open{display:flex}
 .imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:520px;padding-bottom:calc(20px + var(--safe-bottom))}
@@ -181,22 +159,15 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .imp-btn{padding:10px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;min-height:42px}
 .imp-btn-p{background:var(--accent);color:#fff}
 .imp-btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-
-/* ── SELECTION BAR ── */
 .sel-bar-wrap{display:none;position:fixed;top:52px;left:0;right:0;background:rgba(220,38,38,.95);z-index:99;padding:8px 12px;align-items:center;gap:8px;backdrop-filter:blur(8px)}
 .sel-bar-wrap.open{display:flex}
-
-/* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-
-/* ── CAMPAIGN / PLATFORM ── */
 .camp-tag{display:inline-block;font-size:.6rem;background:rgba(59,130,246,.12);color:#60a5fa;padding:1px 5px;border-radius:3px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
 .plat-tag{display:inline-block;font-size:.63rem;font-weight:700;padding:1px 5px;border-radius:3px;vertical-align:middle;letter-spacing:.3px}
 .plat-fb{background:rgba(59,130,246,.2);color:#3b82f6}
 .plat-ig{background:rgba(236,72,153,.2);color:#ec4899}
-
 @media(max-width:640px){
   .topbar{height:54px;gap:6px;padding:0 10px}
   .tabs{display:none}
@@ -207,6 +178,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   #view-cards{display:block}
   #view-stats{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
   #view-volat{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
+  #view-kampane{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
   .stats-bar{padding:6px 10px}
   .panel{width:100%;border-left:none;border-radius:0;top:0}
   .panel.open{transform:translateX(0)}
@@ -222,13 +194,13 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="logo">V&R Ads</div>
   <div class="tabs">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
     <button class="tab" onclick="setTab('volat')">📞 Volat</button>
+    <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
   </div>
   <div class="search-wrap">
     <span class="si">🔍</span>
@@ -265,15 +237,12 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <button class="btn-imp" onclick="openImport()">📥 Import XLS</button>
   </div>
 </div>
-
 <div class="sel-bar-wrap" id="selBar">
   <span id="selCount" style="font-size:.8rem;color:#fff;flex:1"></span>
   <button onclick="deleteSelected()" style="background:#fff;color:#dc2626;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.78rem;font-weight:700">🗑️ Smazat</button>
   <button onclick="clearSel()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:.78rem">✕</button>
 </div>
-
 <div class="stats-bar" id="statsBar"></div>
-
 <div id="view-table">
   <table>
     <thead>
@@ -299,20 +268,19 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <tbody id="tableBody"></tbody>
   </table>
 </div>
-
 <div id="view-cards"><div id="cardsBody"></div></div>
 <div id="view-stats"></div>
 <div id="view-volat"></div>
-
+<div id="view-kampane" style="display:none;overflow-y:auto;max-height:calc(100vh - 125px)"></div>
 <div class="bottom-nav">
   <div class="bn-inner">
     <button class="bn-item active" id="bn-table" onclick="setTab('table')"><span class="bn-ic">📋</span><span class="bn-lbl">Leady</span></button>
     <button class="bn-item" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span><span class="bn-lbl">Statistiky</span></button>
     <button class="bn-item" id="bn-volat" onclick="setTab('volat')"><span class="bn-ic">📞</span><span class="bn-lbl">Volat</span></button>
+    <button class="bn-item" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📣</span><span class="bn-lbl">Kampaně</span></button>
     <button class="bn-item" onclick="openImport()"><span class="bn-ic">📥</span><span class="bn-lbl">Import</span></button>
   </div>
 </div>
-
 <div class="overlay" id="fltOverlay" onclick="closeFltSheet()"></div>
 <div class="flt-sheet" id="fltSheet">
   <div class="flt-sheet-handle"></div>
@@ -344,7 +312,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <button class="imp-btn imp-btn-p" style="flex:2" onclick="closeFltSheet()">✅ Použít</button>
   </div>
 </div>
-
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="panel" id="panel">
   <div class="ph">
@@ -420,7 +387,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </div>
   <div class="ps"><button class="btn btn-pri" style="width:100%;font-size:.88rem;height:46px" onclick="closePanel()">Zavřít a uložit</button></div>
 </div>
-
 <div class="imp-ov" id="impOv">
   <div class="imp-modal">
     <h3>📥 Import leadů z XLS / CSV</h3>
@@ -441,15 +407,12 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     </div>
   </div>
 </div>
-
 <script>
 const SB='https://tvokxlkxnevlstavtibf.supabase.co';
 const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
 const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
-
 async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
 async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
-
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
   {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#f97316'},
@@ -466,67 +429,44 @@ const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_e
 function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
 function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
 function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
-
 const POZ_LABEL={'otevreno':'🟡 otevřeno','uzavreno':'🟢 uzavřeno','konec':'🔴 konec','':''};
 const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'domluvena_schuzka','konec':'nerelevantni','':''};
 const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
-
 function isMobile(){return window.innerWidth<=640;}
 function formatDatum(d){if(!d)return'—';const m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return parseInt(m[3])+'.'+parseInt(m[2])+'.'+m[1];return d||'—';}
 function getMesicLabel(m){if(!m)return'';if(m>100){const yr=Math.floor(m/100),mo=m%100;return(MONTH_NAMES[mo]||'')+' '+yr;}return MONTH_NAMES[m]||'';}
 function getMesicYear(m){return m>100?Math.floor(m/100):null;}
-
 let leads=[],currentLead=null,currentTab='table';
 let sortCol='datum',sortDir=1;
 let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
 let statsMonth=null,impD=[];
 let selected=new Set();
-
+let fbSpend={};
 function toggleSel(email,checked){if(checked)selected.add(email);else selected.delete(email);updateSelBar();}
 function toggleSelAll(checked){const filtered=getFiltered();filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});updateSelBar();renderTable();}
 function clearSel(){selected.clear();updateSelBar();renderTable();}
-function updateSelBar(){
-  const n=selected.size;
-  document.getElementById('selBar').classList.toggle('open',n>0);
-  document.getElementById('selCount').textContent=n+' vybraných';
-  const sa=document.getElementById('selAll');
-  if(sa){const f=getFiltered();sa.checked=f.length>0&&f.every(l=>selected.has(l.email));sa.indeterminate=!sa.checked&&f.some(l=>selected.has(l.email));}
-}
-async function deleteSelected(){
-  if(!selected.size)return;
-  if(!confirm('Opravdu smazat '+selected.size+' leadů?'))return;
-  showSync('🗑️ Mažu…','#dc2626');
-  try{
-    const emails=[...selected];
-    for(let i=0;i<emails.length;i+=50){
-      const batch=emails.slice(i,i+50);
-      const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
-      await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});
-      await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
-    }
-    leads=leads.filter(l=>!selected.has(l.email));
-    selected.clear();updateSelBar();
-    showSync('✅ Smazáno','#16a34a');render();
-  }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
-}
-
+function updateSelBar(){const n=selected.size;document.getElementById('selBar').classList.toggle('open',n>0);document.getElementById('selCount').textContent=n+' vybraných';const sa=document.getElementById('selAll');if(sa){const f=getFiltered();sa.checked=f.length>0&&f.every(l=>selected.has(l.email));sa.indeterminate=!sa.checked&&f.some(l=>selected.has(l.email));}}
+async function deleteSelected(){if(!selected.size)return;if(!confirm('Opravdu smazat '+selected.size+' leadů?'))return;showSync('🗑️ Mažu…','#dc2626');try{const emails=[...selected];for(let i=0;i<emails.length;i+=50){const batch=emails.slice(i,i+50);const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});}leads=leads.filter(l=>!selected.has(l.email));selected.clear();updateSelBar();showSync('✅ Smazáno','#16a34a');render();}catch(e){showSync('⚠️ '+e.message,'#dc2626');}}
 function fixPhone(s){s=String(s||'').trim();if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}return s;}
 function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
-
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
-    const[ls,cs]=await Promise.all([sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),sbGet('/rest/v1/crm_data?limit=5000')]);
+    const[ls,cs,fs]=await Promise.all([
+      sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
+      sbGet('/rest/v1/crm_data?limit=5000'),
+      sbGet('/rest/v1/fb_spend?limit=1000')
+    ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
+    fbSpend={};(fs||[]).forEach(r=>{fbSpend[r.campaign_name]=r.spend;});
     leads=(ls||[]).map(l=>{const c=cm[l.email]||{};return{...l,_id:l.id,stav:migrateStav(c.stav||l.stav||''),prodej_castka:c.prodej_castka||'',prodej_produkt:c.prodej_produkt||'',prodej_note:c.prodej_note||'',followup:c.followup||'',myNotes:c.my_notes||''};});
     showSync('✅ '+leads.length+' · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
     render();
   }catch(e){showSync('❌ '+e.message,'#dc2626');}
   showLoading(false);
 }
-
 async function saveToApi(lead){
   showSync('💾','#d97706');
   try{
@@ -540,53 +480,29 @@ async function saveToApi(lead){
     showSync('✅','#16a34a');
   }catch(e){showSync('⚠️','#d97706');}
 }
-
 function showLoading(on){let el=document.getElementById('loadBar');if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';document.body.prepend(el);}el.style.display=on?'block':'none';}
 function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.style.display='';el.textContent=msg;el.style.color=color;}}
-
-function getFiltered(){
-  return leads.filter(l=>{
-    const poz=getPoz(l.stav);
-    if(filterPoz&&poz!==filterPoz)return false;
-    if(filterFaze&&l.stav!==filterFaze)return false;
-    if(filterSluzba&&l.sluzba!==filterSluzba)return false;
-    if(filterProdej==='yes'&&!l.prodej_castka)return false;
-    if(filterProdej==='no'&&l.prodej_castka)return false;
-    if(filterSearch){const q=filterSearch.toLowerCase();if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;}
-    return true;
-  });
-}
+function getFiltered(){return leads.filter(l=>{const poz=getPoz(l.stav);if(filterPoz&&poz!==filterPoz)return false;if(filterFaze&&l.stav!==filterFaze)return false;if(filterSluzba&&l.sluzba!==filterSluzba)return false;if(filterProdej==='yes'&&!l.prodej_castka)return false;if(filterProdej==='no'&&l.prodej_castka)return false;if(filterSearch){const q=filterSearch.toLowerCase();if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;}return true;});}
 function applyFilters(){filterSearch=document.getElementById('searchInput').value.trim();filterFaze=document.getElementById('fazeFilter').value||document.getElementById('fazeFilterM').value;filterSluzba=document.getElementById('sluzbaFilter').value;filterProdej=document.getElementById('prodejFilter').value||document.getElementById('prodejFilterM').value;render();}
-function syncFilters(){
-  filterFaze=document.getElementById('fazeFilterM').value;filterProdej=document.getElementById('prodejFilterM').value;
-  document.getElementById('fazeFilter').value=filterFaze;document.getElementById('prodejFilter').value=filterProdej;
-  const btn=document.getElementById('fltBtn');btn.style.background=(filterFaze||filterProdej)?'var(--accent)':'var(--bg3)';btn.style.color=(filterFaze||filterProdej)?'#fff':'var(--text2)';btn.style.borderColor=(filterFaze||filterProdej)?'var(--accent)':'var(--border)';
-  render();
-}
+function syncFilters(){filterFaze=document.getElementById('fazeFilterM').value;filterProdej=document.getElementById('prodejFilterM').value;document.getElementById('fazeFilter').value=filterFaze;document.getElementById('prodejFilter').value=filterProdej;const btn=document.getElementById('fltBtn');btn.style.background=(filterFaze||filterProdej)?'var(--accent)':'var(--bg3)';btn.style.color=(filterFaze||filterProdej)?'#fff':'var(--text2)';btn.style.borderColor=(filterFaze||filterProdej)?'var(--accent)':'var(--border)';render();}
 function resetFilters(){filterFaze='';filterProdej='';filterSearch='';document.getElementById('fazeFilterM').value='';document.getElementById('prodejFilterM').value='';document.getElementById('fazeFilter').value='';document.getElementById('prodejFilter').value='';document.getElementById('searchInput').value='';syncFilters();}
 function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
-
 function setTab(t){
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat'][i]===t));
-  ['table','stats','volat'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat','kampane'][i]===t));
+  ['table','stats','volat','kampane'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   const mob=isMobile();
   document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
   document.getElementById('view-cards').style.display=(t==='table'&&mob)?'block':'none';
   document.getElementById('view-stats').style.display=t==='stats'?'block':'none';
   document.getElementById('view-volat').style.display=t==='volat'?'block':'none';
+  document.getElementById('view-kampane').style.display=t==='kampane'?'block':'none';
   render();
 }
 function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}document.querySelectorAll('th[data-col]').forEach(th=>{th.classList.toggle('sorted',th.dataset.col===col);const ico=th.querySelector('.si2');if(ico)ico.textContent=th.dataset.col===col?(sortDir===1?'▲':'▼'):'▲';});renderTable();}
-function render(){renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}else if(currentTab==='stats')renderStatsView();else renderVolat();}
-
-function renderStatsBar(){
-  const bar=document.getElementById('statsBar');
-  const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length,uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length,ko=leads.filter(l=>getPoz(l.stav)==='konec').length,no=leads.filter(l=>!getPoz(l.stav)).length;
-  const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
-  bar.innerHTML=`<div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>${mk('Otevřeno',ot,'otevreno','#eab308')}${mk('Uzavřeno',uz,'uzavreno','#22c55e')}${mk('Konec',ko,'konec','#ef4444')}${no>0?mk('Bez statusu',no,'NONE','#64748b'):''}`;
+function render(){renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}else if(currentTab==='stats')renderStatsView();else if(currentTab==='kampane')renderKampane();else renderVolat();}
+function renderStatsBar(){const bar=document.getElementById('statsBar');const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length,uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length,ko=leads.filter(l=>getPoz(l.stav)==='konec').length,no=leads.filter(l=>!getPoz(l.stav)).length;const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;bar.innerHTML=`<div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>${mk('Otevřeno',ot,'otevreno','#eab308')}${mk('Uzavřeno',uz,'uzavreno','#22c55e')}${mk('Konec',ko,'konec','#ef4444')}${no>0?mk('Bez statusu',no,'NONE','#64748b'):''}`;
 }
-
 function renderTable(){
   const filtered=getFiltered();
   const sorted=[...filtered].sort((a,b)=>{let va=a[sortCol]||'',vb=b[sortCol]||'';if(sortCol==='prodej_castka'){va=parseFloat(va)||0;vb=parseFloat(vb)||0;return(va-vb)*sortDir;}return String(va).localeCompare(String(vb),'cs')*sortDir;});
@@ -621,7 +537,6 @@ function renderTable(){
     </tr>`;
   }).join('');
 }
-
 function renderCards(){
   const filtered=getFiltered();
   const sorted=[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs')*-1);
@@ -649,13 +564,10 @@ function renderCards(){
     </div>`;
   }).join('');
 }
-
 async function changeFaze(email,newStav){const lead=leads.find(l=>l.email===email);if(!lead)return;lead.stav=newStav;await saveToApi(lead);renderStatsBar();renderTable();}
 async function changePoz(email,newPoz){const lead=leads.find(l=>l.email===email);if(!lead)return;const curPoz=getPoz(lead.stav);if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}await saveToApi(lead);renderStatsBar();renderTable();}
-
 function getLeadMonth(l){return l.mesic||null;}
 function getMonths(){const m=new Set();leads.forEach(l=>{const x=getLeadMonth(l);if(x)m.add(x);});return[...m].sort((a,b)=>a-b);}
-
 function renderStatsView(){
   const sv=document.getElementById('view-stats');
   const months=getMonths(),curYear=new Date().getFullYear();
@@ -697,7 +609,6 @@ function renderStatsView(){
   }
   h+=`</div>`;sv.innerHTML=h;
 }
-
 function renderVolat(){
   const vv=document.getElementById('view-volat'),today=new Date().toISOString().slice(0,10);
   const emailLeads=leads.filter(l=>l.stav==='odeslat_email'),nezvedaLeads=leads.filter(l=>['nezvedan1','nezvedan2','nezvedan3'].includes(l.stav));
@@ -709,7 +620,6 @@ function renderVolat(){
   if(!h)h='<div style="color:var(--text3);text-align:center;padding:48px;font-size:.88rem">Žádné naplánované aktivity 🎉</div>';
   vv.innerHTML=h;
 }
-
 function openLead(id){
   const l=leads.find(x=>x._id===id);if(!l)return;
   currentLead=l;
@@ -734,7 +644,8 @@ function openLead(id){
   const campWrap=document.getElementById('pCampaignWrap');
   if(l.campaign_name||l.platform||l.website){
     document.getElementById('pCampaignName').textContent=l.campaign_name||'—';
-    document.getElementById('pPlatform').innerHTML=l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:'—';
+    const platEl=document.getElementById('pPlatform');
+    platEl.innerHTML=l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:'—';
     document.getElementById('pAdsetName').textContent=l.adset_name||'—';
     const webEl=document.getElementById('pWebsite');
     if(l.website){const url=l.website.startsWith('http')?l.website:'https://'+l.website;webEl.innerHTML=`<a class="link" href="${esc(url)}" target="_blank">${esc(l.website)}</a>`;}else{webEl.textContent='—';}
@@ -745,23 +656,14 @@ function openLead(id){
   document.getElementById('overlay').classList.add('open');document.getElementById('panel').classList.add('open');
   document.body.style.overflow='hidden';
 }
-function savePanel(){
-  if(!currentLead)return;
-  currentLead.stav=document.getElementById('pStage').value;currentLead.followup=document.getElementById('pFollowup').value;currentLead.myNotes=document.getElementById('pNotes').value;currentLead.prodej_castka=document.getElementById('pCastka').value;currentLead.prodej_produkt=document.getElementById('pProdukt').value;currentLead.prodej_note=document.getElementById('pProdejNote').value;
-  document.getElementById('pPoz').value=getPoz(currentLead.stav);saveToApi(currentLead);renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
-}
+function savePanel(){if(!currentLead)return;currentLead.stav=document.getElementById('pStage').value;currentLead.followup=document.getElementById('pFollowup').value;currentLead.myNotes=document.getElementById('pNotes').value;currentLead.prodej_castka=document.getElementById('pCastka').value;currentLead.prodej_produkt=document.getElementById('pProdukt').value;currentLead.prodej_note=document.getElementById('pProdejNote').value;document.getElementById('pPoz').value=getPoz(currentLead.stav);saveToApi(currentLead);renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}}
 function savePozFromPanel(){if(!currentLead)return;const newPoz=document.getElementById('pPoz').value,curPoz=getPoz(currentLead.stav);if(curPoz!==newPoz){currentLead.stav=POZ_DEFAULT[newPoz]||'';document.getElementById('pStage').value=currentLead.stav;}savePanel();}
-function closePanel(){
-  if(currentLead){currentLead.stav=document.getElementById('pStage').value;currentLead.followup=document.getElementById('pFollowup').value;currentLead.myNotes=document.getElementById('pNotes').value;currentLead.prodej_castka=document.getElementById('pCastka').value;currentLead.prodej_produkt=document.getElementById('pProdukt').value;currentLead.prodej_note=document.getElementById('pProdejNote').value;saveToApi(currentLead);renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}}
-  document.getElementById('overlay').classList.remove('open');document.getElementById('panel').classList.remove('open');document.body.style.overflow='';currentLead=null;
-}
-
+function closePanel(){if(currentLead){currentLead.stav=document.getElementById('pStage').value;currentLead.followup=document.getElementById('pFollowup').value;currentLead.myNotes=document.getElementById('pNotes').value;currentLead.prodej_castka=document.getElementById('pCastka').value;currentLead.prodej_produkt=document.getElementById('pProdukt').value;currentLead.prodej_note=document.getElementById('pProdejNote').value;saveToApi(currentLead);renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}}document.getElementById('overlay').classList.remove('open');document.getElementById('panel').classList.remove('open');document.body.style.overflow='';currentLead=null;}
 function openFltSheet(){document.getElementById('fltSheet').classList.add('open');document.getElementById('fltOverlay').classList.add('open');}
 function closeFltSheet(){document.getElementById('fltSheet').classList.remove('open');document.getElementById('fltOverlay').classList.remove('open');applyFilters();}
 function openImport(){document.getElementById('impOv').classList.add('open');}
 function closeImport(){document.getElementById('impOv').classList.remove('open');document.getElementById('impPrev').style.display='none';document.getElementById('impBtn').style.display='none';impD=[];document.getElementById('progF').style.width='0%';}
 function doDrop(ev){ev.preventDefault();document.getElementById('dropZ').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)doFile(f);}
-
 function doFile(file){
   if(!file)return;
   const r=new FileReader();
@@ -806,7 +708,6 @@ function doFile(file){
   };
   r.readAsArrayBuffer(file);
 }
-
 async function doImport(){
   if(!impD.length)return;
   const btn=document.getElementById('impBtn');btn.disabled=true;btn.textContent='⏳ Importuji…';
@@ -820,7 +721,78 @@ async function doImport(){
   }
   st.textContent='✅ Hotovo!';setTimeout(()=>{closeImport();init();},1000);
 }
-
+/* ── KAMPANE VIEW ── */
+async function saveFbSpend(campName,spend){
+  showSync('💾','#d97706');
+  try{
+    spend=parseFloat(spend)||0;fbSpend[campName]=spend;
+    const enc=encodeURIComponent(campName);
+    const pr=await fetch(SB+'/rest/v1/fb_spend?campaign_name=eq.'+enc+'&month=eq.0',{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({spend,updated_at:new Date().toISOString()})});
+    if(!pr.ok)throw new Error(await pr.text());
+    const upd=await pr.json();
+    if(!upd||!upd.length){const ir=await fetch(SB+'/rest/v1/fb_spend',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({campaign_name:campName,month:0,spend,updated_at:new Date().toISOString()})});if(!ir.ok)throw new Error(await ir.text());}
+    showSync('✅','#16a34a');renderKampane();
+  }catch(e){showSync('⚠️ '+e.message,'#d97706');}
+}
+function renderKampane(){
+  const kv=document.getElementById('view-kampane');
+  const campMap={};
+  leads.forEach(l=>{const key=l.campaign_name||'';if(!campMap[key])campMap[key]={name:key,platform:l.platform||'',leads:[],closed:0,obrat:0};campMap[key].leads.push(l);if(getPoz(l.stav)==='uzavreno'){campMap[key].closed++;campMap[key].obrat+=parseFloat(l.prodej_castka)||0;}});
+  const camps=Object.values(campMap).filter(c=>c.name).sort((a,b)=>b.leads.length-a.leads.length);
+  const noCamp=campMap[''];
+  const fbLeads=leads.filter(l=>l.campaign_name).length;
+  const totalSpend=Object.values(fbSpend).reduce((s,v)=>s+(parseFloat(v)||0),0);
+  const totalObrat=camps.reduce((s,c)=>s+c.obrat,0);
+  const totalClosed=camps.reduce((s,c)=>s+c.closed,0);
+  let h=`<div style="padding:14px">`;
+  h+=`<div class="stats-grid" style="margin-bottom:14px">
+    <div class="kpi"><div class="kpi-val">${camps.length}</div><div class="kpi-label">Kampaně</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--blue)">${fbLeads}</div><div class="kpi-label">FB/IG leady</div><div class="kpi-sub">z ${leads.length} celkem</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--red)">${totalSpend?Number(totalSpend).toLocaleString('cs')+' €':'—'}</div><div class="kpi-label">Investice celkem</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--green)">${totalObrat?Number(totalObrat).toLocaleString('cs')+' €':'—'}</div><div class="kpi-label">Obrat z kampaní</div></div>
+    ${totalSpend&&totalObrat?`<div class="kpi"><div class="kpi-val" style="color:${totalObrat>=totalSpend?'var(--green)':'var(--red)'}">${Math.round((totalObrat-totalSpend)/totalSpend*100)}%</div><div class="kpi-label">ROI celkem</div></div>`:''}
+  </div>`;
+  h+=`<div class="chart-box"><h3>📣 Výsledky kampaní</h3>
+    <p style="font-size:.7rem;color:var(--text3);margin-bottom:10px">Investici zadej ručně — uloží se automaticky při odchodu z pole.</p>
+    <div style="overflow-x:auto"><table class="pt">
+      <thead><tr>
+        <th>Kampaň</th><th style="text-align:center">Platf.</th><th style="text-align:right">Leady</th>
+        <th style="text-align:right">Investice (€)</th><th style="text-align:right">Cena/lead</th>
+        <th style="text-align:right">Uzavřeno</th><th style="text-align:right">Obrat (€)</th><th style="text-align:right">ROI</th>
+      </tr></thead><tbody>`;
+  camps.forEach(c=>{
+    const spend=parseFloat(fbSpend[c.name])||0,cpl=spend&&c.leads.length?spend/c.leads.length:0;
+    const roi=spend?((c.obrat-spend)/spend*100):null,roiColor=roi===null?'var(--text3)':roi>=0?'var(--green)':'var(--red)';
+    const platBadge=c.platform?`<span class="plat-tag plat-${c.platform}">${c.platform.toUpperCase()}</span>`:'<span style="color:var(--text3);font-size:.7rem">—</span>';
+    const convRate=c.leads.length?Math.round(c.closed/c.leads.length*100):0;
+    h+=`<tr>
+      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.name)}">${esc(c.name)}</td>
+      <td style="text-align:center">${platBadge}</td>
+      <td style="text-align:right">${c.leads.length}</td>
+      <td style="text-align:right;padding:4px 9px"><input type="number" value="${spend||''}" placeholder="0" style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--text);font-size:.78rem;width:82px;text-align:right;outline:none;font-family:inherit" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)';saveFbSpend('${esc(c.name)}',this.value)"></td>
+      <td style="text-align:right;color:${cpl?'var(--text)':'var(--text3)'}">${cpl?Number(cpl.toFixed(2)).toLocaleString('cs')+' €':'—'}</td>
+      <td style="text-align:right"><span style="color:var(--accent2);font-weight:600">${c.closed}</span><span style="color:var(--text3);font-size:.68rem"> (${convRate}%)</span></td>
+      <td style="text-align:right;color:var(--green);font-weight:600">${c.obrat?Number(c.obrat).toLocaleString('cs')+' €':'—'}</td>
+      <td style="text-align:right;font-weight:700;color:${roiColor}">${roi!==null?Math.round(roi)+'%':'—'}</td>
+    </tr>`;
+  });
+  const totSpendAll=camps.reduce((s,c)=>s+(parseFloat(fbSpend[c.name])||0),0);
+  const totCpl=totSpendAll&&fbLeads?totSpendAll/fbLeads:0;
+  const totRoi=totSpendAll&&totalObrat?(totalObrat-totSpendAll)/totSpendAll*100:null;
+  h+=`<tr style="border-top:2px solid var(--border);font-weight:700;background:var(--bg3)">
+    <td>CELKEM</td><td></td><td style="text-align:right">${fbLeads}</td>
+    <td style="text-align:right;color:var(--red)">${totSpendAll?Number(totSpendAll).toLocaleString('cs')+' €':'—'}</td>
+    <td style="text-align:right">${totCpl?Number(totCpl.toFixed(2)).toLocaleString('cs')+' €':'—'}</td>
+    <td style="text-align:right;color:var(--accent2)">${totalClosed}</td>
+    <td style="text-align:right;color:var(--green)">${totalObrat?Number(totalObrat).toLocaleString('cs')+' €':'—'}</td>
+    <td style="text-align:right;color:${totRoi===null?'var(--text3)':totRoi>=0?'var(--green)':'var(--red)'}">${totRoi!==null?Math.round(totRoi)+'%':'—'}</td>
+  </tr>`;
+  h+=`</tbody></table></div></div>`;
+  const fbOnly=leads.filter(l=>l.platform==='facebook').length,igOnly=leads.filter(l=>l.platform==='instagram').length;
+  if(fbOnly||igOnly){const tot=fbOnly+igOnly;h+=`<div class="chart-box"><h3>📱 Facebook vs Instagram</h3><div class="bar-row"><div class="bar-label">📘 Facebook</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(fbOnly/tot*100)}%;background:#3b82f6">${fbOnly}</div></div><div class="bar-count">${fbOnly}</div></div><div class="bar-row"><div class="bar-label">📸 Instagram</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(igOnly/tot*100)}%;background:#ec4899">${igOnly}</div></div><div class="bar-count">${igOnly}</div></div></div>`;}
+  if(noCamp&&noCamp.leads.length){h+=`<div style="font-size:.72rem;color:var(--text3);margin-top:8px">⚠️ ${noCamp.leads.length} leadů bez přiřazené kampaně (importováno mimo FB Lead Ads)</div>`;}
+  h+=`</div>`;kv.innerHTML=h;
+}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 let _resizeT;window.addEventListener('resize',()=>{clearTimeout(_resizeT);_resizeT=setTimeout(()=>setTab(currentTab),150);});
 init();setTab('table');
