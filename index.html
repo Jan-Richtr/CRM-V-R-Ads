@@ -2,35 +2,45 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="V&R CRM">
 <title>V&R Ads CRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:52px;position:sticky;top:0;z-index:100}
-.logo{font-size:1rem;font-weight:700;color:var(--accent2);flex-shrink:0}
+:root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px;display:flex;align-items:center;gap:8px;height:52px;position:sticky;top:0;z-index:100;padding-top:env(safe-area-inset-top,0)}
+.logo{font-size:.95rem;font-weight:700;color:var(--accent2);flex-shrink:0}
 .tabs{display:flex;gap:2px;flex-shrink:0}
-.tab{background:none;border:none;color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:500;transition:all .15s;white-space:nowrap}
+.tab{background:none;border:none;color:var(--text2);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:500;transition:all .15s;white-space:nowrap}
 .tab.active{background:var(--accent);color:#fff}
 .tab:hover:not(.active){background:var(--bg3);color:var(--text)}
-.search-wrap{flex:1;max-width:260px;position:relative}
-.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px 6px 28px;color:var(--text);font-size:.8rem;outline:none}
+.search-wrap{flex:1;position:relative;min-width:0}
+.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px 8px 30px;color:var(--text);font-size:.82rem;outline:none;height:38px}
 .search-wrap input:focus{border-color:var(--accent)}
-.si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.75rem}
-.filter-row{display:flex;gap:5px;align-items:center;margin-left:auto}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.75rem}
+.filter-row{display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0}
 .flt{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 9px;color:var(--text2);font-size:.73rem;cursor:pointer;white-space:nowrap}
 select.flt{appearance:none;padding-right:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center}
-.btn-imp{background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0}
+.btn-imp{background:var(--accent);color:#fff;padding:6px 11px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0;height:36px}
 .btn-imp:hover{background:var(--accent2)}
-/* STATS BAR */
-.stats-bar{display:flex;gap:8px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
-.stt{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.icon-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0;cursor:pointer;font-size:1rem;flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:6px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.stats-bar::-webkit-scrollbar{display:none}
+.stt{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 12px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all .15s;flex-shrink:0;touch-action:manipulation}
 .stt:hover,.stt.on{border-color:var(--accent);background:rgba(108,99,255,.12)}
-.stt-n{font-size:1.15rem;font-weight:700}
-.stt-l{font-size:.68rem;color:var(--text2)}
-/* TABLE */
+.stt-n{font-size:1.1rem;font-weight:700}
+.stt-l{font-size:.65rem;color:var(--text2)}
+
+/* ── TABLE (desktop) ── */
 #view-table{overflow-x:auto;max-height:calc(100vh - 125px);overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:.78rem}
 thead{position:sticky;top:0;z-index:10}
@@ -40,8 +50,24 @@ th .si2{margin-left:3px;opacity:.4;font-size:.65rem}
 th.sorted .si2{opacity:1;color:var(--accent2)}
 td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
+
+/* ── MOBILE CARDS ── */
+#view-cards{display:none;padding:8px;overflow-y:auto;padding-bottom:calc(70px + var(--safe-bottom))}
+.lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s;active:scale(.98)}
+.lead-card:active{transform:scale(.98);border-color:var(--accent)}
+.lead-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.lead-card-name{font-weight:700;font-size:.9rem;line-height:1.2}
+.lead-card-firma{font-size:.75rem;color:var(--text2);margin-top:1px}
+.lead-card-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.lead-card-mid{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.lead-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lead-card-note{font-size:.72rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lead-card-acts{display:flex;gap:6px;flex-shrink:0}
+.card-act{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-decoration:none;color:var(--text2);font-size:.8rem;display:flex;align-items:center;gap:4px;cursor:pointer;touch-action:manipulation}
+.card-act:active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── BADGES ── */
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
-/* Fáze badge colors */
 .b-nz1{background:rgba(249,115,22,.2);color:#f97316}
 .b-nz2{background:rgba(251,146,60,.2);color:#fb923c}
 .b-nz3{background:rgba(253,186,116,.2);color:#fbbf24}
@@ -50,101 +76,153 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .b-ds{background:rgba(34,197,94,.2);color:#22c55e}
 .b-uz{background:rgba(34,197,94,.25);color:#16a34a}
 .b-of{background:rgba(59,130,246,.2);color:#3b82f6}
-/* Poznámka category badges */
 .p-ot{background:rgba(234,179,8,.15);color:#eab308}
 .p-uz{background:rgba(34,197,94,.15);color:#22c55e}
 .p-ko{background:rgba(239,68,68,.15);color:#ef4444}
-/* Inline cell select */
 .cell-sel{background:transparent;border:none;color:inherit;font-size:.72rem;cursor:pointer;font-family:inherit;width:100%;padding:0;outline:none}
 .cell-sel:focus{outline:1px solid var(--accent);border-radius:3px}
 .link{color:var(--accent2);text-decoration:none}
 .link:hover{text-decoration:underline}
 .prodej-val{color:var(--green);font-weight:600}
-/* STATS VIEW */
-#view-stats{padding:20px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:20px}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:15px 18px}
-.kpi-val{font-size:1.9rem;font-weight:700;margin-bottom:2px}
-.kpi-label{font-size:.72rem;color:var(--text2)}
-.kpi-sub{font-size:.75rem;color:var(--text3);margin-top:3px}
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
-.chart-box h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* ── STATS VIEW ── */
+#view-stats{padding:16px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.kpi-val{font-size:1.7rem;font-weight:700;margin-bottom:2px}
+.kpi-label{font-size:.7rem;color:var(--text2)}
+.kpi-sub{font-size:.72rem;color:var(--text3);margin-top:3px}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.chart-box h3{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
-.bar-label{width:150px;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-label{width:140px;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-track{flex:1;background:var(--bg3);border-radius:4px;height:16px;overflow:hidden}
 .bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:5px;font-size:.65rem;font-weight:600;color:#fff;transition:width .4s}
-.bar-count{width:32px;text-align:right;color:var(--text2);flex-shrink:0}
+.bar-count{width:30px;text-align:right;color:var(--text2);flex-shrink:0}
 .pt{width:100%;border-collapse:collapse;font-size:.78rem}
 .pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
-@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
-/* VOLAT VIEW */
-#view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
-.vl-section{margin-bottom:18px}
-.vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.vl-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;margin-bottom:5px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
-.vl-card:hover{border-color:var(--accent)}
-.vl-date{font-size:.9rem;font-weight:700;min-width:55px;flex-shrink:0}
+
+/* ── VOLAT VIEW ── */
+#view-volat{padding:12px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
+.vl-section{margin-bottom:16px}
+.vl-section h3{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.vl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.vl-card:active{border-color:var(--accent);transform:scale(.99)}
+.vl-date{font-size:.88rem;font-weight:700;min-width:50px;flex-shrink:0}
 .vl-info{flex:1;min-width:0}
 .vl-name{font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vl-sub{font-size:.72rem;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vl-acts{display:flex;gap:5px;flex-shrink:0}
-.btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.75rem;transition:all .15s}
-.btn-ic:hover{border-color:var(--accent);color:var(--accent2)}
-/* PANEL */
+.btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.8rem;transition:all .15s;touch-action:manipulation}
+.btn-ic:active{border-color:var(--accent);color:var(--accent2)}
+
+/* ── PANEL ── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
 .overlay.open{display:block}
-.panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;overflow:hidden}
+.panel{position:fixed;right:0;top:0;bottom:0;width:420px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);overflow:hidden}
 .panel.open{transform:translateX(0)}
 .ph{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .ph-name{font-size:.95rem;font-weight:700}
 .ph-sub{font-size:.75rem;color:var(--text2);margin-top:2px}
-.ph-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:2px}
-.ph-close:hover{color:var(--text)}
-.pb{overflow-y:auto;flex:1;padding:13px 15px;display:flex;flex-direction:column;gap:11px}
+.ph-close{background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:.9rem;padding:0;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ph-close:active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pb{overflow-y:auto;flex:1;padding:13px 15px;display:flex;flex-direction:column;gap:11px;-webkit-overflow-scrolling:touch}
 .p-actions{display:flex;gap:6px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;border-radius:6px;font-size:.75rem;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s}
-.btn:hover{border-color:var(--accent);color:var(--accent2)}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 14px;border-radius:8px;font-size:.8rem;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s;touch-action:manipulation;min-height:40px}
+.btn:active{border-color:var(--accent);color:var(--accent2)}
 .btn-pri{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-pri:hover{background:var(--accent2)}
-.p-label{font-size:.68rem;color:var(--text2);margin-bottom:3px;display:block;text-transform:uppercase;letter-spacing:.4px}
-.p-select,.p-input,.p-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-size:.8rem;outline:none;font-family:inherit}
+.btn-pri:active{background:var(--accent2)}
+.p-label{font-size:.67rem;color:var(--text2);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.4px}
+.p-select,.p-input,.p-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit;min-height:42px}
 .p-select:focus,.p-input:focus,.p-textarea:focus{border-color:var(--accent)}
-.p-textarea{resize:vertical;min-height:80px}
-.p-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.p-textarea{resize:vertical;min-height:90px}
+.p-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .p-full{grid-column:1/-1}
-.info-box{background:var(--bg3);border-radius:6px;padding:8px 10px}
-.info-box .lbl{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
-.info-box .val{font-size:.78rem;word-break:break-word}
+.info-box{background:var(--bg3);border-radius:8px;padding:9px 11px}
+.info-box .lbl{font-size:.63rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.info-box .val{font-size:.8rem;word-break:break-word}
 .info-box .val a{color:var(--accent2);text-decoration:none}
-.prodej-sec{background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:11px}
-.prodej-sec .sec-t{font-size:.68rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:9px}
-.prodej-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.ps{padding:10px 15px;border-top:1px solid var(--border)}
-/* IMPORT */
-.imp-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center}
+.prodej-sec{background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px}
+.prodej-sec .sec-t{font-size:.67rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:9px}
+.prodej-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ps{padding:10px 15px;border-top:1px solid var(--border);padding-bottom:calc(10px + var(--safe-bottom))}
+
+/* ── BOTTOM NAV (mobile only) ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:100;padding-bottom:var(--safe-bottom)}
+.bn-inner{display:flex;height:56px}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text3);transition:all .15s;border:none;background:none;touch-action:manipulation;font-family:inherit}
+.bn-item.active{color:var(--accent2)}
+.bn-item .bn-ic{font-size:1.25rem;line-height:1}
+.bn-item .bn-lbl{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+
+/* ── MOBILE FILTER SHEET ── */
+.flt-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);border-radius:16px 16px 0 0;z-index:300;padding:0 16px;padding-bottom:calc(16px + var(--safe-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.flt-sheet.open{transform:translateY(0)}
+.flt-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 14px}
+.flt-sheet h3{font-size:.82rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.flt-row{margin-bottom:10px}
+.flt-row label{font-size:.7rem;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.flt-sel{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit;height:44px}
+.flt-sel:focus{border-color:var(--accent)}
+.flt-sheet-acts{display:flex;gap:8px;margin-top:14px}
+
+/* ── IMPORT MODAL ── */
+.imp-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:flex-end;justify-content:center}
 .imp-ov.open{display:flex}
-.imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;width:480px;max-width:95vw}
-.imp-modal h3{font-size:.95rem;font-weight:700;margin-bottom:12px}
-.drop-z{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:520px;padding-bottom:calc(20px + var(--safe-bottom))}
+.imp-modal h3{font-size:.92rem;font-weight:700;margin-bottom:12px}
+.drop-z{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
 .drop-z:hover,.drop-z.drag{border-color:var(--accent);background:rgba(108,99,255,.06)}
-.drop-z .ic{font-size:30px;margin-bottom:7px}
+.drop-z .ic{font-size:28px;margin-bottom:7px}
 .imp-prog{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px}
 .imp-prog-f{height:100%;background:var(--accent);transition:width .3s}
 .imp-foot{display:flex;gap:7px;justify-content:flex-end;margin-top:12px}
-.imp-btn{padding:6px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:none}
+.imp-btn{padding:10px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;min-height:42px}
 .imp-btn-p{background:var(--accent);color:#fff}
 .imp-btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-::-webkit-scrollbar{width:5px;height:5px}
+
+/* ── SELECTION BAR ── */
+.sel-bar-wrap{display:none;position:fixed;top:52px;left:0;right:0;background:rgba(220,38,38,.95);z-index:99;padding:8px 12px;align-items:center;gap:8px;backdrop-filter:blur(8px)}
+.sel-bar-wrap.open{display:flex}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ════════════════════════════════
+   MOBILE OVERRIDES (≤ 640px)
+════════════════════════════════ */
+@media(max-width:640px){
+  .topbar{height:54px;gap:6px;padding:0 10px}
+  .tabs{display:none}
+  .filter-row{display:none}
+  .logo{font-size:.85rem}
+  .bottom-nav{display:block}
+  #view-table{display:none !important}
+  #view-cards{display:block}
+  #view-stats{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
+  #view-volat{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
+  .stats-bar{padding:6px 10px}
+  .panel{width:100%;border-left:none;border-radius:0;top:0}
+  .panel.open{transform:translateX(0)}
+  .pb{padding-bottom:calc(70px + var(--safe-bottom))}
+  .ps{padding-bottom:calc(16px + var(--safe-bottom))}
+  .imp-ov{align-items:flex-end}
+  .imp-modal{border-radius:16px 16px 0 0;width:100%;max-width:100%}
+}
+@media(min-width:641px){
+  .flt-sheet{display:none !important}
+  #view-cards{display:none !important}
+}
 </style>
 </head>
 <body>
 
+<!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">V&R Ads CRM</div>
+  <div class="logo">V&R Ads</div>
   <div class="tabs">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
@@ -154,13 +232,10 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <span class="si">🔍</span>
     <input type="text" id="searchInput" placeholder="Hledat…" oninput="applyFilters()">
   </div>
-  <span id="syncLbl" style="font-size:.7rem;color:#64748b;flex-shrink:0;white-space:nowrap"></span>
-  <button onclick="init()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:.8rem;flex-shrink:0">🔄</button>
-  <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
-    <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
-    <button onclick="deleteSelected()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">🗑️ Smazat vybrané</button>
-    <button onclick="clearSel()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.78rem">✕ Zrušit</button>
-  </div>
+  <span id="syncLbl" style="font-size:.68rem;color:#64748b;flex-shrink:0;white-space:nowrap;display:none"></span>
+  <button class="icon-btn" onclick="openFltSheet()" id="fltBtn" title="Filtry">⚙️</button>
+  <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
+  <button class="icon-btn" onclick="openImport()" title="Import" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
   <div class="filter-row">
     <select class="flt" id="fazeFilter" onchange="applyFilters()">
       <option value="">Všechny fáze</option>
@@ -189,6 +264,12 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </div>
 </div>
 
+<div class="sel-bar-wrap" id="selBar">
+  <span id="selCount" style="font-size:.8rem;color:#fff;flex:1"></span>
+  <button onclick="deleteSelected()" style="background:#fff;color:#dc2626;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.78rem;font-weight:700">🗑️ Smazat</button>
+  <button onclick="clearSel()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:.78rem">✕</button>
+</div>
+
 <div class="stats-bar" id="statsBar"></div>
 
 <div id="view-table">
@@ -206,7 +287,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
         <th>Služba</th>
         <th>Poznámka</th>
         <th onclick="sortBy('stav')" data-col="stav">Fáze <span class="si2">▲</span></th>
-        <th onclick="sortBy('prodej_castka')" data-col="prodej_castka">💰 Prodej (€) <span class="si2">▲</span></th>
+        <th onclick="sortBy('prodej_castka')" data-col="prodej_castka">💰 € <span class="si2">▲</span></th>
         <th>📦 Produkt</th>
         <th onclick="sortBy('followup')" data-col="followup">📅 Follow-up <span class="si2">▲</span></th>
         <th>📝 Poznámky</th>
@@ -215,10 +296,63 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <tbody id="tableBody"></tbody>
   </table>
 </div>
+
+<div id="view-cards">
+  <div id="cardsBody"></div>
+</div>
+
 <div id="view-stats"></div>
 <div id="view-volat"></div>
 
-<!-- PANEL -->
+<div class="bottom-nav">
+  <div class="bn-inner">
+    <button class="bn-item active" id="bn-table" onclick="setTab('table')">
+      <span class="bn-ic">📋</span><span class="bn-lbl">Leady</span>
+    </button>
+    <button class="bn-item" id="bn-stats" onclick="setTab('stats')">
+      <span class="bn-ic">📊</span><span class="bn-lbl">Statistiky</span>
+    </button>
+    <button class="bn-item" id="bn-volat" onclick="setTab('volat')">
+      <span class="bn-ic">📞</span><span class="bn-lbl">Volat</span>
+    </button>
+    <button class="bn-item" onclick="openImport()">
+      <span class="bn-ic">📥</span><span class="bn-lbl">Import</span>
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="fltOverlay" onclick="closeFltSheet()"></div>
+<div class="flt-sheet" id="fltSheet">
+  <div class="flt-sheet-handle"></div>
+  <h3>Filtry</h3>
+  <div class="flt-row">
+    <label>Fáze</label>
+    <select class="flt-sel" id="fazeFilterM" onchange="syncFilters()">
+      <option value="">Všechny fáze</option>
+      <option value="nezvedan1">Nezvedá 1 ☎️</option>
+      <option value="nezvedan2">Nezvedá 2 ☎️</option>
+      <option value="nezvedan3">Nezvedá 3 ☎️</option>
+      <option value="odeslat_email">Odeslat email 📧</option>
+      <option value="nerelevantni">Nerelevantní ☹️</option>
+      <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
+      <option value="odeslana_faktura">Odeslaná faktura 🧾</option>
+      <option value="uzavreno">Uzavřeno 💚</option>
+    </select>
+  </div>
+  <div class="flt-row">
+    <label>Prodej</label>
+    <select class="flt-sel" id="prodejFilterM" onchange="syncFilters()">
+      <option value="">Vše</option>
+      <option value="yes">✅ Prodáno</option>
+      <option value="no">❌ Neprodáno</option>
+    </select>
+  </div>
+  <div class="flt-sheet-acts">
+    <button class="imp-btn imp-btn-s" style="flex:1" onclick="resetFilters()">Resetovat</button>
+    <button class="imp-btn imp-btn-p" style="flex:2" onclick="closeFltSheet()">✅ Použít</button>
+  </div>
+</div>
+
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="panel" id="panel">
   <div class="ph">
@@ -232,7 +366,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <div class="p-actions" id="pActions"></div>
     <div class="p-grid">
       <div>
-        <span class="p-label">Poznámka (kategorie)</span>
+        <span class="p-label">Kategorie</span>
         <select class="p-select" id="pPoz" onchange="savePozFromPanel()">
           <option value="">— nevybráno —</option>
           <option value="otevreno">🟡 Otevřeno</option>
@@ -291,19 +425,18 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     </div>
     <div id="pImportedNotesWrap" style="display:none">
       <span class="p-label">📋 Poznámky z importu (Excel)</span>
-      <div id="pImportedNotes" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;color:var(--text2);white-space:pre-wrap;word-break:break-word;line-height:1.5"></div>
+      <div id="pImportedNotes" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.82rem;color:var(--text2);white-space:pre-wrap;word-break:break-word;line-height:1.55"></div>
     </div>
     <div>
       <span class="p-label">📝 Moje poznámky (editovatelné)</span>
-      <textarea class="p-textarea" id="pNotes" onblur="savePanel()" style="min-height:80px"></textarea>
+      <textarea class="p-textarea" id="pNotes" onblur="savePanel()" placeholder="Napiš poznámku…"></textarea>
     </div>
   </div>
   <div class="ps">
-    <button class="btn btn-pri" style="width:100%" onclick="closePanel()">Zavřít a uložit</button>
+    <button class="btn btn-pri" style="width:100%;font-size:.88rem;height:46px" onclick="closePanel()">Zavřít a uložit</button>
   </div>
 </div>
 
-<!-- IMPORT -->
 <div class="imp-ov" id="impOv">
   <div class="imp-modal">
     <h3>📥 Import leadů z XLS / CSV</h3>
@@ -329,7 +462,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 </div>
 
 <script>
-// ── Supabase ──────────────────────────────────────────────────
 const SB='https://tvokxlkxnevlstavtibf.supabase.co';
 const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
 const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
@@ -337,7 +469,6 @@ const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/js
 async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
 async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
 
-// ── Fáze system ───────────────────────────────────────────────
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
   {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#f97316'},
@@ -350,38 +481,31 @@ const FAZE=[
   {id:'uzavreno',label:'Uzavřeno 💚',poz:'uzavreno',cls:'b-uz',color:'#16a34a'},
 ];
 const FAZE_MAP={};FAZE.forEach(f=>FAZE_MAP[f.id]=f);
-
-// Migrate old stav values
 const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_email','volat':'nezvedan1','uzavren':'domluvena_schuzka','konec':'nerelevantni'};
 function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
-
 function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
 function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
 
-// Poznámka (category) display
 const POZ_LABEL={'otevreno':'🟡 otevřeno','uzavreno':'🟢 uzavřeno','konec':'🔴 konec','':''};
 const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
-// When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'domluvena_schuzka','konec':'nerelevantni','':''};
-
 const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
-// Datum: ukládáme jako ISO "YYYY-MM-DD", zobrazujeme jako "21.7.2025"
+function isMobile(){return window.innerWidth<=640;}
+
 function formatDatum(d){
   if(!d)return'—';
   const m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if(m)return parseInt(m[3])+'.'+parseInt(m[2])+'.'+m[1];
   return d||'—';
 }
-// Mesic: ukládáme jako YYYYMM (202507), label = "Červenec 2025"
 function getMesicLabel(m){
   if(!m)return'';
   if(m>100){const yr=Math.floor(m/100),mo=m%100;return(MONTH_NAMES[mo]||'')+' '+yr;}
   return MONTH_NAMES[m]||'';
 }
 function getMesicYear(m){return m>100?Math.floor(m/100):null;}
-function getMesicMonth(m){return m>100?m%100:m;}
 
 let leads=[],currentLead=null,currentTab='table';
 let sortCol='datum',sortDir=1;
@@ -389,49 +513,36 @@ let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
 let statsMonth=null,impD=[];
 let selected=new Set();
 
-function toggleSel(email,checked){
-  if(checked)selected.add(email);else selected.delete(email);
-  updateSelBar();
-}
-function toggleSelAll(checked){
-  const filtered=getFiltered();
-  filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});
-  updateSelBar();
-  renderTable();
-}
+function toggleSel(email,checked){if(checked)selected.add(email);else selected.delete(email);updateSelBar();}
+function toggleSelAll(checked){const filtered=getFiltered();filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});updateSelBar();renderTable();}
 function clearSel(){selected.clear();updateSelBar();renderTable();}
 function updateSelBar(){
   const n=selected.size;
   const bar=document.getElementById('selBar');
   const cnt=document.getElementById('selCount');
-  bar.style.display=n>0?'flex':'none';
+  bar.classList.toggle('open',n>0);
   cnt.textContent=n+' vybraných';
   const sa=document.getElementById('selAll');
   if(sa){const f=getFiltered();sa.checked=f.length>0&&f.every(l=>selected.has(l.email));sa.indeterminate=!sa.checked&&f.some(l=>selected.has(l.email));}
 }
 async function deleteSelected(){
   if(!selected.size)return;
-  if(!confirm('Opravdu smazat '+selected.size+' leadů? Tato akce je nevratná.'))return;
+  if(!confirm('Opravdu smazat '+selected.size+' leadů?'))return;
   showSync('🗑️ Mažu…','#dc2626');
   try{
     const emails=[...selected];
     for(let i=0;i<emails.length;i+=50){
       const batch=emails.slice(i,i+50);
       const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
-      const r1=await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});
-      if(!r1.ok)throw new Error(await r1.text());
-      const r2=await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
-      if(!r2.ok)throw new Error(await r2.text());
+      await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});
+      await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
     }
     leads=leads.filter(l=>!selected.has(l.email));
-    selected.clear();
-    updateSelBar();
-    showSync('✅ Smazáno','#16a34a');
-    render();
+    selected.clear();updateSelBar();
+    showSync('✅ Smazáno','#16a34a');render();
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
 
-// ── Phone fix ─────────────────────────────────────────────────
 function fixPhone(s){
   s=String(s||'').trim();
   if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}
@@ -439,7 +550,6 @@ function fixPhone(s){
 }
 function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
 
-// ── Data ──────────────────────────────────────────────────────
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
@@ -450,9 +560,8 @@ async function init(){
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
-      const rawStav=c.stav||l.stav||'';
       return{...l,_id:l.id,
-        stav:migrateStav(rawStav),
+        stav:migrateStav(c.stav||l.stav||''),
         prodej_castka:c.prodej_castka||'',
         prodej_produkt:c.prodej_produkt||'',
         prodej_note:c.prodej_note||'',
@@ -460,44 +569,28 @@ async function init(){
         myNotes:c.my_notes||'',
       };
     });
-    showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
+    showSync('✅ '+leads.length+' · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
     render();
   }catch(e){showSync('❌ '+e.message,'#dc2626');}
   showLoading(false);
 }
 
 async function saveToApi(lead){
-  showSync('💾 Ukládám…','#d97706');
+  showSync('💾','#d97706');
   try{
     const idx=leads.findIndex(l=>l.email===lead.email);
     if(idx>=0)leads[idx]={...leads[idx],...lead};
-    const data={
-      stav:lead.stav,
-      prodej_castka:lead.prodej_castka||null,
-      prodej_produkt:lead.prodej_produkt||null,
-      prodej_note:lead.prodej_note||null,
-      followup:lead.followup||null,
-      my_notes:lead.myNotes||null,
-      updated_at:new Date().toISOString()
-    };
+    const data={stav:lead.stav,prodej_castka:lead.prodej_castka||null,prodej_produkt:lead.prodej_produkt||null,prodej_note:lead.prodej_note||null,followup:lead.followup||null,my_notes:lead.myNotes||null,updated_at:new Date().toISOString()};
     const enc=encodeURIComponent(lead.email);
-    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{
-      method:'PATCH',
-      headers:{...H,'Prefer':'return=representation'},
-      body:JSON.stringify(data)
-    });
+    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(data)});
     if(!pr.ok)throw new Error(await pr.text());
     const updated=await pr.json();
-    if(!updated||updated.length===0){
-      const ir=await fetch(SB+'/rest/v1/crm_data',{
-        method:'POST',
-        headers:{...H,'Prefer':'return=minimal'},
-        body:JSON.stringify({email:lead.email,...data})
-      });
+    if(!updated||!updated.length){
+      const ir=await fetch(SB+'/rest/v1/crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({email:lead.email,...data})});
       if(!ir.ok)throw new Error(await ir.text());
     }
-    showSync('✅ Uloženo','#16a34a');
-  }catch(e){showSync('⚠️ '+e.message,'#d97706');}
+    showSync('✅','#16a34a');
+  }catch(e){showSync('⚠️','#d97706');}
 }
 
 function showLoading(on){
@@ -505,9 +598,11 @@ function showLoading(on){
   if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';document.body.prepend(el);}
   el.style.display=on?'block':'none';
 }
-function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.textContent=msg;el.style.color=color;}}
+function showSync(msg,color){
+  const el=document.getElementById('syncLbl');
+  if(el){el.style.display='';el.textContent=msg;el.style.color=color;}
+}
 
-// ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
   return leads.filter(l=>{
     const poz=getPoz(l.stav);
@@ -516,48 +611,62 @@ function getFiltered(){
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
     if(filterProdej==='yes'&&!l.prodej_castka)return false;
     if(filterProdej==='no'&&l.prodej_castka)return false;
-    if(filterSearch){
-      const q=filterSearch.toLowerCase();
-      if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;
-    }
+    if(filterSearch){const q=filterSearch.toLowerCase();if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;}
     return true;
   });
 }
 function applyFilters(){
   filterSearch=document.getElementById('searchInput').value.trim();
-  filterFaze=document.getElementById('fazeFilter').value;
+  filterFaze=document.getElementById('fazeFilter').value||document.getElementById('fazeFilterM').value;
   filterSluzba=document.getElementById('sluzbaFilter').value;
-  filterProdej=document.getElementById('prodejFilter').value;
+  filterProdej=document.getElementById('prodejFilter').value||document.getElementById('prodejFilterM').value;
   render();
+}
+function syncFilters(){
+  filterFaze=document.getElementById('fazeFilterM').value;
+  filterProdej=document.getElementById('prodejFilterM').value;
+  document.getElementById('fazeFilter').value=filterFaze;
+  document.getElementById('prodejFilter').value=filterProdej;
+  const btn=document.getElementById('fltBtn');
+  btn.style.background=(filterFaze||filterProdej)?'var(--accent)':'var(--bg3)';
+  btn.style.color=(filterFaze||filterProdej)?'#fff':'var(--text2)';
+  btn.style.borderColor=(filterFaze||filterProdej)?'var(--accent)':'var(--border)';
+  render();
+}
+function resetFilters(){
+  filterFaze='';filterProdej='';filterSearch='';
+  document.getElementById('fazeFilterM').value='';
+  document.getElementById('prodejFilterM').value='';
+  document.getElementById('fazeFilter').value='';
+  document.getElementById('prodejFilter').value='';
+  document.getElementById('searchInput').value='';
+  syncFilters();
 }
 function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 
-// ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat'][i]===t));
-  document.getElementById('view-table').style.display=t==='table'?'':'none';
+  ['table','stats','volat'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
+  const mob=isMobile();
+  document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
+  document.getElementById('view-cards').style.display=(t==='table'&&mob)?'block':'none';
   document.getElementById('view-stats').style.display=t==='stats'?'block':'none';
   document.getElementById('view-volat').style.display=t==='volat'?'block':'none';
   render();
 }
 function sortBy(col){
   if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
-  document.querySelectorAll('th[data-col]').forEach(th=>{
-    th.classList.toggle('sorted',th.dataset.col===col);
-    const ico=th.querySelector('.si2');
-    if(ico)ico.textContent=th.dataset.col===col?(sortDir===1?'▲':'▼'):'▲';
-  });
+  document.querySelectorAll('th[data-col]').forEach(th=>{th.classList.toggle('sorted',th.dataset.col===col);const ico=th.querySelector('.si2');if(ico)ico.textContent=th.dataset.col===col?(sortDir===1?'▲':'▼'):'▲';});
   renderTable();
 }
 function render(){
   renderStatsBar();
-  if(currentTab==='table')renderTable();
+  if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
   else if(currentTab==='stats')renderStatsView();
   else renderVolat();
 }
 
-// ── Stats bar ─────────────────────────────────────────────────
 function renderStatsBar(){
   const bar=document.getElementById('statsBar');
   const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length;
@@ -574,7 +683,6 @@ function renderStatsBar(){
   `;
 }
 
-// ── Table ─────────────────────────────────────────────────────
 function renderTable(){
   const filtered=getFiltered();
   const sorted=[...filtered].sort((a,b)=>{
@@ -617,22 +725,47 @@ function renderTable(){
   }).join('');
 }
 
-// Inline change handlers
-async function changeFaze(email,newStav){
-  const lead=leads.find(l=>l.email===email);if(!lead)return;
-  lead.stav=newStav;
-  await saveToApi(lead);
-  renderStatsBar();renderTable();
-}
-async function changePoz(email,newPoz){
-  const lead=leads.find(l=>l.email===email);if(!lead)return;
-  const curPoz=getPoz(lead.stav);
-  if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}
-  await saveToApi(lead);
-  renderStatsBar();renderTable();
+function renderCards(){
+  const filtered=getFiltered();
+  const sorted=[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs')*-1);
+  const cb=document.getElementById('cardsBody');
+  if(!sorted.length){cb.innerHTML=`<div style="text-align:center;color:var(--text3);padding:48px 20px;font-size:.88rem">Žádné výsledky</div>`;return;}
+  const today=new Date().toISOString().slice(0,10);
+  cb.innerHTML=sorted.map(l=>{
+    const finfo=getFazeInfo(l.stav);
+    const tel=telNum(l.telefon);
+    const note=l.myNotes||l.notes||'';
+    const castka=l.prodej_castka?`<span style="color:var(--green);font-weight:700;font-size:.8rem">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'';
+    const fu=l.followup?`<span style="font-size:.7rem;color:${l.followup<today?'var(--red)':'var(--text3)'}">📅 ${l.followup}</span>`:'';
+    return`<div class="lead-card" onclick="openLead(${l._id})">
+      <div class="lead-card-top">
+        <div>
+          <div class="lead-card-name">${esc(l.jmeno||'Neznámý')}</div>
+          ${l.firma?`<div class="lead-card-firma">${esc(l.firma)}</div>`:''}
+        </div>
+        <div class="lead-card-badges">
+          <span class="badge ${finfo.cls}" style="color:${finfo.color}">${finfo.label}</span>
+          ${castka}
+        </div>
+      </div>
+      ${l.problem||fu?`<div class="lead-card-mid">
+        ${l.problem?`<span style="font-size:.75rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.problem)}</span>`:''}
+        ${fu}
+      </div>`:''}
+      <div class="lead-card-bottom">
+        <div class="lead-card-note">${note?'📝 '+esc(note):''}</div>
+        <div class="lead-card-acts" onclick="event.stopPropagation()">
+          ${tel?`<a class="card-act" href="tel:${tel}">📞</a>`:''}
+          ${l.email?`<a class="card-act" href="mailto:${esc(l.email)}">✉️</a>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-// ── Stats view ────────────────────────────────────────────────
+async function changeFaze(email,newStav){const lead=leads.find(l=>l.email===email);if(!lead)return;lead.stav=newStav;await saveToApi(lead);renderStatsBar();renderTable();}
+async function changePoz(email,newPoz){const lead=leads.find(l=>l.email===email);if(!lead)return;const curPoz=getPoz(lead.stav);if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}await saveToApi(lead);renderStatsBar();renderTable();}
+
 function getLeadMonth(l){return l.mesic||null;}
 function getMonths(){const m=new Set();leads.forEach(l=>{const x=getLeadMonth(l);if(x)m.add(x);});return[...m].sort((a,b)=>a-b);}
 
@@ -650,50 +783,45 @@ function renderStatsView(){
       obrat:mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0),
       konec:ml.filter(l=>getPoz(l.stav)==='konec').length};
   });
-  let h=`<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 18px 0;position:sticky;top:0;z-index:5">`;
-  h+=`<div style="display:flex;align-items:center;gap:18px;margin-bottom:8px;flex-wrap:wrap">
-    <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">${curYear} celkem</div>
-    <span style="font-size:1.25rem;font-weight:700;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</span>
-    <span style="color:var(--text2);font-size:.82rem">${allProd.length} prodejů z ${leads.length} leadů</span>
+  let h=`<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px 0;position:sticky;top:0;z-index:5">`;
+  h+=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap">
+    <div style="font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">${curYear} celkem</div>
+    <span style="font-size:1.2rem;font-weight:700;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</span>
+    <span style="color:var(--text2);font-size:.78rem">${allProd.length} prodejů z ${leads.length}</span>
   </div>`;
-  h+=`<div style="display:flex;gap:3px;overflow-x:auto;padding-bottom:1px">
-    <button onclick="statsMonth=null;renderStatsView()" style="background:${!statsMonth?'var(--accent)':'var(--bg3)'};border:1px solid ${!statsMonth?'var(--accent)':'var(--border)'};color:${!statsMonth?'#fff':'var(--text2)'};border-radius:5px 5px 0 0;padding:5px 12px;cursor:pointer;font-size:.78rem;font-weight:500;white-space:nowrap;border-bottom:none">📊 Srovnání</button>`;
+  h+=`<div style="display:flex;gap:3px;overflow-x:auto;padding-bottom:1px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+    <button onclick="statsMonth=null;renderStatsView()" style="background:${!statsMonth?'var(--accent)':'var(--bg3)'};border:1px solid ${!statsMonth?'var(--accent)':'var(--border)'};color:${!statsMonth?'#fff':'var(--text2)'};border-radius:6px 6px 0 0;padding:5px 10px;cursor:pointer;font-size:.75rem;font-weight:500;white-space:nowrap;border-bottom:none;flex-shrink:0">📊 Přehled</button>`;
   monthData.forEach(md=>{const active=statsMonth===md.month;
-    h+=`<button onclick="statsMonth=${md.month};renderStatsView()" style="background:${active?'var(--accent)':'var(--bg3)'};border:1px solid ${active?'var(--accent)':'var(--border)'};color:${active?'#fff':'var(--text2)'};border-radius:5px 5px 0 0;padding:5px 12px;cursor:pointer;font-size:.78rem;white-space:nowrap;border-bottom:none;position:relative">
-      ${md.name}${md.obrat>0?`<span style="position:absolute;top:-5px;right:-3px;background:var(--green);color:#fff;border-radius:7px;padding:0 4px;font-size:.58rem;font-weight:700">${Number(md.obrat).toLocaleString('cs')}€</span>`:''}
+    h+=`<button onclick="statsMonth=${md.month};renderStatsView()" style="background:${active?'var(--accent)':'var(--bg3)'};border:1px solid ${active?'var(--accent)':'var(--border)'};color:${active?'#fff':'var(--text2)'};border-radius:6px 6px 0 0;padding:5px 10px;cursor:pointer;font-size:.75rem;white-space:nowrap;border-bottom:none;position:relative;flex-shrink:0">
+      ${md.name}${md.obrat>0?`<span style="position:absolute;top:-5px;right:-3px;background:var(--green);color:#fff;border-radius:7px;padding:0 4px;font-size:.55rem;font-weight:700">${Number(md.obrat).toLocaleString('cs')}€</span>`:''}
     </button>`;
   });
-  h+=`</div></div><div style="padding:18px">`;
+  h+=`</div></div><div style="padding:14px">`;
   if(!statsMonth){
     const maxO=Math.max(...monthData.map(m=>m.obrat),1);
-    h+=`<div class="chart-box" style="margin-bottom:14px"><h3>💰 Obrat po měsících</h3>
-    <div style="display:flex;align-items:flex-end;gap:7px;height:140px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px">`;
-    monthData.forEach(md=>{const barH=Math.max(Math.round(md.obrat/maxO*120),md.obrat>0?7:2);
-      h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
-        <div style="font-size:.65rem;color:var(--green);font-weight:600">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+'€':''}</div>
-        <div style="width:100%;background:${md.obrat>0?'var(--green)':'var(--border)'};border-radius:3px 3px 0 0;height:${barH}px;opacity:${md.obrat>0?1:.4}"></div>
-        <div style="font-size:.65rem;color:var(--text2)">${md.name}</div>
-        <div style="font-size:.6rem;color:var(--text3)">${md.prodano}p</div>
+    h+=`<div class="chart-box"><h3>💰 Obrat po měsících</h3>
+    <div style="display:flex;align-items:flex-end;gap:5px;height:120px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;overflow-x:auto">`;
+    monthData.forEach(md=>{const barH=Math.max(Math.round(md.obrat/maxO*100),md.obrat>0?6:2);
+      h+=`<div style="flex:1;min-width:32px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
+        <div style="font-size:.6rem;color:var(--green);font-weight:600;text-align:center">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+'€':''}</div>
+        <div style="width:100%;background:${md.obrat>0?'var(--green)':'var(--border)'};border-radius:3px 3px 0 0;height:${barH}px;opacity:${md.obrat>0?1:.35}"></div>
+        <div style="font-size:.58rem;color:var(--text2);text-align:center">${md.name.slice(0,3)}</div>
       </div>`;
     });
     h+=`</div></div>`;
-    h+=`<div class="chart-box"><h3>📋 Přehled po měsících</h3>
-    <table class="pt"><thead><tr><th>Měsíc</th><th style="text-align:right">Leady</th><th style="text-align:right">Prodáno</th><th style="text-align:right">Konverze</th><th style="text-align:right">Konec</th><th style="text-align:right">Obrat</th></tr></thead><tbody>`;
-    monthData.forEach(md=>{const konv=md.leads?Math.round(md.prodano/md.leads*100):0;
+    h+=`<div class="chart-box"><h3>📋 Přehled</h3>
+    <table class="pt"><thead><tr><th>Měsíc</th><th style="text-align:right">Leady</th><th style="text-align:right">Prodáno</th><th style="text-align:right">Obrat</th></tr></thead><tbody>`;
+    monthData.forEach(md=>{
       h+=`<tr style="cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()">
         <td style="font-weight:600">${md.name}</td><td style="text-align:right">${md.leads}</td>
         <td style="text-align:right;color:var(--accent2)">${md.prodano}</td>
-        <td style="text-align:right;color:${konv>10?'var(--green)':konv>5?'var(--yellow)':'var(--text2)'}">${konv}%</td>
-        <td style="text-align:right;color:var(--red)">${md.konec}</td>
         <td style="text-align:right;color:var(--green);font-weight:600">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+' €':'—'}</td>
       </tr>`;
     });
     const totKonv=leads.length?Math.round(allProd.length/leads.length*100):0;
     h+=`<tr style="border-top:2px solid var(--border);font-weight:700">
       <td>CELKEM</td><td style="text-align:right">${leads.length}</td>
-      <td style="text-align:right;color:var(--accent2)">${allProd.length}</td>
-      <td style="text-align:right;color:var(--green)">${totKonv}%</td>
-      <td style="text-align:right;color:var(--red)">${leads.filter(l=>getPoz(l.stav)==='konec').length}</td>
+      <td style="text-align:right;color:var(--accent2)">${allProd.length} (${totKonv}%)</td>
       <td style="text-align:right;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</td>
     </tr></tbody></table></div>`;
   }else{
@@ -703,40 +831,39 @@ function renderStatsView(){
     const mths=getMonths();const idx=mths.indexOf(statsMonth);
     const prev=idx>0?mths[idx-1]:null;const nxt=idx<mths.length-1?mths[idx+1]:null;
     h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      ${prev?`<button onclick="statsMonth=${prev};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">← ${getMesicLabel(prev)}</button>`:'<div></div>'}
-      <h2 style="flex:1;text-align:center;font-size:1rem">${getMesicLabel(statsMonth)}</h2>
-      ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">${getMesicLabel(nxt)} →</button>`:'<div></div>'}
+      ${prev?`<button onclick="statsMonth=${prev};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.78rem">←</button>`:'<div style="width:40px"></div>'}
+      <h2 style="flex:1;text-align:center;font-size:.95rem">${getMesicLabel(statsMonth)}</h2>
+      ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.78rem">→</button>`:'<div style="width:40px"></div>'}
     </div>`;
     const ot=ml.filter(l=>getPoz(l.stav)==='otevreno').length;
     const uz=ml.filter(l=>getPoz(l.stav)==='uzavreno').length;
     const ko=ml.filter(l=>getPoz(l.stav)==='konec').length;
     h+=`<div class="stats-grid">
       <div class="kpi"><div class="kpi-val" style="color:var(--green)">${Number(mTotal).toLocaleString('cs')} €</div><div class="kpi-label">Obrat</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${mp.length}</div><div class="kpi-label">Prodáno</div><div class="kpi-sub">z ${ml.length} leadů (${ml.length?Math.round(mp.length/ml.length*100):0}%)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${mp.length}</div><div class="kpi-label">Prodáno</div><div class="kpi-sub">z ${ml.length} leadů</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#eab308">${ot}</div><div class="kpi-label">Otevřeno</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#22c55e">${uz}</div><div class="kpi-label">Uzavřeno</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#ef4444">${ko}</div><div class="kpi-label">Konec</div></div>
     </div>`;
     const fazeCounts={};ml.forEach(l=>{fazeCounts[l.stav]=(fazeCounts[l.stav]||0)+1;});
     const maxF=Math.max(...FAZE.slice(1).map(f=>fazeCounts[f.id]||0),1);
-    h+=`<div class="chart-box" style="margin-bottom:14px"><h3>Leady podle fáze</h3>`;
+    h+=`<div class="chart-box"><h3>Leady podle fáze</h3>`;
     FAZE.slice(1).forEach(f=>{const cnt=fazeCounts[f.id]||0;const pct=Math.round(cnt/maxF*100);
       h+=`<div class="bar-row"><div class="bar-label">${f.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${f.color}">${cnt>0?cnt:''}</div></div><div class="bar-count">${cnt}</div></div>`;
     });
     h+=`</div>`;
     if(mp.length>0){
       const sorted=[...mp].sort((a,b)=>(parseFloat(b.prodej_castka)||0)-(parseFloat(a.prodej_castka)||0));
-      h+=`<div class="chart-box"><h3>💰 Prodeje – ${getMesicLabel(statsMonth)}</h3>
-      <table class="pt"><thead><tr><th>Jméno</th><th>Firma</th><th>Produkt</th><th style="text-align:right">Částka</th></tr></thead><tbody>`;
-      sorted.forEach(l=>{h+=`<tr style="cursor:pointer" onclick="openLead(${l._id})"><td style="font-weight:600">${esc(l.jmeno||'')}</td><td>${esc(l.firma||'')}</td><td>${SLUZBA[l.prodej_produkt]||'—'}</td><td style="text-align:right;color:var(--green);font-weight:600">${Number(l.prodej_castka).toLocaleString('cs')} €</td></tr>`;});
-      h+=`<tr style="border-top:2px solid var(--border)"><td colspan="3" style="font-weight:600">CELKEM</td><td style="text-align:right;color:var(--green);font-weight:700;font-size:.95rem">${Number(mTotal).toLocaleString('cs')} €</td></tr>`;
+      h+=`<div class="chart-box"><h3>💰 Prodeje</h3>
+      <table class="pt"><thead><tr><th>Jméno</th><th>Produkt</th><th style="text-align:right">€</th></tr></thead><tbody>`;
+      sorted.forEach(l=>{h+=`<tr style="cursor:pointer" onclick="openLead(${l._id})"><td style="font-weight:600">${esc(l.jmeno||'')}</td><td>${SLUZBA[l.prodej_produkt]||'—'}</td><td style="text-align:right;color:var(--green);font-weight:600">${Number(l.prodej_castka).toLocaleString('cs')}</td></tr>`;});
+      h+=`<tr style="border-top:2px solid var(--border)"><td colspan="2" style="font-weight:600">CELKEM</td><td style="text-align:right;color:var(--green);font-weight:700">${Number(mTotal).toLocaleString('cs')} €</td></tr>`;
       h+=`</tbody></table></div>`;
     }
   }
   h+=`</div>`;sv.innerHTML=h;
 }
 
-// ── Volat view ────────────────────────────────────────────────
 function renderVolat(){
   const vv=document.getElementById('view-volat');
   const today=new Date().toISOString().slice(0,10);
@@ -755,7 +882,7 @@ function renderVolat(){
       s+=`<div class="vl-card" onclick="openLead(${l._id})">
         <div class="vl-date" style="color:${color}">${formatDatum(l.datum)}</div>
         <div class="vl-info">
-          <div class="vl-name">${esc(l.jmeno||'')}${l.firma?` · <span style="color:var(--text2)">${esc(l.firma)}</span>`:''}</div>
+          <div class="vl-name">${esc(l.jmeno||'')}${l.firma?` · <span style="color:var(--text2);font-weight:400">${esc(l.firma)}</span>`:''}</div>
           <div class="vl-sub">${esc(l.myNotes||l.problem||'')}${l.lokace?` · 📍${esc(l.lokace)}`:''}</div>
         </div>
         <div class="vl-acts">
@@ -771,11 +898,10 @@ function renderVolat(){
   h+=sec('⚠️ Prošlé follow-upy',fuOv,'#ef4444');
   h+=sec('✅ Dnes',fuTd,'#22c55e');
   h+=sec('📅 Nadcházející',fuUp,'#3b82f6');
-  if(!h)h='<div style="color:var(--text3);text-align:center;padding:40px">Žádné naplánované aktivity.</div>';
+  if(!h)h='<div style="color:var(--text3);text-align:center;padding:48px;font-size:.88rem">Žádné naplánované aktivity 🎉</div>';
   vv.innerHTML=h;
 }
 
-// ── Panel ─────────────────────────────────────────────────────
 function openLead(id){
   const l=leads.find(x=>x._id===id);if(!l)return;
   currentLead=l;
@@ -787,12 +913,10 @@ function openLead(id){
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
-  // Importované poznámky z Excelu (read-only, vždy viditelné celé)
   const importedNote=l.notes||l.poznamka||'';
   const inWrap=document.getElementById('pImportedNotesWrap');
   const inBox=document.getElementById('pImportedNotes');
   if(importedNote){inBox.textContent=importedNote;inWrap.style.display='';}else{inWrap.style.display='none';}
-  // Editovatelné poznámky = jen myNotes
   document.getElementById('pNotes').value=l.myNotes||'';
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
@@ -807,8 +931,8 @@ function openLead(id){
   document.getElementById('pActions').innerHTML=acts;
   document.getElementById('overlay').classList.add('open');
   document.getElementById('panel').classList.add('open');
+  document.body.style.overflow='hidden';
 }
-
 function savePanel(){
   if(!currentLead)return;
   currentLead.stav=document.getElementById('pStage').value;
@@ -818,22 +942,16 @@ function savePanel(){
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
   document.getElementById('pPoz').value=getPoz(currentLead.stav);
-  saveToApi(currentLead);
-  renderStatsBar();
-  if(currentTab==='table')renderTable();
+  saveToApi(currentLead);renderStatsBar();
+  if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
 }
-
 function savePozFromPanel(){
   if(!currentLead)return;
   const newPoz=document.getElementById('pPoz').value;
   const curPoz=getPoz(currentLead.stav);
-  if(curPoz!==newPoz){
-    currentLead.stav=POZ_DEFAULT[newPoz]||'';
-    document.getElementById('pStage').value=currentLead.stav;
-  }
+  if(curPoz!==newPoz){currentLead.stav=POZ_DEFAULT[newPoz]||'';document.getElementById('pStage').value=currentLead.stav;}
   savePanel();
 }
-
 function closePanel(){
   if(currentLead){
     currentLead.stav=document.getElementById('pStage').value;
@@ -842,23 +960,27 @@ function closePanel(){
     currentLead.prodej_castka=document.getElementById('pCastka').value;
     currentLead.prodej_produkt=document.getElementById('pProdukt').value;
     currentLead.prodej_note=document.getElementById('pProdejNote').value;
-    saveToApi(currentLead);
-    renderStatsBar();
-    if(currentTab==='table')renderTable();
+    saveToApi(currentLead);renderStatsBar();
+    if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
   }
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('panel').classList.remove('open');
+  document.body.style.overflow='';
   currentLead=null;
 }
 
-// ── Import ────────────────────────────────────────────────────
-function openImport(){document.getElementById('impOv').classList.add('open');}
-function closeImport(){
-  document.getElementById('impOv').classList.remove('open');
-  document.getElementById('impPrev').style.display='none';
-  document.getElementById('impBtn').style.display='none';
-  impD=[];document.getElementById('progF').style.width='0%';
+function openFltSheet(){
+  document.getElementById('fltSheet').classList.add('open');
+  document.getElementById('fltOverlay').classList.add('open');
 }
+function closeFltSheet(){
+  document.getElementById('fltSheet').classList.remove('open');
+  document.getElementById('fltOverlay').classList.remove('open');
+  applyFilters();
+}
+
+function openImport(){document.getElementById('impOv').classList.add('open');}
+function closeImport(){document.getElementById('impOv').classList.remove('open');document.getElementById('impPrev').style.display='none';document.getElementById('impBtn').style.display='none';impD=[];document.getElementById('progF').style.width='0%';}
 function doDrop(ev){ev.preventDefault();document.getElementById('dropZ').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)doFile(f);}
 
 function doFile(file){
@@ -925,15 +1047,11 @@ function doFile(file){
         let telefon=String(row[cm.telefon]||'').replace(/^p:/i,'').trim();
         telefon=fixPhone(telefon);
         return{
-          jmeno:String(row[cm.jmeno]||'').trim(),
-          firma:String(row[cm.firma]||'').trim(),
-          telefon,
-          problem:String(row[cm.problem]||'').trim(),
+          jmeno:String(row[cm.jmeno]||'').trim(),firma:String(row[cm.firma]||'').trim(),
+          telefon,problem:String(row[cm.problem]||'').trim(),
           email:String(row[cm.email]||'').trim().toLowerCase(),
-          datum,mesic,poznamka:poz,
-          lokace:String(row[cm.lokace]||'').trim(),
-          sluzba,ai_info:ai,stav,
-          notes:String(row[cm.notes]||'').trim()
+          datum,mesic,poznamka:poz,lokace:String(row[cm.lokace]||'').trim(),
+          sluzba,ai_info:ai,stav,notes:String(row[cm.notes]||'').trim()
         };
       }).filter(r=>r.jmeno||r.email);
       document.getElementById('impPrev').style.display='';
@@ -967,6 +1085,9 @@ async function doImport(){
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+let _resizeT;
+window.addEventListener('resize',()=>{clearTimeout(_resizeT);_resizeT=setTimeout(()=>setTab(currentTab),150);});
 
 init();setTab('table');
 </script>
