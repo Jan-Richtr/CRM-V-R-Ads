@@ -1,796 +1,357 @@
 <!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Vrads Draft Sync",
+  "schemaVersion": 1,
+  "description": "V&R Ads – živý přehled \"Volat & Drafty\". Zobrazuje všechny leady naplánované k volání a follow-upům, po kliknutí na Synchronizovat Gmail načte aktuální drafty a ukáže ke každému leadovi, jestli má připravený draft k odeslání.",
+  "mcpTools": [
+    "mcp__10e3268c-06b9-4a9e-9e5c-89490496ccbb__list_drafts"
+  ],
+  "mcpServerNames": [
+    "Gmail"
+  ]
+}
+</script>
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0d0f1a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="V&R CRM">
-<title>V&R Ads CRM</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230d1340'/%3E%3Ctext x='32' y='26' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EV%26R%3C/text%3E%3Ctext x='32' y='50' font-family='Arial,sans-serif' font-size='16' font-weight='800' fill='%2322c55e' text-anchor='middle' letter-spacing='2'%3EADS%3C/text%3E%3C/svg%3E">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V&R Ads – Volat & Draft sync</title>
 <style>
-:root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--safe-bottom:env(safe-area-inset-bottom,0px)}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px;display:flex;align-items:center;gap:8px;height:52px;position:sticky;top:0;z-index:100;padding-top:env(safe-area-inset-top,0)}
-.logo{font-size:.95rem;font-weight:700;color:var(--accent2);flex-shrink:0}
-.tabs{display:flex;gap:2px;flex-shrink:0}
-.tab{background:none;border:none;color:var(--text2);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:500;transition:all .15s;white-space:nowrap}
-.tab.active{background:var(--accent);color:#fff}
-.tab:hover:not(.active){background:var(--bg3);color:var(--text)}
-.search-wrap{flex:1;position:relative;min-width:0}
-.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px 8px 30px;color:var(--text);font-size:.82rem;outline:none;height:38px}
-.search-wrap input:focus{border-color:var(--accent)}
-.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.75rem}
-.filter-row{display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0}
-.flt{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 9px;color:var(--text2);font-size:.73rem;cursor:pointer;white-space:nowrap}
-select.flt{appearance:none;padding-right:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center}
-.btn-imp{background:var(--accent);color:#fff;padding:6px 11px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;white-space:nowrap;flex-shrink:0;height:36px}
-.btn-imp:hover{background:var(--accent2)}
-.icon-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0;cursor:pointer;font-size:1rem;flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center}
-.stats-bar{display:flex;gap:6px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.stats-bar::-webkit-scrollbar{display:none}
-.stt{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 12px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all .15s;flex-shrink:0;touch-action:manipulation}
-.stt:hover,.stt.on{border-color:var(--accent);background:rgba(108,99,255,.12)}
-.stt-n{font-size:1.1rem;font-weight:700}
-.stt-l{font-size:.65rem;color:var(--text2)}
-#view-table{overflow-x:auto;max-height:calc(100vh - 125px);overflow-y:auto}
-table{width:100%;border-collapse:collapse;font-size:.78rem}
-thead{position:sticky;top:0;z-index:10}
-th{background:var(--bg2);color:var(--text2);font-weight:600;padding:8px 9px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid var(--border)}
-th:hover{color:var(--accent2)}
-th .si2{margin-left:3px;opacity:.4;font-size:.65rem}
-th.sorted .si2{opacity:1;color:var(--accent2)}
-td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
-#view-cards{display:none;padding:8px;overflow-y:auto;padding-bottom:calc(70px + var(--safe-bottom))}
-.lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
-.lead-card:active{transform:scale(.98);border-color:var(--accent)}
-.lead-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
-.lead-card-name{font-weight:700;font-size:.9rem;line-height:1.2}
-.lead-card-firma{font-size:.75rem;color:var(--text2);margin-top:1px}
-.lead-card-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-.lead-card-mid{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
-.lead-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.lead-card-note{font-size:.72rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lead-card-acts{display:flex;gap:6px;flex-shrink:0}
-.card-act{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-decoration:none;color:var(--text2);font-size:.8rem;display:flex;align-items:center;gap:4px;cursor:pointer;touch-action:manipulation}
-.card-act:active{background:var(--accent);border-color:var(--accent);color:#fff}
-.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
-.b-nz1{background:rgba(249,115,22,.2);color:#f97316}
-.b-nz2{background:rgba(251,146,60,.2);color:#fb923c}
-.b-nz3{background:rgba(253,186,116,.2);color:#fbbf24}
-.b-em{background:rgba(168,85,247,.2);color:#a855f7}
-.b-nr{background:rgba(100,116,139,.2);color:#94a3b8}
-.b-ds{background:rgba(34,197,94,.2);color:#22c55e}
-.b-uz{background:rgba(34,197,94,.25);color:#16a34a}
-.b-of{background:rgba(59,130,246,.2);color:#3b82f6}
-.p-ot{background:rgba(234,179,8,.15);color:#eab308}
-.p-uz{background:rgba(34,197,94,.15);color:#22c55e}
-.p-ko{background:rgba(239,68,68,.15);color:#ef4444}
-.cell-sel{background:transparent;border:none;color:inherit;font-size:.72rem;cursor:pointer;font-family:inherit;width:100%;padding:0;outline:none}
-.cell-sel:focus{outline:1px solid var(--accent);border-radius:3px}
-.link{color:var(--accent2);text-decoration:none}
-.link:hover{text-decoration:underline}
-.prodej-val{color:var(--green);font-weight:600}
-#view-stats{padding:16px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
-.kpi-val{font-size:1.7rem;font-weight:700;margin-bottom:2px}
-.kpi-label{font-size:.7rem;color:var(--text2)}
-.kpi-sub{font-size:.72rem;color:var(--text3);margin-top:3px}
-.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
-.chart-box h3{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.75rem}
-.bar-label{width:140px;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar-track{flex:1;background:var(--bg3);border-radius:4px;height:16px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:5px;font-size:.65rem;font-weight:600;color:#fff;transition:width .4s}
-.bar-count{width:30px;text-align:right;color:var(--text2);flex-shrink:0}
-.pt{width:100%;border-collapse:collapse;font-size:.78rem}
-.pt th{background:var(--bg3);color:var(--text2);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
-.pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
-#view-volat{padding:12px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
-.vl-section{margin-bottom:16px}
-.vl-section h3{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.vl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
-.vl-card:active{border-color:var(--accent);transform:scale(.99)}
-.vl-date{font-size:.88rem;font-weight:700;min-width:50px;flex-shrink:0}
-.vl-info{flex:1;min-width:0}
-.vl-name{font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vl-sub{font-size:.72rem;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vl-acts{display:flex;gap:5px;flex-shrink:0}
-.btn-ic{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;text-decoration:none;color:var(--text2);font-size:.8rem;transition:all .15s;touch-action:manipulation}
-.btn-ic:active{border-color:var(--accent);color:var(--accent2)}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
-.overlay.open{display:block}
-.panel{position:fixed;right:0;top:0;bottom:0;width:420px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);overflow:hidden}
-.panel.open{transform:translateX(0)}
-.ph{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.ph-name{font-size:.95rem;font-weight:700}
-.ph-sub{font-size:.75rem;color:var(--text2);margin-top:2px}
-.ph-close{background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:.9rem;padding:0;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ph-close:active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.pb{overflow-y:auto;flex:1;padding:13px 15px;display:flex;flex-direction:column;gap:11px;-webkit-overflow-scrolling:touch}
-.p-actions{display:flex;gap:6px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 14px;border-radius:8px;font-size:.8rem;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s;touch-action:manipulation;min-height:40px}
-.btn:active{border-color:var(--accent);color:var(--accent2)}
-.btn-pri{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-pri:active{background:var(--accent2)}
-.p-label{font-size:.67rem;color:var(--text2);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.4px}
-.p-select,.p-input,.p-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit;min-height:42px}
-.p-select:focus,.p-input:focus,.p-textarea:focus{border-color:var(--accent)}
-.p-textarea{resize:vertical;min-height:90px}
-.p-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.p-full{grid-column:1/-1}
-.info-box{background:var(--bg3);border-radius:8px;padding:9px 11px}
-.info-box .lbl{font-size:.63rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
-.info-box .val{font-size:.8rem;word-break:break-word}
-.info-box .val a{color:var(--accent2);text-decoration:none}
-.prodej-sec{background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px}
-.prodej-sec .sec-t{font-size:.67rem;color:var(--green);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:9px}
-.prodej-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ps{padding:10px 15px;border-top:1px solid var(--border);padding-bottom:calc(10px + var(--safe-bottom))}
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:100;padding-bottom:var(--safe-bottom)}
-.bn-inner{display:flex;height:56px}
-.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text3);transition:all .15s;border:none;background:none;touch-action:manipulation;font-family:inherit}
-.bn-item.active{color:var(--accent2)}
-.bn-item .bn-ic{font-size:1.25rem;line-height:1}
-.bn-item .bn-lbl{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.flt-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);border-radius:16px 16px 0 0;z-index:300;padding:0 16px;padding-bottom:calc(16px + var(--safe-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
-.flt-sheet.open{transform:translateY(0)}
-.flt-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 14px}
-.flt-sheet h3{font-size:.82rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
-.flt-row{margin-bottom:10px}
-.flt-row label{font-size:.7rem;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
-.flt-sel{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit;height:44px}
-.flt-sel:focus{border-color:var(--accent)}
-.flt-sheet-acts{display:flex;gap:8px;margin-top:14px}
-.imp-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:flex-end;justify-content:center}
-.imp-ov.open{display:flex}
-.imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:520px;padding-bottom:calc(20px + var(--safe-bottom))}
-.imp-modal h3{font-size:.92rem;font-weight:700;margin-bottom:12px}
-.drop-z{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
-.drop-z:hover,.drop-z.drag{border-color:var(--accent);background:rgba(108,99,255,.06)}
-.drop-z .ic{font-size:28px;margin-bottom:7px}
-.imp-prog{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px}
-.imp-prog-f{height:100%;background:var(--accent);transition:width .3s}
-.imp-foot{display:flex;gap:7px;justify-content:flex-end;margin-top:12px}
-.imp-btn{padding:10px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;min-height:42px}
-.imp-btn-p{background:var(--accent);color:#fff}
-.imp-btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-.sel-bar-wrap{display:none;position:fixed;top:52px;left:0;right:0;background:rgba(220,38,38,.95);z-index:99;padding:8px 12px;align-items:center;gap:8px;backdrop-filter:blur(8px)}
-.sel-bar-wrap.open{display:flex}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-#loginScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
-.login-logo{font-size:2rem;font-weight:800;color:var(--accent2);text-align:center;margin-bottom:4px;letter-spacing:-1px}
-.login-sub{text-align:center;color:var(--text3);font-size:.8rem;margin-bottom:28px}
-.login-field{margin-bottom:14px}
-.login-field label{display:block;font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
-.login-field input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:.92rem;outline:none;font-family:inherit;height:48px;transition:border-color .15s}
-.login-field input:focus{border-color:var(--accent)}
-.login-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:14px;font-size:.92rem;font-weight:700;cursor:pointer;margin-top:6px;height:50px;letter-spacing:.2px;transition:background .15s}
-.login-btn:hover{background:var(--accent2)}
-.login-btn:active{transform:scale(.98)}
-.login-err{color:var(--red);font-size:.78rem;text-align:center;margin-top:10px;min-height:20px}
-.camp-tag{display:inline-block;font-size:.6rem;background:rgba(59,130,246,.12);color:#60a5fa;padding:1px 5px;border-radius:3px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
-.plat-tag{display:inline-block;font-size:.63rem;font-weight:700;padding:1px 5px;border-radius:3px;vertical-align:middle;letter-spacing:.3px}
-.plat-fb{background:rgba(59,130,246,.2);color:#3b82f6}
-.plat-ig{background:rgba(236,72,153,.2);color:#ec4899}
-@media(max-width:640px){
-  .topbar{height:54px;gap:6px;padding:0 10px}
-  .tabs{display:none}
-  .filter-row{display:none}
-  .logo{font-size:.85rem}
-  .bottom-nav{display:block}
-  #view-table{display:none !important}
-  #view-cards{display:block}
-  #view-stats{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
-  #view-volat{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
-  #view-kampane{max-height:calc(100vh - 112px);padding-bottom:calc(70px + var(--safe-bottom))}
-  .stats-bar{padding:6px 10px}
-  .panel{width:100%;border-left:none;border-radius:0;top:0}
-  .panel.open{transform:translateX(0)}
-  .pb{padding-bottom:calc(70px + var(--safe-bottom))}
-  .ps{padding-bottom:calc(16px + var(--safe-bottom))}
-  .imp-ov{align-items:flex-end}
-  .imp-modal{border-radius:16px 16px 0 0;width:100%;max-width:100%}
-}
-@media(min-width:641px){
-  .flt-sheet{display:none !important}
-  #view-cards{display:none !important}
-}
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8f9fc; color: #1e293b; font-size: 14px; }
+
+/* HEADER */
+.header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 20px; display: flex; align-items: center; gap: 14px; height: 54px; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 1rem; font-weight: 700; color: #4f46e5; flex-shrink: 0; }
+.tabs { display: flex; gap: 2px; }
+.tab { background: none; border: none; color: #64748b; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; font-weight: 500; transition: all .15s; }
+.tab.active { background: #4f46e5; color: #fff; }
+.tab:hover:not(.active) { background: #f1f5f9; }
+.sync-btn { margin-left: auto; display: flex; align-items: center; gap: 7px; background: #4f46e5; color: #fff; border: none; border-radius: 7px; padding: 7px 14px; font-size: .8rem; font-weight: 600; cursor: pointer; transition: background .15s; flex-shrink: 0; }
+.sync-btn:hover { background: #4338ca; }
+.sync-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+.sync-status { font-size: .75rem; color: #64748b; flex-shrink: 0; }
+
+/* STATS BAR */
+.stats-bar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 10px 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.stat-chip { display: flex; align-items: center; gap: 8px; background: #f8f9fc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 14px; font-size: .8rem; }
+.stat-chip .num { font-size: 1.2rem; font-weight: 700; }
+.c-blue { color: #3b82f6; } .c-orange { color: #f97316; } .c-purple { color: #7c3aed; }
+.c-green { color: #16a34a; } .c-red { color: #dc2626; } .c-gray { color: #64748b; }
+
+/* CONTENT */
+.content { padding: 16px 20px; }
+.section { margin-bottom: 24px; }
+.section-title { font-size: .78rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+.section-count { background: #e2e8f0; border-radius: 10px; padding: 1px 7px; font-size: .7rem; font-weight: 600; color: #475569; }
+
+/* CARD */
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 14px; transition: box-shadow .15s; cursor: default; }
+.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.card-date { font-size: .95rem; font-weight: 700; min-width: 62px; flex-shrink: 0; text-align: center; }
+.card-info { flex: 1; min-width: 0; }
+.card-name { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-sub { font-size: .75rem; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 5px; font-size: .7rem; font-weight: 600; }
+.badge-draft { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-nodraft { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+.badge-sluzba { background: #ede9fe; color: #5b21b6; }
+.badge-lokace { background: #f1f5f9; color: #64748b; }
+.badge-overdue { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-ic { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 10px; cursor: pointer; text-decoration: none; color: #475569; font-size: .8rem; transition: all .15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.btn-ic:hover { background: #e0e7ff; border-color: #a5b4fc; color: #4f46e5; }
+.btn-ic.green:hover { background: #dcfce7; border-color: #86efac; color: #15803d; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 40px; color: #94a3b8; font-size: .85rem; }
+
+/* LOADING SPINNER */
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SEARCH */
+.search-bar { margin-bottom: 14px; }
+.search-bar input { width: 100%; max-width: 360px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 14px; font-size: .82rem; outline: none; color: #1e293b; }
+.search-bar input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+
+/* DRAFT TABLE */
+.draft-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.draft-table th { background: #f8f9fc; color: #475569; font-weight: 600; padding: 8px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+.draft-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.draft-table tr:hover td { background: #f8f9fc; }
+.draft-name { font-weight: 600; }
+.draft-email { color: #4f46e5; font-size: .75rem; }
+.draft-date { color: #94a3b8; font-size: .72rem; white-space: nowrap; }
+.match-yes { color: #15803d; font-weight: 600; }
+.match-no { color: #94a3b8; }
 </style>
 </head>
 <body>
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">V&R Ads</div>
-    <div class="login-sub">CRM · Přihlášení</div>
-    <div class="login-field">
-      <label>Uživatelské jméno</label>
-      <input type="text" id="loginUser" placeholder="Jméno" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
-    </div>
-    <div class="login-field">
-      <label>Heslo</label>
-      <input type="password" id="loginPass" placeholder="Heslo" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="login-btn" onclick="doLogin()">Přihlásit se</button>
-    <div class="login-err" id="loginErr"></div>
-  </div>
-</div>
-<div class="topbar">
-  <div class="logo">V&R Ads</div>
+
+<div class="header">
+  <div class="logo">📋 V&R Ads – Drafty & Volat</div>
   <div class="tabs">
-    <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
-    <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
-    <button class="tab" onclick="setTab('volat')">📞 Volat</button>
-    <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
+    <button class="tab active" onclick="setTab('volat')">📞 Volat & Drafty</button>
+    <button class="tab" onclick="setTab('drafts')">✉️ Všechny drafty</button>
   </div>
-  <div class="search-wrap">
-    <span class="si">🔍</span>
-    <input type="text" id="searchInput" placeholder="Hledat…" oninput="applyFilters()">
-  </div>
-  <span id="syncLbl" style="font-size:.68rem;color:#64748b;flex-shrink:0;white-space:nowrap;display:none"></span>
-  <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
-  <button class="icon-btn" onclick="doLogout()" title="Odhlásit" style="font-size:.7rem;color:var(--text3);border-color:transparent;background:none">🚪</button>
-  <button class="icon-btn" onclick="openImport()" title="Import" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
-  <div class="filter-row">
-    <select class="flt" id="fazeFilter" onchange="applyFilters()">
-      <option value="">Všechny fáze</option>
-      <option value="nezvedan1">Nezvedá 1 ☎️</option>
-      <option value="nezvedan2">Nezvedá 2 ☎️</option>
-      <option value="nezvedan3">Nezvedá 3 ☎️</option>
-      <option value="odeslat_email">Odeslat email 📧</option>
-      <option value="nerelevantni">Nerelevantní ☹️</option>
-      <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
-      <option value="odeslana_faktura">Odeslaná faktura 🧾</option>
-      <option value="uzavreno">Uzavřeno 💚</option>
-    </select>
-    <select class="flt" id="sluzbaFilter" onchange="applyFilters()">
-      <option value="">Vše – služby</option>
-      <option value="tvorba_ai_videi">🎬 AI videa</option>
-      <option value="reklama_marketing">📢 Reklama</option>
-      <option value="video_produkce">📹 Video</option>
-      <option value="jine">🔧 Jiné</option>
-    </select>
-    <select class="flt" id="prodejFilter" onchange="applyFilters()">
-      <option value="">Prodej – vše</option>
-      <option value="yes">✅ Prodáno</option>
-      <option value="no">❌ Neprodáno</option>
-    </select>
-    <button class="btn-imp" onclick="openImport()">📥 Import XLS</button>
-  </div>
+  <div class="sync-status" id="syncStatus">—</div>
+  <button class="sync-btn" id="syncBtn" onclick="doSync()">
+    <span id="syncIcon">🔄</span> Synchronizovat Gmail
+  </button>
 </div>
-<div class="sel-bar-wrap" id="selBar">
-  <span id="selCount" style="font-size:.8rem;color:#fff;flex:1"></span>
-  <button onclick="deleteSelected()" style="background:#fff;color:#dc2626;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.78rem;font-weight:700">🗑️ Smazat</button>
-  <button onclick="clearSel()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:.78rem">✕</button>
-</div>
+
 <div class="stats-bar" id="statsBar"></div>
-<div id="view-table">
-  <table>
-    <thead>
-      <tr>
-        <th style="width:36px;text-align:center"><input type="checkbox" id="selAll" onclick="toggleSelAll(this.checked)" style="cursor:pointer;accent-color:var(--accent)"></th>
-        <th onclick="sortBy('datum')" data-col="datum">Datum <span class="si2">▲</span></th>
-        <th onclick="sortBy('jmeno')" data-col="jmeno">Jméno <span class="si2">▲</span></th>
-        <th onclick="sortBy('firma')" data-col="firma">Firma <span class="si2">▲</span></th>
-        <th>Telefon</th><th>Email</th>
-        <th onclick="sortBy('problem')" data-col="problem">Problém <span class="si2">▲</span></th>
-        <th>Lokalita</th><th>Služba</th><th>Poznámka</th>
-        <th onclick="sortBy('stav')" data-col="stav">Fáze <span class="si2">▲</span></th>
-        <th onclick="sortBy('prodej_castka')" data-col="prodej_castka">💰 € <span class="si2">▲</span></th>
-        <th>📦 Produkt</th>
-        <th onclick="sortBy('followup')" data-col="followup">📅 Follow-up <span class="si2">▲</span></th>
-        <th>📝 Poznámky</th>
-        <th onclick="sortBy('campaign_name')" data-col="campaign_name">📣 Kampaň <span class="si2">▲</span></th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-<div id="view-cards"><div id="cardsBody"></div></div>
-<div id="view-stats"></div>
-<div id="view-volat"></div>
-<div id="view-kampane" style="display:none;overflow-y:auto;max-height:calc(100vh - 125px)"></div>
-<div class="bottom-nav">
-  <div class="bn-inner">
-    <button class="bn-item active" id="bn-table" onclick="setTab('table')"><span class="bn-ic">📋</span><span class="bn-lbl">Leady</span></button>
-    <button class="bn-item" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span><span class="bn-lbl">Statistiky</span></button>
-    <button class="bn-item" id="bn-volat" onclick="setTab('volat')"><span class="bn-ic">📞</span><span class="bn-lbl">Volat</span></button>
-    <button class="bn-item" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📣</span><span class="bn-lbl">Kampaně</span></button>
-    <button class="bn-item" onclick="openImport()"><span class="bn-ic">📥</span><span class="bn-lbl">Import</span></button>
-  </div>
-</div>
-<div class="overlay" id="fltOverlay" onclick="closeFltSheet()"></div>
-<div class="flt-sheet" id="fltSheet">
-  <div class="flt-sheet-handle"></div>
-  <h3>Filtry</h3>
-  <div class="flt-row">
-    <label>Fáze</label>
-    <select class="flt-sel" id="fazeFilterM" onchange="syncFilters()">
-      <option value="">Všechny fáze</option>
-      <option value="nezvedan1">Nezvedá 1 ☎️</option>
-      <option value="nezvedan2">Nezvedá 2 ☎️</option>
-      <option value="nezvedan3">Nezvedá 3 ☎️</option>
-      <option value="odeslat_email">Odeslat email 📧</option>
-      <option value="nerelevantni">Nerelevantní ☹️</option>
-      <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
-      <option value="odeslana_faktura">Odeslaná faktura 🧾</option>
-      <option value="uzavreno">Uzavřeno 💚</option>
-    </select>
-  </div>
-  <div class="flt-row">
-    <label>Prodej</label>
-    <select class="flt-sel" id="prodejFilterM" onchange="syncFilters()">
-      <option value="">Vše</option>
-      <option value="yes">✅ Prodáno</option>
-      <option value="no">❌ Neprodáno</option>
-    </select>
-  </div>
-  <div class="flt-sheet-acts">
-    <button class="imp-btn imp-btn-s" style="flex:1" onclick="resetFilters()">Resetovat</button>
-    <button class="imp-btn imp-btn-p" style="flex:2" onclick="closeFltSheet()">✅ Použít</button>
-  </div>
-</div>
-<div class="overlay" id="overlay" onclick="closePanel()"></div>
-<div class="panel" id="panel">
-  <div class="ph">
-    <div><div class="ph-name" id="pName"></div><div class="ph-sub" id="pFirma"></div></div>
-    <button class="ph-close" onclick="closePanel()">✕</button>
-  </div>
-  <div class="pb">
-    <div class="p-actions" id="pActions"></div>
-    <div class="p-grid">
-      <div><span class="p-label">Kategorie</span>
-        <select class="p-select" id="pPoz" onchange="savePozFromPanel()">
-          <option value="">— nevybráno —</option>
-          <option value="otevreno">🟡 Otevřeno</option>
-          <option value="uzavreno">🟢 Uzavřeno</option>
-          <option value="konec">🔴 Konec</option>
-        </select>
-      </div>
-      <div><span class="p-label">Fáze</span>
-        <select class="p-select" id="pStage" onchange="savePanel()">
-          <option value="">— nevybráno —</option>
-          <option value="nezvedan1">Nezvedá 1 ☎️</option>
-          <option value="nezvedan2">Nezvedá 2 ☎️</option>
-          <option value="nezvedan3">Nezvedá 3 ☎️</option>
-          <option value="odeslat_email">Odeslat email 📧</option>
-          <option value="nerelevantni">Nerelevantní ☹️</option>
-          <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
-          <option value="odeslana_faktura">Odeslaná faktura 🧾</option>
-          <option value="uzavreno">Uzavřeno 💚</option>
-        </select>
-      </div>
-    </div>
-    <div class="p-grid">
-      <div class="info-box"><div class="lbl">Email</div><div class="val" id="pEmail"></div></div>
-      <div class="info-box"><div class="lbl">Telefon</div><div class="val" id="pTel"></div></div>
-      <div class="info-box p-full"><div class="lbl">Problém / Zájem</div><div class="val" id="pProblem"></div></div>
-      <div class="info-box"><div class="lbl">Lokalita</div><div class="val" id="pLokace"></div></div>
-      <div class="info-box"><div class="lbl">Datum přijetí</div><div class="val" id="pDatum"></div></div>
-    </div>
-    <div class="prodej-sec">
-      <div class="sec-t">💰 Prodej</div>
-      <div class="prodej-grid">
-        <div><span class="p-label">Částka (€)</span><input class="p-input" type="number" id="pCastka" placeholder="0" onblur="savePanel()"></div>
-        <div><span class="p-label">Produkt</span>
-          <select class="p-select" id="pProdukt" onchange="savePanel()">
-            <option value="">— nevybráno —</option>
-            <option value="tvorba_ai_videi">🎬 AI videa</option>
-            <option value="reklama_marketing">📢 Reklama</option>
-            <option value="video_produkce">📹 Video</option>
-            <option value="jine">🔧 Jiné</option>
-          </select>
-        </div>
-        <div class="p-full"><span class="p-label">Poznámka k prodeji</span><input class="p-input" id="pProdejNote" placeholder="Datum podpisu, podmínky…" onblur="savePanel()"></div>
-      </div>
-    </div>
-    <div><span class="p-label">📅 Follow-up datum</span><input class="p-input" type="date" id="pFollowup" onchange="savePanel()"></div>
-    <div id="pCampaignWrap" style="display:none">
-      <span class="p-label">📣 Kampaň (FB reklama)</span>
-      <div class="p-grid" style="gap:6px">
-        <div class="info-box"><div class="lbl">Kampaň</div><div class="val" id="pCampaignName"></div></div>
-        <div class="info-box"><div class="lbl">Platforma</div><div class="val" id="pPlatform"></div></div>
-        <div class="info-box p-full"><div class="lbl">Ad Set</div><div class="val" id="pAdsetName" style="color:var(--text2)"></div></div>
-        <div class="info-box p-full"><div class="lbl">Web stránka leada</div><div class="val" id="pWebsite"></div></div>
-      </div>
-    </div>
-    <div id="pImportedNotesWrap" style="display:none">
-      <span class="p-label">📋 Poznámky z importu (Excel)</span>
-      <div id="pImportedNotes" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.82rem;color:var(--text2);white-space:pre-wrap;word-break:break-word;line-height:1.55"></div>
-    </div>
-    <div><span class="p-label">📝 Moje poznámky (editovatelné)</span><textarea class="p-textarea" id="pNotes" onblur="savePanel()" placeholder="Napiš poznámku…"></textarea></div>
-  </div>
-  <div class="ps"><button class="btn btn-pri" style="width:100%;font-size:.88rem;height:46px" onclick="closePanel()">Zavřít a uložit</button></div>
-</div>
-<div class="imp-ov" id="impOv">
-  <div class="imp-modal">
-    <h3>📥 Import leadů z XLS / CSV</h3>
-    <div class="drop-z" id="dropZ" onclick="document.getElementById('fInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="doDrop(event)">
-      <div class="ic">📂</div>
-      <div style="font-weight:600">Přetáhni soubor nebo klikni</div>
-      <p style="color:var(--text3);font-size:.75rem;margin-top:3px">.xlsx .xls .csv</p>
-      <input type="file" id="fInput" style="display:none" accept=".xlsx,.xls,.csv" onchange="doFile(this.files[0])">
-    </div>
-    <div id="impPrev" style="display:none">
-      <div id="impInfo" style="font-size:.8rem;margin-bottom:5px"></div>
-      <div class="imp-prog"><div class="imp-prog-f" id="progF" style="width:0%"></div></div>
-      <div id="impSt" style="font-size:.72rem;color:var(--text3);margin-top:4px;text-align:center"></div>
-    </div>
-    <div class="imp-foot">
-      <button class="imp-btn imp-btn-s" onclick="closeImport()">Zrušit</button>
-      <button class="imp-btn imp-btn-p" id="impBtn" style="display:none" onclick="doImport()">✅ Importovat</button>
-    </div>
-  </div>
-</div>
+
+<div class="content" id="contentArea"></div>
+
 <script>
-const AUTH_USER='VargaRichtr',AUTH_PASS='RolexDubaj1M',AUTH_KEY='vrads_auth';
-function checkAuth(){if(sessionStorage.getItem(AUTH_KEY)==='1'){document.getElementById('loginScreen').style.display='none';}else{document.getElementById('loginScreen').style.display='flex';setTimeout(()=>document.getElementById('loginUser').focus(),100);}}
-function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value,err=document.getElementById('loginErr');if(u===AUTH_USER&&p===AUTH_PASS){sessionStorage.setItem(AUTH_KEY,'1');document.getElementById('loginScreen').style.display='none';init();setTab('table');}else{err.textContent='❌ Špatné jméno nebo heslo';document.getElementById('loginPass').value='';setTimeout(()=>{err.textContent='';},3000);}}
-function doLogout(){if(confirm('Odhlásit se?')){sessionStorage.removeItem(AUTH_KEY);location.reload();}}
-const SB='https://tvokxlkxnevlstavtibf.supabase.co';
-const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
-const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
-async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
-async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
-const FAZE=[
-  {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
-  {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#f97316'},
-  {id:'nezvedan2',label:'Nezvedá 2 ☎️',poz:'otevreno',cls:'b-nz2',color:'#fb923c'},
-  {id:'nezvedan3',label:'Nezvedá 3 ☎️',poz:'otevreno',cls:'b-nz3',color:'#fbbf24'},
-  {id:'odeslat_email',label:'Odeslat email 📧',poz:'otevreno',cls:'b-em',color:'#a855f7'},
-  {id:'nerelevantni',label:'Nerelevantní ☹️',poz:'konec',cls:'b-nr',color:'#94a3b8'},
-  {id:'domluvena_schuzka',label:'Domluvena schuzka ✅',poz:'uzavreno',cls:'b-ds',color:'#22c55e'},
-  {id:'odeslana_faktura',label:'Odeslaná faktura 🧾',poz:'uzavreno',cls:'b-of',color:'#3b82f6'},
-  {id:'uzavreno',label:'Uzavřeno 💚',poz:'uzavreno',cls:'b-uz',color:'#16a34a'},
-];
-const FAZE_MAP={};FAZE.forEach(f=>FAZE_MAP[f.id]=f);
-const OLD_STAV={'novy':'','email_ready':'odeslat_email','kontaktovan':'odeslat_email','volat':'nezvedan1','uzavren':'domluvena_schuzka','konec':'nerelevantni'};
-function migrateStav(s){if(FAZE_MAP.hasOwnProperty(s))return s;return OLD_STAV[s]||'';}
-function getPoz(stav){return(FAZE_MAP[stav]||FAZE[0]).poz;}
-function getFazeInfo(stav){return FAZE_MAP[stav]||FAZE[0];}
-const POZ_LABEL={'otevreno':'🟡 otevřeno','uzavreno':'🟢 uzavřeno','konec':'🔴 konec','':''};
-const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
-const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'domluvena_schuzka','konec':'nerelevantni','':''};
-const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
-const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
-function isMobile(){return window.innerWidth<=640;}
-function formatDatum(d){if(!d)return'—';const m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return parseInt(m[3])+'.'+parseInt(m[2])+'.'+m[1];return d||'—';}
-function getMesicLabel(m){if(!m)return'';if(m>100){const yr=Math.floor(m/100),mo=m%100;return(MONTH_NAMES[mo]||'')+' '+yr;}return MONTH_NAMES[m]||'';}
-function getMesicYear(m){return m>100?Math.floor(m/100):null;}
-let leads=[],currentLead=null,currentTab='table';
-let sortCol='datum',sortDir=1;
-let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
-let statsMonth=null,impD=[];
-let selected=new Set();
-let fbSpend={};
-function toggleSel(email,checked){if(checked)selected.add(email);else selected.delete(email);updateSelBar();}
-function toggleSelAll(checked){const filtered=getFiltered();filtered.forEach(l=>{if(checked)selected.add(l.email);else selected.delete(l.email);});updateSelBar();renderTable();}
-function clearSel(){selected.clear();updateSelBar();renderTable();}
-function updateSelBar(){const n=selected.size;document.getElementById('selBar').classList.toggle('open',n>0);document.getElementById('selCount').textContent=n+' vybraných';const sa=document.getElementById('selAll');if(sa){const f=getFiltered();sa.checked=f.length>0&&f.every(l=>selected.has(l.email));sa.indeterminate=!sa.checked&&f.some(l=>selected.has(l.email));}}
-async function deleteSelected(){if(!selected.size)return;if(!confirm('Opravdu smazat '+selected.size+' leadů?'))return;showSync('🗑️ Mažu…','#dc2626');try{const emails=[...selected];for(let i=0;i<emails.length;i+=50){const batch=emails.slice(i,i+50);const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});}leads=leads.filter(l=>!selected.has(l.email));selected.clear();updateSelBar();showSync('✅ Smazáno','#16a34a');render();}catch(e){showSync('⚠️ '+e.message,'#dc2626');}}
-function fixPhone(s){s=String(s||'').trim();if(/^-?[\d.]+[eE][+\-]?\d+$/.test(s)){const n=parseFloat(s);if(!isNaN(n)&&n>0)s=Math.round(n).toString();}return s;}
-function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
-async function init(){
-  showLoading(true);showSync('⏳ Načítám…','#64748b');
-  try{
-    const[ls,cs,fs]=await Promise.all([
-      sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
-      sbGet('/rest/v1/crm_data?limit=5000'),
-      sbGet('/rest/v1/fb_spend?limit=1000')
-    ]);
-    const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
-    fbSpend={};(fs||[]).forEach(r=>{fbSpend[r.campaign_name]=r.spend;});
-    leads=(ls||[]).map(l=>{const c=cm[l.email]||{};return{...l,_id:l.id,stav:migrateStav(c.stav||l.stav||''),prodej_castka:c.prodej_castka||'',prodej_produkt:c.prodej_produkt||'',prodej_note:c.prodej_note||'',followup:c.followup||'',myNotes:c.my_notes||''};});
-    showSync('✅ '+leads.length+' · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
-    render();
-  }catch(e){showSync('❌ '+e.message,'#dc2626');}
-  showLoading(false);
-}
-async function saveToApi(lead){
-  showSync('💾','#d97706');
-  try{
-    const idx=leads.findIndex(l=>l.email===lead.email);if(idx>=0)leads[idx]={...leads[idx],...lead};
-    const data={stav:lead.stav,prodej_castka:lead.prodej_castka||null,prodej_produkt:lead.prodej_produkt||null,prodej_note:lead.prodej_note||null,followup:lead.followup||null,my_notes:lead.myNotes||null,updated_at:new Date().toISOString()};
-    const enc=encodeURIComponent(lead.email);
-    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(data)});
-    if(!pr.ok)throw new Error(await pr.text());
-    const updated=await pr.json();
-    if(!updated||!updated.length){const ir=await fetch(SB+'/rest/v1/crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({email:lead.email,...data})});if(!ir.ok)throw new Error(await ir.text());}
-    showSync('✅','#16a34a');
-  }catch(e){showSync('⚠️','#d97706');}
-}
-function showLoading(on){let el=document.getElementById('loadBar');if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';document.body.prepend(el);}el.style.display=on?'block':'none';}
-function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.style.display='';el.textContent=msg;el.style.color=color;}}
-function getFiltered(){return leads.filter(l=>{const poz=getPoz(l.stav);if(filterPoz&&poz!==filterPoz)return false;if(filterFaze&&l.stav!==filterFaze)return false;if(filterSluzba&&l.sluzba!==filterSluzba)return false;if(filterProdej==='yes'&&!l.prodej_castka)return false;if(filterProdej==='no'&&l.prodej_castka)return false;if(filterSearch){const q=filterSearch.toLowerCase();if(!((l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||fixPhone(l.telefon||'').includes(q)||(l.problem||'').toLowerCase().includes(q)))return false;}return true;});}
-function applyFilters(){filterSearch=document.getElementById('searchInput').value.trim();filterFaze=document.getElementById('fazeFilter').value||document.getElementById('fazeFilterM').value;filterSluzba=document.getElementById('sluzbaFilter').value;filterProdej=document.getElementById('prodejFilter').value||document.getElementById('prodejFilterM').value;render();}
-function syncFilters(){filterFaze=document.getElementById('fazeFilterM').value;filterProdej=document.getElementById('prodejFilterM').value;document.getElementById('fazeFilter').value=filterFaze;document.getElementById('prodejFilter').value=filterProdej;render();}
-function resetFilters(){filterFaze='';filterProdej='';filterSearch='';document.getElementById('fazeFilterM').value='';document.getElementById('prodejFilterM').value='';document.getElementById('fazeFilter').value='';document.getElementById('prodejFilter').value='';document.getElementById('searchInput').value='';syncFilters();}
-function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
-function setTab(t){
-  currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat','kampane'][i]===t));
-  ['table','stats','volat','kampane'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
-  const mob=isMobile();
-  document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
-  document.getElementById('view-cards').style.display=(t==='table'&&mob)?'block':'none';
-  document.getElementById('view-stats').style.display=t==='stats'?'block':'none';
-  document.getElementById('view-volat').style.display=t==='volat'?'block':'none';
-  document.getElementById('view-kampane').style.display=t==='kampane'?'block':'none';
-  render();
-}
-function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}document.querySelectorAll('th[data-col]').forEach(th=>{th.classList.toggle('sorted',th.dataset.col===col);const ico=th.querySelector('.si2');if(ico)ico.textContent=th.dataset.col===col?(sortDir===1?'▲':'▼'):'▲';});renderTable();}
-function render(){renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}else if(currentTab==='stats')renderStatsView();else if(currentTab==='kampane')renderKampane();else renderVolat();}
-function renderStatsBar(){const bar=document.getElementById('statsBar');const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length,uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length,ko=leads.filter(l=>getPoz(l.stav)==='konec').length,no=leads.filter(l=>!getPoz(l.stav)).length;const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;bar.innerHTML=`<div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>${mk('Otevřeno',ot,'otevreno','#eab308')}${mk('Uzavřeno',uz,'uzavreno','#22c55e')}${mk('Konec',ko,'konec','#ef4444')}${no>0?mk('Bez statusu',no,'NONE','#64748b'):''}`;
-}
-function renderTable(){
-  const filtered=getFiltered();
-  const sorted=[...filtered].sort((a,b)=>{let va=a[sortCol]||'',vb=b[sortCol]||'';if(sortCol==='prodej_castka'){va=parseFloat(va)||0;vb=parseFloat(vb)||0;return(va-vb)*sortDir;}return String(va).localeCompare(String(vb),'cs')*sortDir;});
-  const tb=document.getElementById('tableBody');
-  if(!sorted.length){tb.innerHTML=`<tr><td colspan="16" style="text-align:center;color:var(--text3);padding:36px">Žádné výsledky</td></tr>`;return;}
-  const today=new Date().toISOString().slice(0,10);
-  tb.innerHTML=sorted.map(l=>{
-    const finfo=getFazeInfo(l.stav),poz=getPoz(l.stav),tel=telNum(l.telefon);
-    const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
-    const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
-    const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
-    const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
-    const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
-    const phoneDisplay=fixPhone(l.telefon||'');
-    return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
-      <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
-      <td style="color:var(--text3);min-width:55px">${formatDatum(l.datum)}</td>
-      <td style="font-weight:600;max-width:130px">${esc(l.jmeno||'')}</td>
-      <td style="color:var(--text2);max-width:120px">${esc(l.firma||'')}</td>
-      <td style="min-width:110px">${tel?`<a class="link" href="tel:${tel}" onclick="event.stopPropagation()">${esc(phoneDisplay)}</a>`:esc(phoneDisplay)}</td>
-      <td style="max-width:150px"><a class="link" href="mailto:${esc(l.email||'')}" onclick="event.stopPropagation()">${esc(l.email||'')}</a></td>
-      <td style="color:var(--text2);max-width:160px">${esc(l.problem||'')}</td>
-      <td style="color:var(--text3)">${esc(l.lokace||'')}</td>
-      <td>${slzBadge}</td>
-      <td style="min-width:110px"><select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select></td>
-      <td style="min-width:160px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select></td>
-      <td>${castka}</td><td>${produkt}</td>
-      <td style="color:${l.followup&&l.followup<today?'var(--red)':'var(--text2)'}">${l.followup||'—'}</td>
-      <td style="color:var(--text2);max-width:220px;font-size:.72rem">${esc(l.myNotes||l.notes||'')}</td>
-      <td style="max-width:160px;white-space:nowrap">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span> `:''}${l.campaign_name?`<span class="camp-tag" title="${esc(l.campaign_name)}">${esc(l.campaign_name)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
-    </tr>`;
-  }).join('');
-}
-function renderCards(){
-  const filtered=getFiltered();
-  const sorted=[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs')*-1);
-  const cb=document.getElementById('cardsBody');
-  if(!sorted.length){cb.innerHTML=`<div style="text-align:center;color:var(--text3);padding:48px 20px;font-size:.88rem">Žádné výsledky</div>`;return;}
-  const today=new Date().toISOString().slice(0,10);
-  cb.innerHTML=sorted.map(l=>{
-    const finfo=getFazeInfo(l.stav),tel=telNum(l.telefon),note=l.myNotes||l.notes||'';
-    const castka=l.prodej_castka?`<span style="color:var(--green);font-weight:700;font-size:.8rem">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'';
-    const fu=l.followup?`<span style="font-size:.7rem;color:${l.followup<today?'var(--red)':'var(--text3)'}">📅 ${l.followup}</span>`:'';
-    return`<div class="lead-card" onclick="openLead(${l._id})">
-      <div class="lead-card-top">
-        <div><div class="lead-card-name">${esc(l.jmeno||'Neznámý')}</div>${l.firma?`<div class="lead-card-firma">${esc(l.firma)}</div>`:''}${l.campaign_name?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:''}<span class="camp-tag" title="${esc(l.campaign_name)}">${esc(l.campaign_name)}</span></div>`:''}</div>
-        <div class="lead-card-badges"><span class="badge ${finfo.cls}" style="color:${finfo.color}">${finfo.label}</span>${castka}</div>
-      </div>
-      ${l.problem||fu?`<div class="lead-card-mid">${l.problem?`<span style="font-size:.75rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.problem)}</span>`:''}${fu}</div>`:''}
-      <div class="lead-card-bottom"><div class="lead-card-note">${note?'📝 '+esc(note):''}</div><div class="lead-card-acts" onclick="event.stopPropagation()">${tel?`<a class="card-act" href="tel:${tel}">📞</a>`:''}${l.email?`<a class="card-act" href="mailto:${esc(l.email)}">✉️</a>`:''}</div></div>
-    </div>`;
-  }).join('');
-}
-async function changeFaze(email,newStav){const lead=leads.find(l=>l.email===email);if(!lead)return;lead.stav=newStav;await saveToApi(lead);renderStatsBar();renderTable();}
-async function changePoz(email,newPoz){const lead=leads.find(l=>l.email===email);if(!lead)return;const curPoz=getPoz(lead.stav);if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}await saveToApi(lead);renderStatsBar();renderTable();}
-function getLeadMonth(l){return l.mesic||null;}
-function getMonths(){const m=new Set();leads.forEach(l=>{const x=getLeadMonth(l);if(x)m.add(x);});return[...m].sort((a,b)=>a-b);}
-function renderStatsView(){
-  const sv=document.getElementById('view-stats');
-  const months=getMonths(),curYear=new Date().getFullYear();
-  const allProd=leads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
-  const prodCurYear=allProd.filter(l=>l.mesic&&getMesicYear(l.mesic)===curYear);
-  const totalYear=prodCurYear.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
-  const monthData=months.map(m=>{const ml=leads.filter(l=>getLeadMonth(l)===m),mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);return{month:m,name:getMesicLabel(m),leads:ml.length,prodano:mp.length,obrat:mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0),konec:ml.filter(l=>getPoz(l.stav)==='konec').length};});
-  let h=`<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px 0;position:sticky;top:0;z-index:5">`;
-  h+=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">${curYear} celkem</div><span style="font-size:1.2rem;font-weight:700;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</span><span style="color:var(--text2);font-size:.78rem">${allProd.length} prodejů z ${leads.length}</span></div>`;
-  h+=`<div style="display:flex;gap:3px;overflow-x:auto;padding-bottom:1px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><button onclick="statsMonth=null;renderStatsView()" style="background:${!statsMonth?'var(--accent)':'var(--bg3)'};border:1px solid ${!statsMonth?'var(--accent)':'var(--border)'};color:${!statsMonth?'#fff':'var(--text2)'};border-radius:6px 6px 0 0;padding:5px 10px;cursor:pointer;font-size:.75rem;font-weight:500;white-space:nowrap;border-bottom:none;flex-shrink:0">📊 Přehled</button>`;
-  monthData.forEach(md=>{const active=statsMonth===md.month;h+=`<button onclick="statsMonth=${md.month};renderStatsView()" style="background:${active?'var(--accent)':'var(--bg3)'};border:1px solid ${active?'var(--accent)':'var(--border)'};color:${active?'#fff':'var(--text2)'};border-radius:6px 6px 0 0;padding:5px 10px;cursor:pointer;font-size:.75rem;white-space:nowrap;border-bottom:none;position:relative;flex-shrink:0">${md.name}${md.obrat>0?`<span style="position:absolute;top:-5px;right:-3px;background:var(--green);color:#fff;border-radius:7px;padding:0 4px;font-size:.55rem;font-weight:700">${Number(md.obrat).toLocaleString('cs')}€</span>`:''}</button>`;});
-  h+=`</div></div><div style="padding:14px">`;
-  if(!statsMonth){
-    const maxO=Math.max(...monthData.map(m=>m.obrat),1);
-    h+=`<div class="chart-box"><h3>💰 Obrat po měsících</h3><div style="display:flex;align-items:flex-end;gap:5px;height:120px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;overflow-x:auto">`;
-    monthData.forEach(md=>{const barH=Math.max(Math.round(md.obrat/maxO*100),md.obrat>0?6:2);h+=`<div style="flex:1;min-width:32px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()"><div style="font-size:.6rem;color:var(--green);font-weight:600;text-align:center">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+'€':''}</div><div style="width:100%;background:${md.obrat>0?'var(--green)':'var(--border)'};border-radius:3px 3px 0 0;height:${barH}px;opacity:${md.obrat>0?1:.35}"></div><div style="font-size:.58rem;color:var(--text2);text-align:center">${md.name.slice(0,3)}</div></div>`;});
-    h+=`</div></div><div class="chart-box"><h3>📋 Přehled</h3><table class="pt"><thead><tr><th>Měsíc</th><th style="text-align:right">Leady</th><th style="text-align:right">Prodáno</th><th style="text-align:right">Obrat</th></tr></thead><tbody>`;
-    monthData.forEach(md=>{h+=`<tr style="cursor:pointer" onclick="statsMonth=${md.month};renderStatsView()"><td style="font-weight:600">${md.name}</td><td style="text-align:right">${md.leads}</td><td style="text-align:right;color:var(--accent2)">${md.prodano}</td><td style="text-align:right;color:var(--green);font-weight:600">${md.obrat>0?Number(md.obrat).toLocaleString('cs')+' €':'—'}</td></tr>`;});
-    const totKonv=leads.length?Math.round(allProd.length/leads.length*100):0;
-    h+=`<tr style="border-top:2px solid var(--border);font-weight:700"><td>CELKEM</td><td style="text-align:right">${leads.length}</td><td style="text-align:right;color:var(--accent2)">${allProd.length} (${totKonv}%)</td><td style="text-align:right;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</td></tr></tbody></table></div>`;
-  }else{
-    const ml=leads.filter(l=>getLeadMonth(l)===statsMonth),mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
-    const mTotal=mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
-    const mths=getMonths(),idx=mths.indexOf(statsMonth),prev=idx>0?mths[idx-1]:null,nxt=idx<mths.length-1?mths[idx+1]:null;
-    h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">${prev?`<button onclick="statsMonth=${prev};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.78rem">←</button>`:'<div style="width:40px"></div>'}<h2 style="flex:1;text-align:center;font-size:.95rem">${getMesicLabel(statsMonth)}</h2>${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.78rem">→</button>`:'<div style="width:40px"></div>'}</div>`;
-    const ot=ml.filter(l=>getPoz(l.stav)==='otevreno').length,uz=ml.filter(l=>getPoz(l.stav)==='uzavreno').length,ko=ml.filter(l=>getPoz(l.stav)==='konec').length;
-    h+=`<div class="stats-grid"><div class="kpi"><div class="kpi-val" style="color:var(--green)">${Number(mTotal).toLocaleString('cs')} €</div><div class="kpi-label">Obrat</div></div><div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${mp.length}</div><div class="kpi-label">Prodáno</div><div class="kpi-sub">z ${ml.length} leadů</div></div><div class="kpi"><div class="kpi-val" style="color:#eab308">${ot}</div><div class="kpi-label">Otevřeno</div></div><div class="kpi"><div class="kpi-val" style="color:#22c55e">${uz}</div><div class="kpi-label">Uzavřeno</div></div><div class="kpi"><div class="kpi-val" style="color:#ef4444">${ko}</div><div class="kpi-label">Konec</div></div></div>`;
-    const fazeCounts={};ml.forEach(l=>{fazeCounts[l.stav]=(fazeCounts[l.stav]||0)+1;});
-    const maxF=Math.max(...FAZE.slice(1).map(f=>fazeCounts[f.id]||0),1);
-    h+=`<div class="chart-box"><h3>Leady podle fáze</h3>`;
-    FAZE.slice(1).forEach(f=>{const cnt=fazeCounts[f.id]||0,pct=Math.round(cnt/maxF*100);h+=`<div class="bar-row"><div class="bar-label">${f.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${f.color}">${cnt>0?cnt:''}</div></div><div class="bar-count">${cnt}</div></div>`;});
-    h+=`</div>`;
-    if(mp.length>0){
-      const sorted=[...mp].sort((a,b)=>(parseFloat(b.prodej_castka)||0)-(parseFloat(a.prodej_castka)||0));
-      h+=`<div class="chart-box"><h3>💰 Prodeje</h3><table class="pt"><thead><tr><th>Jméno</th><th>Produkt</th><th style="text-align:right">€</th></tr></thead><tbody>`;
-      sorted.forEach(l=>{h+=`<tr style="cursor:pointer" onclick="openLead(${l._id})"><td style="font-weight:600">${esc(l.jmeno||'')}</td><td>${SLUZBA[l.prodej_produkt]||'—'}</td><td style="text-align:right;color:var(--green);font-weight:600">${Number(l.prodej_castka).toLocaleString('cs')}</td></tr>`;});
-      h+=`<tr style="border-top:2px solid var(--border)"><td colspan="2" style="font-weight:600">CELKEM</td><td style="text-align:right;color:var(--green);font-weight:700">${Number(mTotal).toLocaleString('cs')} €</td></tr></tbody></table></div>`;
-    }
-  }
-  h+=`</div>`;sv.innerHTML=h;
-}
-function renderVolat(){
-  const vv=document.getElementById('view-volat'),today=new Date().toISOString().slice(0,10);
-  const emailLeads=leads.filter(l=>l.stav==='odeslat_email'),nezvedaLeads=leads.filter(l=>['nezvedan1','nezvedan2','nezvedan3'].includes(l.stav));
-  const fuAll=leads.filter(l=>l.followup).sort((a,b)=>a.followup.localeCompare(b.followup));
-  const fuOv=fuAll.filter(l=>l.followup<today),fuTd=fuAll.filter(l=>l.followup===today),fuUp=fuAll.filter(l=>l.followup>today);
-  let h='';
-  const sec=(title,arr,color)=>{if(!arr.length)return'';let s=`<div class="vl-section"><h3 style="color:${color}">${title} (${arr.length})</h3>`;arr.forEach(l=>{const tel=telNum(l.telefon);s+=`<div class="vl-card" onclick="openLead(${l._id})"><div class="vl-date" style="color:${color}">${formatDatum(l.datum)}</div><div class="vl-info"><div class="vl-name">${esc(l.jmeno||'')}${l.firma?` · <span style="color:var(--text2);font-weight:400">${esc(l.firma)}</span>`:''}</div><div class="vl-sub">${esc(l.myNotes||l.problem||'')}${l.lokace?` · 📍${esc(l.lokace)}`:''}</div></div><div class="vl-acts">${tel?`<a class="btn-ic" href="tel:${tel}" onclick="event.stopPropagation()">📞</a>`:''}${l.email?`<a class="btn-ic" href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">✉️</a>`:''}</div></div>`;});return s+'</div>';};
-  h+=sec('📧 Odeslat email',emailLeads,'#a855f7');h+=sec('☎️ Nezvedá',nezvedaLeads,'#f97316');h+=sec('⚠️ Prošlé follow-upy',fuOv,'#ef4444');h+=sec('✅ Dnes',fuTd,'#22c55e');h+=sec('📅 Nadcházející',fuUp,'#3b82f6');
-  if(!h)h='<div style="color:var(--text3);text-align:center;padding:48px;font-size:.88rem">Žádné naplánované aktivity 🎉</div>';
-  vv.innerHTML=h;
-}
-function openLead(id){
-  const l=leads.find(x=>x._id===id);if(!l)return;
-  currentLead=l;
-  document.getElementById('pName').textContent=l.jmeno||'Neznámý';
-  document.getElementById('pFirma').textContent=l.firma||(l.datum?'Datum: '+formatDatum(l.datum):'');
-  document.getElementById('pStage').value=l.stav||'';
-  document.getElementById('pPoz').value=getPoz(l.stav);
-  document.getElementById('pFollowup').value=l.followup||'';
-  document.getElementById('pCastka').value=l.prodej_castka||'';
-  document.getElementById('pProdukt').value=l.prodej_produkt||'';
-  document.getElementById('pProdejNote').value=l.prodej_note||'';
-  const importedNote=l.notes||l.poznamka||'';
-  const inWrap=document.getElementById('pImportedNotesWrap'),inBox=document.getElementById('pImportedNotes');
-  if(importedNote){inBox.textContent=importedNote;inWrap.style.display='';}else{inWrap.style.display='none';}
-  document.getElementById('pNotes').value=l.myNotes||'';
-  const tel=telNum(l.telefon||''),phoneDisplay=fixPhone(l.telefon||'');
-  document.getElementById('pEmail').innerHTML=l.email?`<a class="link" href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—';
-  document.getElementById('pTel').innerHTML=tel?`<a class="link" href="tel:${tel}">${esc(phoneDisplay)}</a>`:(phoneDisplay||'—');
-  document.getElementById('pProblem').textContent=l.problem||'—';
-  document.getElementById('pLokace').textContent=l.lokace||'—';
-  document.getElementById('pDatum').textContent=formatDatum(l.datum);
-  const campWrap=document.getElementById('pCampaignWrap');
-  if(l.campaign_name||l.platform||l.website){
-    document.getElementById('pCampaignName').textContent=l.campaign_name||'—';
-    const platEl=document.getElementById('pPlatform');
-    platEl.innerHTML=l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:'—';
-    document.getElementById('pAdsetName').textContent=l.adset_name||'—';
-    const webEl=document.getElementById('pWebsite');
-    if(l.website){const url=l.website.startsWith('http')?l.website:'https://'+l.website;webEl.innerHTML=`<a class="link" href="${esc(url)}" target="_blank">${esc(l.website)}</a>`;}else{webEl.textContent='—';}
-    campWrap.style.display='';
-  }else{campWrap.style.display='none';}
-  let acts='';if(tel)acts+=`<a class="btn" href="tel:${tel}">📞 Volat</a>`;if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
-  document.getElementById('pActions').innerHTML=acts;
-  document.getElementById('overlay').classList.add('open');document.getElementById('panel').classList.add('open');
-  document.body.style.overflow='hidden';
-}
-function savePanel(){if(!currentLead)return;currentLead.stav=document.getElementById('pStage').value;currentLead.followup=document.getElementById('pFollowup').value;currentLead.myNotes=document.getElementById('pNotes').value;currentLead.prodej_castka=document.getElementById('pCastka').value;currentLead.prodej_produkt=document.getElementById('pProdukt').value;currentLead.prodej_note=document.getElementById('pProdejNote').value;document.getElementById('pPoz').value=getPoz(currentLead.stav);saveToApi(currentLead);renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}}
-function savePozFromPanel(){if(!currentLead)return;const newPoz=document.getElementById('pPoz').value,curPoz=getPoz(currentLead.stav);if(curPoz!==newPoz){currentLead.stav=POZ_DEFAULT[newPoz]||'';document.getElementById('pStage').value=currentLead.stav;}savePanel();}
-function closePanel(){if(currentLead){currentLead.stav=document.getElementById('pStage').value;currentLead.followup=document.getElementById('pFollowup').value;currentLead.myNotes=document.getElementById('pNotes').value;currentLead.prodej_castka=document.getElementById('pCastka').value;currentLead.prodej_produkt=document.getElementById('pProdukt').value;currentLead.prodej_note=document.getElementById('pProdejNote').value;saveToApi(currentLead);renderStatsBar();if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}}document.getElementById('overlay').classList.remove('open');document.getElementById('panel').classList.remove('open');document.body.style.overflow='';currentLead=null;}
-function openFltSheet(){document.getElementById('fltSheet').classList.add('open');document.getElementById('fltOverlay').classList.add('open');}
-function closeFltSheet(){document.getElementById('fltSheet').classList.remove('open');document.getElementById('fltOverlay').classList.remove('open');applyFilters();}
-function openImport(){document.getElementById('impOv').classList.add('open');}
-function closeImport(){document.getElementById('impOv').classList.remove('open');document.getElementById('impPrev').style.display='none';document.getElementById('impBtn').style.display='none';impD=[];document.getElementById('progF').style.width='0%';}
-function doDrop(ev){ev.preventDefault();document.getElementById('dropZ').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)doFile(f);}
-function doFile(file){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=function(ev){
-    try{
-      const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
-      if(!rows.length)return alert('Soubor je prázdný');
-      const hdr=rows[0].map(h=>String(h).toLowerCase().trim());
-      const fi=terms=>{for(const t of terms){const i=hdr.findIndex(h=>h.includes(t));if(i>=0)return i;}return-1;};
-      const isFB=hdr.some(h=>h==='campaign_name'||h==='campaign_id'||h==='ad_id');
-      if(isFB){
-        const cm={fb_lead_id:fi(['id']),jmeno:fi(['full_name','full name']),email:fi(['email']),telefon:fi(['phone_number','phone']),datum:fi(['created_time']),sluzba:fi(['zájem','zajim','mám_zájem','interested','service']),lokace:fi(['lokalit','sídlit','lokac','location']),problem:fi(['prekážka','prekazka','překážka','obstacle','challenge','problem','rast','growth']),website:fi(['webov','uveďte','uveste','website','web stránk','web_stránk']),campaign_name:fi(['campaign_name']),adset_name:fi(['adset_name']),ad_name:fi(['ad_name']),platform:fi(['platform'])};
-        function mapSluzbaFB(s){const v=(s||'').toLowerCase().trim();if(v.includes('ai_vid')||v.includes('ai vid')||v.includes('tvorba_ai')||v.includes('tvorba ai'))return'tvorba_ai_videi';if(v.includes('reklam')||v.includes('marketing'))return'reklama_marketing';if(v.includes('video'))return'video_produkce';if(v&&v!=='0')return'jine';return'';}
-        impD=rows.slice(1).filter(row=>row.some(c=>c!==''&&c!==null&&c!==undefined)).map(row=>{
-          let datum='',mesic=null;const dRaw=cm.datum>=0?String(row[cm.datum]||''):'';const dm=dRaw.match(/^(\d{4})-(\d{2})-(\d{2})/);if(dm){datum=dm[1]+'-'+dm[2]+'-'+dm[3];mesic=parseInt(dm[1])*100+parseInt(dm[2]);}
-          let telefon=cm.telefon>=0?String(row[cm.telefon]||'').trim():'';telefon=fixPhone(telefon);
-          const platform=cm.platform>=0?String(row[cm.platform]||'').trim().toLowerCase():'';
-          return{fb_lead_id:cm.fb_lead_id>=0?String(row[cm.fb_lead_id]||'').trim():'',jmeno:cm.jmeno>=0?String(row[cm.jmeno]||'').trim():'',firma:'',telefon,email:cm.email>=0?String(row[cm.email]||'').trim().toLowerCase():'',problem:cm.problem>=0?String(row[cm.problem]||'').trim():'',lokace:cm.lokace>=0?String(row[cm.lokace]||'').trim():'',website:cm.website>=0?String(row[cm.website]||'').trim():'',datum,mesic,sluzba:mapSluzbaFB(cm.sluzba>=0?String(row[cm.sluzba]||''):''),platform,campaign_name:cm.campaign_name>=0?String(row[cm.campaign_name]||'').trim():'',adset_name:cm.adset_name>=0?String(row[cm.adset_name]||'').trim():'',ad_name:cm.ad_name>=0?String(row[cm.ad_name]||'').trim():'',stav:'',notes:'',poznamka:'',ai_info:''};
-        }).filter(row=>row.jmeno||row.email);
-      }else{
-        const cm={jmeno:fi(['jmén','jmeno','name'])>=0?fi(['jmén','jmeno','name']):0,firma:fi(['web','firma','company'])>=0?fi(['web','firma','company']):1,telefon:fi(['tel','phone','číslo'])>=0?fi(['tel','phone','číslo']):2,problem:fi(['problém','problem'])>=0?fi(['problém','problem']):3,email:fi(['email','mail'])>=0?fi(['email','mail']):4,datum:fi(['datum','date'])>=0?fi(['datum','date']):5,poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):6,lokace:fi(['lok','schůzky'])>=0?fi(['lok','schůzky']):7,sluzba:fi(['služba','sluzba','schuzka'])>=0?fi(['služba','sluzba','schuzka']):8,ai_info:fi(['ai info','ai_info'])>=0?fi(['ai info','ai_info']):9,stav:fi(['stav','status','fáze','faze'])>=0?fi(['stav','status','fáze','faze']):10,notes:fi(['notes'])>=0?fi(['notes']):11};
-        impD=rows.slice(1).filter(row=>row.some(c=>c!=''&&c!==null&&c!==undefined)).map(row=>{
-          const datumRaw=row[cm.datum];let datum='',mesic=null;
-          if(datumRaw instanceof Date){const dd=datumRaw.getDate(),mo=datumRaw.getMonth()+1,y=datumRaw.getFullYear();datum=y+'-'+String(mo).padStart(2,'0')+'-'+String(dd).padStart(2,'0');mesic=y*100+mo;}
-          else if(datumRaw){datum=String(datumRaw).trim();const dc=datum.replace(/\s+/g,'');const dMatch=dc.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);if(dMatch){mesic=parseInt(dMatch[3])*100+parseInt(dMatch[2]);}else{const dm2=dc.match(/^(\d{1,2})\.(\d{1,2})/);if(dm2)mesic=parseInt(dm2[2]);}}
-          const poz=String(row[cm.poznamka]||'').trim(),ai=String(row[cm.ai_info]||'').trim();
-          const gv=poz.toLowerCase(),sv=String(row[cm.stav]||'').trim().toLowerCase(),al=ai.toLowerCase();
-          function mapStavStr(s){if(!s)return null;if(s.includes('nezved')){if(s.includes('3'))return'nezvedan3';if(s.includes('2'))return'nezvedan2';return'nezvedan1';}if(s.includes('nerelevant'))return'nerelevantni';if(s.includes('domluvena')||s.includes('schuzk')||s.includes('schůzk'))return'domluvena_schuzka';if(s.includes('uzavř')||s.includes('uzavr'))return'domluvena_schuzka';if(s.includes('odeslat email')||s.includes('odesláno')||s.includes('odeslano'))return'odeslat_email';if(s.includes('volat'))return'nezvedan1';return null;}
-          const stav=mapStavStr(gv)||mapStavStr(sv)||mapStavStr(al)||'';
-          const rawSlz=String(row[cm.sluzba]||'').trim().toLowerCase();let sluzba='';
-          if(rawSlz.includes('reklam')||rawSlz.includes('marketing'))sluzba='reklama_marketing';else if(rawSlz.includes('ai vid'))sluzba='tvorba_ai_videi';else if(rawSlz.includes('video'))sluzba='video_produkce';else if(rawSlz&&rawSlz!=='0')sluzba='jine';
-          let telefon=String(row[cm.telefon]||'').replace(/^p:/i,'').trim();telefon=fixPhone(telefon);
-          return{jmeno:String(row[cm.jmeno]||'').trim(),firma:String(row[cm.firma]||'').trim(),telefon,problem:String(row[cm.problem]||'').trim(),email:String(row[cm.email]||'').trim().toLowerCase(),datum,mesic,poznamka:poz,lokace:String(row[cm.lokace]||'').trim(),sluzba,ai_info:ai,stav,notes:String(row[cm.notes]||'').trim()};
-        }).filter(row=>row.jmeno||row.email);
-      }
-      document.getElementById('impPrev').style.display='';
-      document.getElementById('impInfo').innerHTML=`<b style="color:var(--green)">✅ Nalezeno ${impD.length} řádků</b> v "${esc(file.name)}"${isFB?` <span style="background:rgba(59,130,246,.15);color:#60a5fa;padding:1px 7px;border-radius:3px;font-size:.72rem">📣 FB Lead Ads</span>`:''}`;
-      document.getElementById('impBtn').style.display='';
-    }catch(err){alert('Chyba při čtení souboru: '+err.message);}
-  };
-  r.readAsArrayBuffer(file);
-}
-async function doImport(){
-  if(!impD.length)return;
-  const btn=document.getElementById('impBtn');btn.disabled=true;btn.textContent='⏳ Importuji…';
-  const prog=document.getElementById('progF'),st=document.getElementById('impSt');let done=0;
-  for(let i=0;i<impD.length;i+=100){
-    try{
-      const batch=impD.slice(i,i+100),emails=batch.map(r=>r.email).filter(Boolean);
-      if(emails.length){const filter=emails.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});}
-      await sbPost('/rest/v1/leads',batch);done+=Math.min(100,impD.length-i);prog.style.width=Math.round(done/impD.length*100)+'%';st.textContent='Importováno '+done+' / '+impD.length;
-    }catch(err){st.textContent='❌ '+err.message;btn.disabled=false;btn.textContent='✅ Importovat';return;}
-  }
-  st.textContent='✅ Hotovo!';setTimeout(()=>{closeImport();init();},1000);
-}
-async function saveFbSpend(campName,spend){
-  showSync('💾','#d97706');
-  try{
-    spend=parseFloat(spend)||0;fbSpend[campName]=spend;
-    const enc=encodeURIComponent(campName);
-    const pr=await fetch(SB+'/rest/v1/fb_spend?campaign_name=eq.'+enc+'&month=eq.0',{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({spend,updated_at:new Date().toISOString()})});
-    if(!pr.ok)throw new Error(await pr.text());
-    const upd=await pr.json();
-    if(!upd||!upd.length){const ir=await fetch(SB+'/rest/v1/fb_spend',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({campaign_name:campName,month:0,spend,updated_at:new Date().toISOString()})});if(!ir.ok)throw new Error(await ir.text());}
-    showSync('✅','#16a34a');renderKampane();
-  }catch(e){showSync('⚠️ '+e.message,'#d97706');}
-}
-function renderKampane(){
-  const kv=document.getElementById('view-kampane');
-  const campMap={};
-  leads.forEach(l=>{const key=l.campaign_name||'';if(!campMap[key])campMap[key]={name:key,platform:l.platform||'',leads:[],closed:0,obrat:0};campMap[key].leads.push(l);if(getPoz(l.stav)==='uzavreno'){campMap[key].closed++;campMap[key].obrat+=parseFloat(l.prodej_castka)||0;}});
-  const camps=Object.values(campMap).filter(c=>c.name).sort((a,b)=>b.leads.length-a.leads.length);
-  const noCamp=campMap[''];
-  const fbLeads=leads.filter(l=>l.campaign_name).length;
-  const totalSpend=Object.values(fbSpend).reduce((s,v)=>s+(parseFloat(v)||0),0);
-  const totalObrat=camps.reduce((s,c)=>s+c.obrat,0);
-  const totalClosed=camps.reduce((s,c)=>s+c.closed,0);
-  let h=`<div style="padding:14px">`;
-  h+=`<div class="stats-grid" style="margin-bottom:14px">
-    <div class="kpi"><div class="kpi-val">${camps.length}</div><div class="kpi-label">Kampaně</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--blue)">${fbLeads}</div><div class="kpi-label">FB/IG leady</div><div class="kpi-sub">z ${leads.length} celkem</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--red)">${totalSpend?Number(totalSpend).toLocaleString('cs')+' €':'—'}</div><div class="kpi-label">Investice celkem</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--green)">${totalObrat?Number(totalObrat).toLocaleString('cs')+' €':'—'}</div><div class="kpi-label">Obrat z kampaní</div></div>
-    ${totalSpend&&totalObrat?`<div class="kpi"><div class="kpi-val" style="color:${totalObrat>=totalSpend?'var(--green)':'var(--red)'}">${Math.round((totalObrat-totalSpend)/totalSpend*100)}%</div><div class="kpi-label">ROI celkem</div></div>`:''}
-  </div>`;
-  h+=`<div class="chart-box"><h3>📣 Výsledky kampaní</h3><p style="font-size:.7rem;color:var(--text3);margin-bottom:10px">Investici zadej ručně — uloží se automaticky při odchodu z pole.</p><div style="overflow-x:auto"><table class="pt"><thead><tr><th>Kampaň</th><th style="text-align:center">Platf.</th><th style="text-align:right">Leady</th><th style="text-align:right">Investice (€)</th><th style="text-align:right">Cena/lead</th><th style="text-align:right">Uzavřeno</th><th style="text-align:right">Obrat (€)</th><th style="text-align:right">ROI</th></tr></thead><tbody>`;
-  camps.forEach(c=>{
-    const spend=parseFloat(fbSpend[c.name])||0,cpl=spend&&c.leads.length?spend/c.leads.length:0;
-    const roi=spend?((c.obrat-spend)/spend*100):null,roiColor=roi===null?'var(--text3)':roi>=0?'var(--green)':'var(--red)';
-    const platBadge=c.platform?`<span class="plat-tag plat-${c.platform}">${c.platform.toUpperCase()}</span>`:'<span style="color:var(--text3);font-size:.7rem">—</span>';
-    const convRate=c.leads.length?Math.round(c.closed/c.leads.length*100):0;
-    h+=`<tr><td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.name)}">${esc(c.name)}</td><td style="text-align:center">${platBadge}</td><td style="text-align:right">${c.leads.length}</td><td style="text-align:right;padding:4px 9px"><input type="number" value="${spend||''}" placeholder="0" style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--text);font-size:.78rem;width:82px;text-align:right;outline:none;font-family:inherit" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)';saveFbSpend('${esc(c.name)}',this.value)"></td><td style="text-align:right;color:${cpl?'var(--text)':'var(--text3)'}">${cpl?Number(cpl.toFixed(2)).toLocaleString('cs')+' €':'—'}</td><td style="text-align:right"><span style="color:var(--accent2);font-weight:600">${c.closed}</span><span style="color:var(--text3);font-size:.68rem"> (${convRate}%)</span></td><td style="text-align:right;color:var(--green);font-weight:600">${c.obrat?Number(c.obrat).toLocaleString('cs')+' €':'—'}</td><td style="text-align:right;font-weight:700;color:${roiColor}">${roi!==null?Math.round(roi)+'%':'—'}</td></tr>`;
+const STORED_KEY = 'vrads_crm_v4';
+const SLIM_KEY   = 'vrads_sync_v1';
+const LEADS_DATA = [{"_id": 570, "jmeno": "Jakub Štědronský", "firma": "www.timberpack.cz", "email": "jakub.stedronsky@timberpack.cz", "telefon": "420725430760", "stav": "uzavren", "volat_date": "9.7.", "poznamka": "Volat: 9.7.🗓️", "lokace": "Česko", "sluzba": "reklama/marketing", "datum": "3. 5.", "problem": "podvědomí klientů"}, {"_id": 571, "jmeno": "Jakub Klabal", "firma": "Pls", "email": "jakub.klabal@seznam.cz", "telefon": "420736400713", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Mega dobree", "sluzba": "tvorba_ai_videí", "datum": "3. 5.", "problem": "Chci taky"}, {"_id": 572, "jmeno": "olik_JR", "firma": "Nemám", "email": "oliverfinka214@gmail.com", "telefon": "421949790225", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "V žiadnej", "sluzba": "tvorba_ai_videí", "datum": "3. 5.", "problem": "Nevim ako mám začať a čo robiť"}, {"_id": 573, "jmeno": "Voidwear", "firma": "Ne", "email": "krystofbauer2014@gmail.com", "telefon": "420797996724", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Teplice", "sluzba": "reklama/marketing", "datum": "3. 5.", "problem": "Nemam zákazníky"}, {"_id": 574, "jmeno": "Malé_hospodárstvo", "firma": "Nemám ešte", "email": "alexfarsky674@gmail.com", "telefon": "421949146469", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Slovensko", "sluzba": "tvorba_ai_videí", "datum": "3. 5.", "problem": "Dostatok financií na nákup techniky pre poľnohospodárstvo"}, {"_id": 575, "jmeno": "Filip Ježek", "firma": "Nemáme", "email": "fifojdfacebook@gmail.com", "telefon": "420731495556", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Blansko", "sluzba": "reklama/marketing", "datum": "3. 5.", "problem": "Reklamy a cílení"}, {"_id": 576, "jmeno": "Jaroslav Trubačík", "firma": "web", "email": "trubacik.jaroslav@gmail.com", "telefon": "420777242985", "stav": "volat", "volat_date": "1.7.", "poznamka": "Volat: 1.7.🗓️", "lokace": "Zlínský kraj", "sluzba": "tvorba_ai_videí", "datum": "3. 5.", "problem": "růst"}, {"_id": 577, "jmeno": "Stan Real Estate Partner", "firma": "V štádiu výstavby www.realitystan.sk", "email": "hambors@yahoo.com", "telefon": "353866650678", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Real Estate", "sluzba": "reklama/marketing", "datum": "3. 5.", "problem": "Začiatok"}, {"_id": 578, "jmeno": "Anastasiia (radsi napiste na WhatsApp)", "firma": "Inst: dr.anastasiia_bragina  zatím nemám spuštěné webovky, děkuji za pochopení 🫶🏻", "email": "staskens.cooperation@gmail.com", "telefon": "420774322848", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "reklama/marketing", "datum": "3. 5.", "problem": "Nedostatek klientů"}, {"_id": 579, "jmeno": "Roman Kováč", "firma": "Nemám", "email": "kovac.rr@seznam.cz", "telefon": "420732997459", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Praha-Karlovy Vary", "sluzba": "tvorba_ai_videí", "datum": "3. 5.", "problem": "Noví klienti"}, {"_id": 580, "jmeno": "Milan Riecan", "firma": "pohon-brany.sk", "email": "mesnerbb@gmail.com", "telefon": "421940905494", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Banská bystrica", "sluzba": "reklama/marketing", "datum": "3. 5.", "problem": "malo montaxi"}, {"_id": 581, "jmeno": "matthew.lens", "firma": "https://matthewlens.mypixieset.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAb21jcARkS8BleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAaeObaIX4qWvgZLAfsQK1Jwyau9yMgUXhmFU6pNSozqhmIN-MQcL0Jiu6WDB-w_aem_SQhvliJAWUVWoxj3D72AmA", "email": "matthew.lens01@gmail.com", "telefon": "421944023269", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "bratislava", "sluzba": "reklama/marketing", "datum": "5. 5.", "problem": "klienti"}, {"_id": 582, "jmeno": "Petra Bauerová", "firma": "Nemám web, pouze IG účet", "email": "satir.art.design@gmail.com", "telefon": "420608010762", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Ústí nad Labem", "sluzba": "reklama/marketing", "datum": "5. 5.", "problem": "Nedostatek klientů"}, {"_id": 583, "jmeno": "David Michalik", "firma": "Zenlux.sk", "email": "info@seoeffect.sk", "telefon": "421902378550", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Nitra", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "Potrebujem spracovať videá"}, {"_id": 584, "jmeno": "Dříňa", "firma": "Zatím není", "email": "stepan.drina@gmail.com", "telefon": "420734230640", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Brno", "sluzba": "reklama/marketing", "datum": "5. 5.", "problem": "Tvorba videí a sledovanost,  Nová věc"}, {"_id": 585, "jmeno": "delfix310", "firma": "Nemam", "email": "delfix310@gmail.com", "telefon": "420607652122", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Česká republika", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "Strach a trapnost"}, {"_id": 586, "jmeno": "Jan Adam", "firma": "nemáme web", "email": "ajoffice@seznam.cz", "telefon": "420702145670", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Plzeňsko", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "netusim"}, {"_id": 587, "jmeno": "Zdenka Poklembova", "firma": "www.szusodorin.sk", "email": "zdenka.babik@gmail.com", "telefon": "421918078910", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "zdenka.babik@gmail.com", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "neznalosť tvorby videí"}, {"_id": 588, "jmeno": "Katerina Stepanova", "firma": "Zatím nemám, hledám vhodný prostor", "email": "stepanovakatka@gmail.com", "telefon": "420739488088", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Chci v brzké době rozjet podnikání- služba zákazníkům a nechci nikde ukazovat obličej", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "Neumím to se sociálními sítěmi a neumím natáčet videa"}, {"_id": 589, "jmeno": "Patrik", "firma": "Motionspace.sk", "email": "driecny.p@gmail.com", "telefon": "421944068530", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Poprad - Slovensko", "sluzba": "reklama/marketing", "datum": "5. 5.", "problem": "marketing na sociálnych sieťach"}, {"_id": 590, "jmeno": "olik_JR", "firma": "Nemám", "email": "oliverfinka214@gmail.com", "telefon": "421949790225", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "V žiadnej", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "Nevim ako mám začať a čo robiť"}, {"_id": 591, "jmeno": "www.vykupenie.sk", "firma": "www.vykupenie.sk", "email": "vladimir.piacek@vykupenie.sk", "telefon": "421948811118", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Bratislava slovensko", "sluzba": "video_produkce", "datum": "5. 5.", "problem": "Velka konkurencia"}, {"_id": 592, "jmeno": "Katarína", "firma": "www.metabolic-balance.cz", "email": "iinfo@katarinagrich.sk", "telefon": "421902445229", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "video_produkce", "datum": "5. 5.", "problem": "neviem vyhodnotit"}, {"_id": 593, "jmeno": "Jozef Mojžiš", "firma": "Fundorian.com", "email": "info@fundorian.com", "telefon": "421940930120", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Slovensko aj Čechy", "sluzba": "reklama/marketing", "datum": "5. 5.", "problem": "Žiadna chceme predať naše dlhopisy"}, {"_id": 594, "jmeno": "Peter Janík", "firma": "www.peterjanik.com", "email": "webmaster@peterjanik.com", "telefon": "421908226828", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Žilina", "sluzba": "tvorba_ai_videí", "datum": "5. 5.", "problem": "Extrémne vysoká hodnota celosvetovo-ocenenej world-class top art investment značky."}, {"_id": 595, "jmeno": "Ivan", "firma": "Neni", "email": "ivanpopovichvsq@gmail.com", "telefon": "420775368028", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Praha", "sluzba": "video_produkce", "datum": "5. 5.", "problem": "Nikdo o mne ne vi"}, {"_id": 596, "jmeno": "Michal Kellner", "firma": "Www.tamazpet.com", "email": "michal@tamazpet.com", "telefon": "420724548129", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "Malo kreativ"}, {"_id": 597, "jmeno": "Marek Gaper", "firma": "https://www.geruestbauteam.com", "email": "gapermarek@gmail.com", "telefon": "421911075806", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Stavebníctvo", "sluzba": "reklama/marketing", "datum": "8. 5.", "problem": "Hladanie nových pracovníkov"}, {"_id": 598, "jmeno": "Nikola Koštrnova-Bartek", "firma": "salonlune.sk", "email": "nikolabartek1@gmail.com", "telefon": "421904264576", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Hlohovec", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "menšia sledovanosť na sieťach"}, {"_id": 599, "jmeno": "Zdenka Poliaková Haluzová", "firma": "Perfect zdravie a krása", "email": "zdenka.poliakova94@gmail.com", "telefon": "421908390874", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "kozmetický salón", "sluzba": "reklama/marketing", "datum": "8. 5.", "problem": "nechcem sa ukazovat"}, {"_id": 600, "jmeno": "Kristína Čerči Staňová", "firma": "Fb: Čistenie fasád", "email": "lambosun46@gmail.com", "telefon": "421908490746", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Vinohrady nad Váhom", "sluzba": "reklama/marketing", "datum": "8. 5.", "problem": "Malé zviditelnenie"}, {"_id": 601, "jmeno": "Peter Ďurdák", "firma": "Lavdin.sk", "email": "kaibasvk@gmail.com", "telefon": "421944745130", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Online podnikanie", "sluzba": "reklama/marketing", "datum": "8. 5.", "problem": "Ziskanie prvych klientov"}, {"_id": 602, "jmeno": "Emil", "firma": "Nemám", "email": "pastierikemilko@gmail.com", "telefon": "421907148127", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "Neoriginálne videa"}, {"_id": 603, "jmeno": "leon chmelovsky", "firma": "www.porno.com", "email": "leonchmelovsky9@gmail.com", "telefon": "421904562925", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Ai modelky", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "Neviem to robiť"}, {"_id": 604, "jmeno": "gorilífenk", "firma": "Instagram", "email": "samuelekonta@gmail.com", "telefon": "420606043507", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Instagram", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "Žádná"}, {"_id": 605, "jmeno": "Monika Hlaváčková", "firma": "Ceskaprobiotika.cz  bezzubka.cz/", "email": "hlavackova.moni@seznam.cz", "telefon": "420603324343", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Doplňky stravy", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "Videa"}, {"_id": 606, "jmeno": "Štefan Pončák", "firma": "instick.sk", "email": "stefanponcak@gmail.com", "telefon": "421905405396", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Prešov", "sluzba": "tvorba_ai_videí", "datum": "8. 5.", "problem": "Mam skvele produkty ale malo ludi o mne vie. Ja sa nechcemmpropagovat a influenceri pytaju brutalne peniaze…"}, {"_id": 607, "jmeno": "Kristián Vilím", "firma": "https://tyn-mobilni-cisteni.webnode.cz", "email": "kikiane@seznam.cz", "telefon": "420602360611", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Žatec", "sluzba": "reklama/marketing", "datum": "8. 5.", "problem": "Lidé o mě neví"}, {"_id": 608, "jmeno": ".", "firma": "Eeere", "email": "andrew.mandrichuk2007@gmail.com", "telefon": "421952256896", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Erddr", "sluzba": "reklama/marketing", "datum": "11. 5.", "problem": "Eeer"}, {"_id": 609, "jmeno": "Lubomír Frišo", "firma": "www.marlus.sk", "email": "friso@marlus.sk", "telefon": "421905644330", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "predaj a inštalacia tepwlnych čerpadiel", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "malo času , preto hladam riešenie"}, {"_id": 610, "jmeno": "Slavka Nováková", "firma": "nemám", "email": "slavka.novakova@slovanet.sk", "telefon": "421915856338", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "nevedomosť"}, {"_id": 611, "jmeno": "Michalrigo", "firma": "Michalove videá ai", "email": "misorigo100@gmail.com", "telefon": "421940148457", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Na Slovensku a chcel by som začať z ai ak by sa dalo", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "Keby som to vedel poviem to hneď ako to zistiť"}, {"_id": 612, "jmeno": "jirka.cz", "firma": "Jj", "email": "jirkakovar52@gmail.com", "telefon": "702382641", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Jak natočit", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "Děkujeme"}, {"_id": 613, "jmeno": "Mäřěk Ďíóŕ", "firma": "Marem@google.cz.", "email": "marekpolak352@gmail.com", "telefon": "420702960890", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Facebook tik tok", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "100"}, {"_id": 614, "jmeno": "vlha", "firma": "Chatgpt", "email": "jakubtobiasvlha@gmail.com", "telefon": "421914106900", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Micheal jakson", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "Neviem"}, {"_id": 615, "jmeno": "Daniel Vaněk", "firma": "www.advbus.cz", "email": "vanekdaniell@email.cz", "telefon": "420731513121", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "kadan", "sluzba": "reklama/marketing", "datum": "11. 5.", "problem": "konkurence nedostatečná viditelnost"}, {"_id": 616, "jmeno": "Jan Hron", "firma": "FFDpower.cz", "email": "j.hron@volny.cz", "telefon": "420602414050", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Praha", "sluzba": "tvorba_ai_videí", "datum": "11. 5.", "problem": "Nevyuzivani prodejniho kanalu Instagram."}, {"_id": 617, "jmeno": "Ivan Urminský", "firma": "https://rexik.eu/", "email": "rexik@rexik.eu", "telefon": "421907536602", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Trnava", "sluzba": "", "datum": "11. 5.", "problem": "Kvalitné reklama, ktorá sa dostane k tým správnym zákazníkom"}, {"_id": 618, "jmeno": "Pavel Navrátil", "firma": "3power.cz", "email": "navratil@3power.cz", "telefon": "420773666659", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "propagace obsah"}, {"_id": 619, "jmeno": "Elizabeta Елизавета", "firma": "Ig", "email": "vakovaeliska@gmail.com", "telefon": "420777897283", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Modelky", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "Hovno"}, {"_id": 620, "jmeno": "_.𝑏𝑒̈𝑧𝑡𝑒̈_.𝑑̈𝑜._𝑝𝑖̂𝑐𝑒._,,", "firma": "honza.234", "email": "jdirda56@gmail.com", "telefon": "420704296097", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "zkusím to ne ?, určitě rád pomůžu, nejakim, klientům", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "nevím, asi žádná"}, {"_id": 621, "jmeno": "Ondřej Špička", "firma": "Zatím neexistuje", "email": "akcips2006@gmail.com", "telefon": "420722689543", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Karlovy Vary", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "Čas a nedostatek důveřivých podniků"}, {"_id": 622, "jmeno": "ŠAUVÍK", "firma": "Samuel_Šauvik", "email": "samuelllll@icloud.com", "telefon": "420774224554", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Herní studio s PS 4", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "FARMING simulátor"}, {"_id": 623, "jmeno": "Michal Kolenčík", "firma": "www.promreal.sk", "email": "tempo77@gmail.com", "telefon": "421903480522", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Reality na Slovensku", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "Čas"}, {"_id": 624, "jmeno": "M�AR$O", "firma": "Nemám webovú stranku", "email": "romancakmarko6@gmail.com", "telefon": "421950327625", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "12. 5.", "problem": "Asi peniaze"}, {"_id": 625, "jmeno": "Pavel Maryška", "firma": "www.mar-van.cz", "email": "info@homeonwheels.cz", "telefon": "420734518102", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Broumov", "sluzba": "tvorba_ai_videí", "datum": "14. 5.", "problem": "Představení produktu"}, {"_id": 626, "jmeno": "Roman Polak", "firma": "realprosper.cz", "email": "roman@realprosper.cz", "telefon": "420602561546", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "tvorba_ai_videí", "datum": "14. 5.", "problem": "Penize"}, {"_id": 627, "jmeno": "Lenka Lengyelová", "firma": "https://my-universe2.reservio.com/booking", "email": "myuniverse.fellowship@gmail.com", "telefon": "421910415212", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Nové Zámky", "sluzba": "reklama/marketing", "datum": "14. 5.", "problem": "nevieme sa predať"}, {"_id": 628, "jmeno": "Roman Wicha", "firma": "Maximusshieldpro.cz", "email": "wicharoman@seznam.cz", "telefon": "420734210219", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Moravskoslezský kraj", "sluzba": "reklama/marketing", "datum": "14. 5.", "problem": "Čas"}, {"_id": 629, "jmeno": "adam", "firma": "Ziadna", "email": "bereznaninadam61@gmail.com", "telefon": "421952538966", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Snina", "sluzba": "tvorba_ai_videí", "datum": "14. 5.", "problem": "Malo sledovatelou"}, {"_id": 630, "jmeno": "Andrea Švrčková", "firma": "www.aimed.sk", "email": "andyarteficial@gmail.com", "telefon": "421903946798", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "zdravotnictvo", "sluzba": "reklama/marketing", "datum": "14. 5.", "problem": "slaby marketing"}, {"_id": 631, "jmeno": "Plamen Petrov", "firma": "www.vip-klima.cz", "email": "info@vip-klima.cz", "telefon": "420777778357", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Česko", "sluzba": "video_produkce", "datum": "14. 5.", "problem": "nevim"}, {"_id": 632, "jmeno": "Treperendy", "firma": "www.treperendy.cz", "email": "mkkolacek@gmail.com", "telefon": "420722669544", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Brno", "sluzba": "tvorba_ai_videí", "datum": "14. 5.", "problem": "Tvorba obsahu"}, {"_id": 633, "jmeno": "Zuzana Medeková", "firma": "www.royalbeauty.sk", "email": "medekovazuzana@gmail.com", "telefon": "421907295184", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Toplcany", "sluzba": "reklama/marketing", "datum": "14. 5.", "problem": "cas"}, {"_id": 634, "jmeno": "Kubo Bujňák", "firma": "Instagram shinycars.detail", "email": "jakubbujnak08@gmail.com", "telefon": "421944358954", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Lipany", "sluzba": "reklama/marketing", "datum": "15. 5.", "problem": "Financie"}, {"_id": 635, "jmeno": "Albert Vaško", "firma": "Www.ktvworkingdrone.com/sk", "email": "albertvasko@gmail.com", "telefon": "421948313436", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Slovensko", "sluzba": "tvorba_ai_videí", "datum": "15. 5.", "problem": "Nedôvera zakaznikov"}, {"_id": 636, "jmeno": "David Aprias", "firma": "Veloxvending.cz", "email": "levnejmobilov@gmail.com", "telefon": "420777557571", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Ostrava", "sluzba": "tvorba_ai_videí", "datum": "15. 5.", "problem": "Zamestnamci"}, {"_id": 637, "jmeno": "Nicolas Niznansky", "firma": "ElitePdfVault.com", "email": "nicolasniznansky@gmail.com", "telefon": "421949298440", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "15. 5.", "problem": "Marketing"}, {"_id": 638, "jmeno": "Petr Turoň", "firma": "www.petrturon.com", "email": "petr.turon@post.cz", "telefon": "421949862898", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Slovensko", "sluzba": "reklama/marketing", "datum": "15. 5.", "problem": "Firmy o mě nevědí"}, {"_id": 639, "jmeno": "Jan Drahoš", "firma": "Financni produkty", "email": "jan.drahos@email.cz", "telefon": "+420773566333", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "reklama/marketing", "datum": "18. 5.", "problem": "Reklamy konkurence"}, {"_id": 640, "jmeno": "Peter Duny", "firma": "LightUpGarage facebook", "email": "lightupgarage1@gmail.com", "telefon": "+421949753352", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "", "sluzba": "reklama/marketing", "datum": "17. 5.", "problem": "Stagnace"}, {"_id": 641, "jmeno": "Pavol Lukacik", "firma": "downhills.sk", "email": "pavolremedy@gmail.com", "telefon": "+421911755708", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "17. 5.", "problem": "cas"}, {"_id": 642, "jmeno": "Adéla Kafková", "firma": "Zatím nemám, ted se tvoří", "email": "adela.kafkova@she-builds.cz", "telefon": "+420720163090", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "reklama/marketing", "datum": "17. 5.", "problem": "Nikdo o mně neví, jsem na začátku, potřebuji více klientů"}, {"_id": 643, "jmeno": "Juraj Ksinan", "firma": "plavaniekorytnacka.sk", "email": "ksinan@redknight.sk", "telefon": "+421910127747", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "17. 5.", "problem": "marketing"}, {"_id": 644, "jmeno": "𝓣𝓱𝓾𝔂 𝓛𝓲𝓷𝓱", "firma": "Www.shebeautystudio.sk", "email": "ghs22.sro@gmail.com", "telefon": "+421917726907", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "17. 5.", "problem": "Konkurencia"}, {"_id": 645, "jmeno": "Alex", "firma": "Rentalwheels.sk Drevenickovo.sk", "email": "agslovexport@gmail.com", "telefon": "+447848513892", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "reklama/marketing", "datum": "17. 5.", "problem": "Tazko povedat , no asi klienti"}, {"_id": 646, "jmeno": "Tadeáš Paleček", "firma": "https://laeluna.cz", "email": "tadeaspalecek@seznam.cz", "telefon": "+420739135473", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "reklama/marketing", "datum": "16. 5.", "problem": "Marketing"}, {"_id": 647, "jmeno": "Dušan Berka - trenér Ostrava", "firma": "www.fitvip.cz", "email": "modimkomunita@gmail.com", "telefon": "+420778510388", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "16. 5.", "problem": "Hrozne leady, spatne zacileni reklamy, videa uz nekolik let delame podobne a cilime na lidi, ktere nechceme."}, {"_id": 648, "jmeno": "monika zuzaníková", "firma": "nemam", "email": "monika.zuzanikova@gmail.com", "telefon": "+420725031618", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "16. 5.", "problem": "Ziskavani klientu"}, {"_id": 649, "jmeno": "Ivan Pišta", "firma": "Www.elcorazon.cz", "email": "ivan.pista@elcorazon.cz", "telefon": "+420792308955", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "18. 5.", "problem": "Nikdo o mych vyjimecnych produktech nevi."}, {"_id": 650, "jmeno": "Dusan", "firma": "www.hunadyreality.sk", "email": "dusan@hunadyreality.sk", "telefon": "+421908643535", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "reklama/marketing", "datum": "18. 5.", "problem": "naber nehnuteľnosti"}, {"_id": 651, "jmeno": "Oliver Formánek", "firma": "Nemám", "email": "oliverformanek@gmail.com", "telefon": "+421918144889", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "17. 5.", "problem": "Mám len 14 rokov"}, {"_id": 652, "jmeno": "Valéria Jaššáková Štefaňáková", "firma": "stefanakovavaleria@gmail.com", "email": "stefanakovavaleria@gmail.com", "telefon": "+421911293085", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "reklama/marketing", "datum": "17. 5.", "problem": "Malo videi"}, {"_id": 653, "jmeno": "Jan Bubnar", "firma": "stavaj stav .o.s.o", "email": "janbubnar578@gmail.com", "telefon": "+421940090804", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "reklama/marketing", "datum": "17. 5.", "problem": "chcem abi to bolo viac reálne a ani to každi videl"}, {"_id": 654, "jmeno": "ʞıɹʇǝԀ", "firma": "Ešte nemám", "email": "peter.kertesz111@gmail.com", "telefon": "+421917532987", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "16. 5.", "problem": "Konkurencia"}, {"_id": 655, "jmeno": "Jaroslav Orgoník", "firma": "Stavicon.sk", "email": "jaroorgonikk@icloud.com", "telefon": "+421902647459", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "reklama/marketing", "datum": "16. 5.", "problem": "Reklama a marketing"}, {"_id": 656, "jmeno": "ᴶᴬᴷᵁᴮ ᴾᴬᴿᴺᴵᶜ̌ᴬᴺ", "firma": "Estw nemam", "email": "parnicanjakub@gmail.com", "telefon": "+421902184694", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "15. 5.", "problem": "Al tvorba"}, {"_id": 657, "jmeno": "Miroslav Borový", "firma": "Nemam", "email": "miroslav.borovy.gd@gmail.com", "telefon": "+420604537674", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "15. 5.", "problem": "Marketing"}, {"_id": 658, "jmeno": "Ondřej Langer", "firma": "https://lifeinhands.eu", "email": "langer@lifeinhands.eu", "telefon": "420736717336", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "reklama/marketing", "datum": "20. 5.", "problem": "Marketing"}, {"_id": 659, "jmeno": "Rossi Března", "firma": "Www.rbstav.cz", "email": "", "telefon": "420727827692", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Jana škody 7/191", "sluzba": "tvorba_ai_videí", "datum": "20. 5.", "problem": "Tvorba videi na socialní sítě"}, {"_id": 660, "jmeno": "Ivan Novák", "firma": "Nemám", "email": "opmegpp32@gmail.com", "telefon": "420607277706", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "České Budějovice", "sluzba": "reklama/marketing", "datum": "20. 5.", "problem": "Kde závist prodávat můj produkt"}, {"_id": 661, "jmeno": "Radim Ševčík", "firma": "www.buenoempresa.cz", "email": "", "telefon": "420606123888", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "", "datum": "22. 5.", "problem": "Málo zakazek"}, {"_id": 662, "jmeno": "Jakub Košata", "firma": "jakubkosata.cz", "email": "", "telefon": "420776062824", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "", "datum": "22. 5.", "problem": "Technickou stránku věci a produkt samotný mám pod palcem a v mnohém předčím konkurenci. Nejde mi propagace / sítě možná SEO. Jak říct zákazníkům ,,tady jsem,,"}, {"_id": 663, "jmeno": "Roman Hujo", "firma": "horecon.sk", "email": "", "telefon": "421911362476", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "", "sluzba": "", "datum": "22. 5.", "problem": "Naplniť platformu ľuďmi a v takom pomere získať aj podniky... ak je jedného veľa a druhého málo alebo naopak, nebude to fungovať. Aktuálne začíname a máme tam 350 ľudí od 1.5."}, {"_id": 664, "jmeno": "Simona Fupšová", "firma": "tfb.stavebneprace", "email": "", "telefon": "421948848460", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "", "sluzba": "", "datum": "22. 5.", "problem": "Malo ľudí o nás vie"}, {"_id": 665, "jmeno": "Michal Šatara", "firma": "Www.geodrone.sk", "email": "info@geodrone.sk", "telefon": "421902933835", "stav": "volat", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Slovensko", "sluzba": "reklama/marketing", "datum": "22. 5.", "problem": "Čas, nestíham spravovať reklamy a nastavovať to"}, {"_id": 666, "jmeno": "Pavol Vasiľ", "firma": "Mám ale neriešim ju", "email": "tepolux@gmail.com", "telefon": "421902171241", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Čistenie Tepovanie", "sluzba": "reklama/marketing", "datum": "22. 5.", "problem": "Malo zákazky"}, {"_id": 667, "jmeno": "Barnák Peter", "firma": "eshop@bbzoo.sk", "email": "eshop@bbzoo.sk", "telefon": "421915754855", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Slovensko", "sluzba": "tvorba_ai_videí", "datum": "22. 5.", "problem": "Financie"}, {"_id": 668, "jmeno": "Tereza Hlavínová", "firma": "terezhlavin@gmail.com", "email": "terezhlavin@gmail.com", "telefon": "420734304181", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Tachov (Plzeňský kraj)", "sluzba": "reklama/marketing", "datum": "22. 5.", "problem": "Nedostatek správných kontaktů"}, {"_id": 669, "jmeno": "Radim Ševčík", "firma": "sevcikradim@buenoinvest.cz", "email": "sevcikradim@buenoinvest.cz", "telefon": "420606123881", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "severni morava", "sluzba": "reklama/marketing", "datum": "22. 5.", "problem": "málo zakazek"}, {"_id": 670, "jmeno": "Tomas Velek", "firma": "Albanienemovitosti.cz", "email": "tom.velek10@gmail.com", "telefon": "420720644383", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Realitní busienss v Albánii", "sluzba": "video_produkce", "datum": "22. 5.", "problem": "Potrebuji marekting"}, {"_id": 671, "jmeno": "The Ultimate Corn Dog", "firma": "INSTA:TheUltimateCornDog", "email": "l.machal@seznam.cz", "telefon": "420775147488", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Po ČR a SK", "sluzba": "tvorba_ai_videí", "datum": "22. 5.", "problem": "Nejsem si vědom překážky."}, {"_id": 672, "jmeno": "Jan Krška", "firma": "jkkeramika.cz", "email": "jan-krska@seznam.cz", "telefon": "420606489134", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Roztoky", "sluzba": "reklama/marketing", "datum": "22. 5.", "problem": "prodej"}, {"_id": 673, "jmeno": "Erik Toth", "firma": "Nemám 😃", "email": "eriktoth1302@gmail.com", "telefon": "421951413318", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "Michalovce", "sluzba": "tvorba_ai_videí", "datum": "22. 5.", "problem": "Tvorba videi"}, {"_id": 674, "jmeno": "Ľubo Nemček", "firma": "www.konturaslovakia.sk", "email": "lubos.nemcek@konturaslovakia.sk", "telefon": "421905609402", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Bratislavs", "sluzba": "reklama/marketing", "datum": "22. 5.", "problem": "Predaj"}, {"_id": 675, "jmeno": "Zia Tomová", "firma": "zatial nemam", "email": "zitka.tomova@gmail.com", "telefon": "421949638875", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Šaľa", "sluzba": "tvorba_ai_videí", "datum": "25. 5.", "problem": "financie"}, {"_id": 676, "jmeno": "Miroslav Miroslav Čonka", "firma": "FB", "email": "mmmconka@sezna.cz", "telefon": "420721871690", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Zatim nevim", "sluzba": "reklama/marketing", "datum": "25. 5.", "problem": "Fb"}, {"_id": 677, "jmeno": "Reality Písař", "firma": "pisar.eu/reality", "email": "info@pisar.eu", "telefon": "420734626264", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Plzeň", "sluzba": "video_produkce", "datum": "25. 5.", "problem": "Potřebuji prodat hotové domy"}, {"_id": 678, "jmeno": "Luka Lifee", "firma": "www.nemam ešte.sk", "email": "lukaspaluf@gmail.com", "telefon": "421951205673", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "roznava", "sluzba": "jiné", "datum": "25. 5.", "problem": "čas"}, {"_id": 679, "jmeno": "Nicolas Mucha", "firma": "Ještě nemám žádné vrbové stránky", "email": "nicolasmucha3@gmail.com", "telefon": "420773495482", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Praha", "sluzba": "reklama/marketing", "datum": "25. 5.", "problem": "Jsem na začátku a potřebuji vědět jak to správně a efektivně promovat"}, {"_id": 680, "jmeno": "Susanna Marie Čermáková", "firma": "www.farma-jerusalem.cz", "email": "susanna-marie@farma-jerusalem.cz", "telefon": "420773555999", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Příbram", "sluzba": "reklama/marketing", "datum": "25. 5.", "problem": "cas"}, {"_id": 681, "jmeno": "POKOJNÝ ŽIVOT", "firma": "Www.pokojnyzivot.sk", "email": "info@pokojnyzivot.sk", "telefon": "421904189000", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Bratislava", "sluzba": "tvorba_ai_videí", "datum": "25. 5.", "problem": "Zacali sme pred tyzdnom"}, {"_id": 682, "jmeno": "Stefan Paralic", "firma": "fotoobrazypro.cz", "email": "das1979@seznam.cz", "telefon": "420776654099", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "25. 5.", "problem": "potřebuji krátký 20 vteřinové videa pro fb a tiktok na každý den jedno pro eshop fotoobrazypro.cz"}, {"_id": 683, "jmeno": "David Cizner", "firma": "Zatím se vyvíjí", "email": "ciznerd@gmail.com", "telefon": "420702180844", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Březnice u Příbrami", "sluzba": "jiné", "datum": "25. 5.", "problem": "Výboj Webu na efektivní a automatickou platformu"}, {"_id": 684, "jmeno": "Stanislav koky", "firma": "Stav plus Stanislav", "email": "kokystanislav33@gmail.com", "telefon": "421951829741", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Poprad", "sluzba": "tvorba_ai_videí", "datum": "25. 5.", "problem": "Robota"}, {"_id": 685, "jmeno": "Jan Poláček", "firma": "www.nocninebe.eu", "email": "polak.jon@seznam.cz", "telefon": "420737758530", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Nymburk", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Dosah"}, {"_id": 686, "jmeno": "Igor Ščomak", "firma": "www.marblessa.studio", "email": "i.scomak@gmail.com", "telefon": "421948220766", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Košice", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Zakaznici"}, {"_id": 687, "jmeno": "Monika Sklenár Kozánková", "firma": "www.alijamosanimals.sk", "email": "shop@alijamosanimals.sk", "telefon": "421905730258", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "predaj Krmnych zmesi pre drobnochov", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "konkurencia, financie pre reklamu"}, {"_id": 688, "jmeno": "MDDr. Jakub Jánošík", "firma": "royalpharm.sk", "email": "dr.jakub.janosik@gmail.com", "telefon": "421915978781", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Marketing"}, {"_id": 689, "jmeno": "Rudolf Kovac", "firma": "Www.rudolf.kovac.sk", "email": "kovacru@gmail.com", "telefon": "421905204461", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Bratislava", "sluzba": "video_produkce", "datum": "31. 5.", "problem": "Malo kontaktov, nefunguje platena reklama"}, {"_id": 690, "jmeno": "Ladislav K.", "firma": "www.diskretniazyl.cz", "email": "asap@centrum.cz", "telefon": "420775958152", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "hodinový hotel", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Jen jeden zdroj reklamy"}, {"_id": 691, "jmeno": "Michaela Jelínková", "firma": "Www.logiscool.com", "email": "michaela.jelinkova@logiscool.com", "telefon": "420604293211", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "video_produkce", "datum": "31. 5.", "problem": "Malé kompetence v tvorbě konzistentní brankové strategie"}, {"_id": 692, "jmeno": "Jakub Rony Roncak", "firma": "roit.sk", "email": "jakub.roncak@gmail.com", "telefon": "421948299557", "stav": "volat", "volat_date": "17.7.", "poznamka": "Volat: 17.7.🗓️", "lokace": "Námestovo", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Všetko je na mne"}, {"_id": 693, "jmeno": "Laura Juhosova", "firma": "hh", "email": "laurajuhosova201@gmail.com", "telefon": "421949647186", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "j", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "žena"}, {"_id": 694, "jmeno": "Kamil Bizub", "firma": "Www.barify.sk", "email": "kamil.bizub@gmail.com", "telefon": "421918857947", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Poprad", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Sme nová značka na trhu a neviem ju spropagovať"}, {"_id": 695, "jmeno": "MŠ", "firma": "martinsmajda.sk", "email": "msnehnutelnosti@gmail.com", "telefon": "#ERROR!", "stav": "volat", "volat_date": "15.7.", "poznamka": "Volat: 15.7.🗓️", "lokace": "Slovensko, Košice", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Málo zakaziek, mala viditeľnosť na soc. Sietach"}, {"_id": 696, "jmeno": "Leopold Černý", "firma": "Dentaprox.cz", "email": "dentaprox@email.cz", "telefon": "420601296296", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Brno", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Novým"}, {"_id": 697, "jmeno": "Ccccx", "firma": "StrategyBet.cz Tajnabotanika.online Getwebify.studio", "email": "ffff@email.cz", "telefon": "+420739385030", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Mam zájem hned několik projektů, pojďme si zavolat", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Nemam"}, {"_id": 698, "jmeno": "Silvester Gajdosik", "firma": "www.akaps.sk", "email": "silvogajdosik@gmail.com", "telefon": "421915322212", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Trenčin", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Videotvorba"}, {"_id": 699, "jmeno": "Milan Brlík", "firma": "letsagent.ai", "email": "milan.brlik@gmail.com", "telefon": "420776061261", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha + global", "sluzba": "video_produkce", "datum": "31. 5.", "problem": "Potřebuju chytlavé 15-30s videa do reklam"}, {"_id": 700, "jmeno": "Sebo Sukenik Codm", "firma": "nemam", "email": "sukeniksebo893@gmail.com", "telefon": "421940167559", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "znicim", "sluzba": "", "datum": "31. 5.", "problem": "0"}, {"_id": 701, "jmeno": "Primák Slavomír", "firma": "www.PRIMAK.cz", "email": "primaks@post.cz", "telefon": "420702899799", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Praha CR", "sluzba": "", "datum": "31. 5.", "problem": "5"}, {"_id": 702, "jmeno": "Nicolas Niznansky", "firma": "https://elitepdfvault.com/", "email": "nicolasniznansky@gmail.com", "telefon": "421940653244", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "V dedine pri Banovciach nad Bebravou", "sluzba": "", "datum": "31. 5.", "problem": "Aspon jedno za den"}, {"_id": 703, "jmeno": "Andrej Gejdos", "firma": "nemam", "email": "andrejgejdos07@gmail.com", "telefon": "421940642757", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "slovensko", "sluzba": "", "datum": "31. 5.", "problem": "3 denne"}, {"_id": 704, "jmeno": "Katarína Kruteková", "firma": "Tvorilka", "email": "katarinakrutekova225@gmail.com", "telefon": "421949845049", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Žilina ale v podstate online SR", "sluzba": "", "datum": "31. 5.", "problem": "10000"}, {"_id": 705, "jmeno": "Marek Nováčik", "firma": "plantoria.sk", "email": "novacik.marek1@gmail.com", "telefon": "421940367415", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Topoľčany", "sluzba": "", "datum": "31. 5.", "problem": "2"}, {"_id": 706, "jmeno": "Nicolas Mucha", "firma": "Ještě nemám žádné vrbové stránky", "email": "nicolasmucha3@gmail.com", "telefon": "420773495482", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Praha", "sluzba": "", "datum": "31. 5.", "problem": ""}, {"_id": 707, "jmeno": "Daniel Kučera", "firma": "www.radostzdreva.sk", "email": "danson.eu@gmail.com", "telefon": "421944642355", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Bratislava", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "malý zaujem o nase výrobky"}, {"_id": 708, "jmeno": "PrivéPaskov", "firma": "Ig", "email": "info@privepaskov.cz", "telefon": "420604199004", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Moravskoslezský kraj", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Reklama - videa"}, {"_id": 709, "jmeno": "Levkanič Daliborko", "firma": "Hg", "email": "levkanicdalibor828@gmail.com", "telefon": "421903411932", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Tg"}, {"_id": 710, "jmeno": "Andrej Kováčik", "firma": "www.ayamax.sk", "email": "cavanagh.sk1@gmail.com", "telefon": "421905222226", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "ayamax.sk vsetko pre domacnost a zahradu", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "videa"}, {"_id": 711, "jmeno": "Viktor zvolenec", "firma": "www.fyziogun.cz smoothiejet.cz", "email": "all4marketplace.group@gmail.com", "telefon": "421901704345", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "E-commerce", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Najet kvalitneho ugc tvorcu na vytvaranie videii nasich produktov"}, {"_id": 712, "jmeno": "David Tóth", "firma": "povesto.cz", "email": "toth@donplus.cz", "telefon": "420773877900", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Sociální sítě"}, {"_id": 713, "jmeno": "Milan Vodák", "firma": "Forge-agency.cz", "email": "info@forge-agency.cz", "telefon": "420722162534", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "Olomouc", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Reklama"}, {"_id": 714, "jmeno": "SKY HIGH EVENT", "firma": "Nemame webovú stránku", "email": "skyhighevents@yahoo.com", "telefon": "421902439963", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Festivaly,koncerty", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Kúpischopnosť ľudí"}, {"_id": 715, "jmeno": "David Vrána", "firma": "nemám", "email": "vrana.david@seznam.cz", "telefon": "420606136382", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "jiné", "datum": "31. 5.", "problem": "Dobrý den. zatím je to vedlejší výdělek, ale prodávám starožitnosti. Takže samozřejmě mám vždy od každé věci jediný kus. Takže pro mne není klasický e shop. Pouze třeba nekonkrétní na určité sekce, jako třeba dřevěné sochy, hutní sklo, měděné věci, mosazné věci atd"}, {"_id": 716, "jmeno": "Petet Bajzik", "firma": "www.ajax.sk", "email": "ajax@ajax.sk", "telefon": "421905222022", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Trenciansky kraj", "sluzba": "video_produkce", "datum": "31. 5.", "problem": "Propagacia"}, {"_id": 717, "jmeno": "Václav Bílek", "firma": "Nemám jen moje ig:vasa_hasic10", "email": "11bilek.vaclav@gmail.com", "telefon": "736714754", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Je mi 15let a chci kontent na ig", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Nevím jak Na dobrý kontent"}, {"_id": 718, "jmeno": "Otto Davídek", "firma": "nyx-production.cz", "email": "otto@nyx-production.cz", "telefon": "420733411690", "stav": "uzavren", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Praha 9", "sluzba": "video_produkce", "datum": "31. 5.", "problem": "Potřebuji udělat promo video o našich službách."}, {"_id": 719, "jmeno": "Anton", "firma": "Nemám", "email": "a.harvan@seznam.cz", "telefon": "420774242193", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Okres Stropkov", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Zatiaľ dom úplne na začiatku s novým projektom"}, {"_id": 720, "jmeno": "Ctibor Slambora", "firma": "nemam", "email": "slamboractibor23@gmail.com", "telefon": "421960655200", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "potrebujem sa zverejniť a získať zákazku v zahranici"}, {"_id": 721, "jmeno": "Pravoslav", "firma": "Vivienapartments.cz", "email": "pravoslav.tomek@okklient.cz", "telefon": "420777702272", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 4☎️", "lokace": "České Budějovice", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Čas"}, {"_id": 722, "jmeno": "Petr Beneš", "firma": "Www.ecorevolution.cz", "email": "benes@hypergroup.cz", "telefon": "420608222326", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Urcite Vase videa 😎"}, {"_id": 723, "jmeno": "ADVOKÁTSKA KANCELÁRIA Čerevková", "firma": "www.advokatcerevkova.sk", "email": "advokatsimonacerevkova@gmail.com", "telefon": "421908500580", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Právne služby a reality", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Malo klientov"}, {"_id": 724, "jmeno": "Modulárne Domy", "firma": "Www.stavbynakluc.sk", "email": "stavbyammontage@gmail.com", "telefon": "421951957164", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Dobry den chceli by sme vytvorit reklamu na predaj nasich modularnych domov", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Reklama"}, {"_id": 725, "jmeno": "Alena Sidlova", "firma": "Nemam", "email": "sidlovaa@centrum.cz", "telefon": "420731401484", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Po celé ČR", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "Vyhoření"}, {"_id": 726, "jmeno": "Peter Polák", "firma": "www.azureinvesments.sk", "email": "polak.aqiz@gmail.com", "telefon": "421948504667", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Slovensko", "sluzba": "tvorba_ai_videí", "datum": "31. 5.", "problem": "malo malo klientov"}, {"_id": 727, "jmeno": "Rada Bada", "firma": "Koucinkradana.cz", "email": "ra.dama@seznam.cz", "telefon": "420730514214", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Praha", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Začínám"}, {"_id": 728, "jmeno": "Tatiana Srnčíková", "firma": "Www.smilIQ.cz", "email": "tatianasrncikova@gmail.com", "telefon": "420721882784", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha 2, I.P. Pavlova", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "Netuším"}, {"_id": 729, "jmeno": "Patrik Batik", "firma": "instragram/facebook  Zilla’s carwash", "email": "batikpatrik03@gmail.com", "telefon": "421950442924", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Slovensko/bardejov", "sluzba": "reklama/marketing", "datum": "31. 5.", "problem": "nemám zákazníkov nemám príjmy"}, {"_id": 730, "jmeno": "𝓙𝓾𝓵𝓲𝓲𝓲", "firma": "Nemám", "email": "1julienovotna@seznam.cz", "telefon": "420722986517", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Česká republika", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Nevim jak se to dela"}, {"_id": 731, "jmeno": "просто_самуэльqqq", "firma": "Instagram", "email": "samuelsamko11@seznam.cz", "telefon": "#ERROR!", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Brezno", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Folowers"}, {"_id": 732, "jmeno": "Klára Červinková | Prodej nemovitostí Praha & okolí", "firma": "Clarareality.cz", "email": "clara.cervinkova@seznam.cz", "telefon": "420604885222", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha a stredocesky kraj", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "Zviditelneni-dostat se k majitelum nemovitosti jsem realitni makleka"}, {"_id": 733, "jmeno": "Young_filipko", "firma": "Instagram", "email": "filipphilippi2@gmail.com", "telefon": "421910269590", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Poprad", "sluzba": "video_produkce", "datum": "8. 6.", "problem": "Neviem"}, {"_id": 734, "jmeno": "KB Clean - Umývanie aút na Orave", "firma": "kbclean.sk", "email": "adamkapicak2009@gmail.com", "telefon": "421940511505", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "námestovo, Orava, Slovensko", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "málo zákazníkov"}, {"_id": 735, "jmeno": "Ján Hudec", "firma": "SMASHBROS BISTRO B", "email": "janhudec80@gmail.com", "telefon": "948285224", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Nitra", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "Socialne siete"}, {"_id": 736, "jmeno": "Nikolas Balog", "firma": "Instagram znašim se být slavni", "email": "romangorila850@gmail.com", "telefon": "733459408", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Z mima fotkami", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "chci peníze"}, {"_id": 737, "jmeno": "Natálie Prokůpková", "firma": "nemam:(", "email": "nathmucq@gmail.com", "telefon": "420603311009", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Ahoj, zatim nikde ale bydlim v Ostrave a chci to rozjet", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Skola, Nizke sebevedomi nevim jak zacit"}, {"_id": 738, "jmeno": "Luboš Petraš", "firma": "flexart.sk", "email": "maximmax26@gmail.com", "telefon": "421908599713", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Detva", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "marketing  reklama"}, {"_id": 739, "jmeno": "Maya", "firma": "www.gynpol.sk", "email": "pruzincova50@gmail.com", "telefon": "421948811000", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Ilava", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Fb reklamy"}, {"_id": 740, "jmeno": "Julius Vavrek", "firma": ".", "email": "juliusvavrek67@gmail.com", "telefon": "421949391162", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": ".", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "."}, {"_id": 741, "jmeno": "Sofia Kostelna", "firma": "Nemam", "email": "sofiadeborahkostelna@gmail.com", "telefon": "421951746637", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Myjava", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Vek"}, {"_id": 742, "jmeno": "Petr Kuzník", "firma": "Www.bratrostav.cz", "email": "petr.kuznik@seznam.cz", "telefon": "420731501094", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Moravskoslezsky kraj", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Zamestnanci"}, {"_id": 743, "jmeno": "Svadobný salón MM - Bardejov", "firma": "www.svadobnysalonmm.sk", "email": "maria.matusovska@gmail.com", "telefon": "421917745255", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Malo času na tvorbu videí."}, {"_id": 744, "jmeno": "Monika Chuda", "firma": "Fb zmrzlina na Pražmě", "email": "moni.chud@seznam.cz", "telefon": "420775111265", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "Pražmo", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "Lidé nereaguji na moje příspěvky tak jak bych chtěla. Chci aby chodili ke mně na zmrzlinu a další sortiment více díky reklamě."}, {"_id": 745, "jmeno": "VZ Klima", "firma": "www.vzklima.sk", "email": "vzklima@gmail.com", "telefon": "421944221918", "stav": "kontaktovan", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "montáž klimatizácii košický kraj", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "malý dopyt"}, {"_id": 746, "jmeno": "Dizajnové steny REWALLWER", "firma": "Nemám", "email": "miskovic.jakub@gmail.com", "telefon": "421948339853", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "Chcem opäť začať robiť dizajnové steny a chcelo by to nový začiatok", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "Do teraz som bol v zahraničí a nemohol som sa kvôli vzdialenosti venovať veciam ktoré som si pred 5timi rokmi naštartoval a už 3,5 roka tvorím len pre seba a nepridavam nič mám blokáciu nejakú neviem a teraz som už na Slovensku narodil sa nám malý chlapček mám prácu a toto je moje hobby ktoré chcem teraz nanovo začať a naštartovať"}, {"_id": 747, "jmeno": "Marian Paták", "firma": "ide o aplikáciu ktorú teraz píšu", "email": "patakmaros@gmail.com", "telefon": "421944191517", "stav": "uzavren", "volat_date": "", "poznamka": "uzavřeno", "lokace": "mexiko,slovensko", "sluzba": "", "datum": "8. 6.", "problem": "2-3-2004"}, {"_id": 748, "jmeno": "David Petr", "firma": "autoskla-trade.cz", "email": "info@autoskla-trade.cz", "telefon": "420731543210", "stav": "uzavren", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Olomouc", "sluzba": "", "datum": "8. 6.", "problem": "12"}, {"_id": 749, "jmeno": "David Brincko", "firma": "zatiaľ nemam", "email": "david.brincko01@gmail.com", "telefon": "421905832271", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Levoča a okolie", "sluzba": "", "datum": "8. 6.", "problem": "5"}, {"_id": 750, "jmeno": "Zdravie Je Harmónia", "firma": "www.zdraviejeharmonia.sk", "email": "info@zdraviejeharmonia.sk", "telefon": "421948123066", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "presov", "sluzba": "", "datum": "8. 6.", "problem": "10"}, {"_id": 751, "jmeno": "Pavel Nowak", "firma": "www.forcable.cz", "email": "p.pristoupil@centrum.cz", "telefon": "420721477844", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "celá ČR a jiný", "sluzba": "", "datum": "8. 6.", "problem": "samostatný projekt"}, {"_id": 752, "jmeno": "Deratizace Dezinfekce", "firma": "studio DDD. cz", "email": "info.dddrumburk@gmail.com", "telefon": "420777884586", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Rumburk", "sluzba": "", "datum": "8. 6.", "problem": "0"}, {"_id": 753, "jmeno": "Peter Krajnak", "firma": "www.krajstav.sk", "email": "info@krajstav.sk", "telefon": "421944502720", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Prešov, Košice", "sluzba": "", "datum": "8. 6.", "problem": "Nechám si poradiť."}, {"_id": 754, "jmeno": "Josef Cibula", "firma": "Zatim nemam osobni web", "email": "cibula@seznam.cz", "telefon": "420733134337", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Most", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "Nevím"}, {"_id": 755, "jmeno": "Adam Pech", "firma": "www.batolatko.cz", "email": "adampech55@gmail.com", "telefon": "420774006735", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Tuchlovice karlovarská 34", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "Konkurence, menší viditelnost"}, {"_id": 756, "jmeno": "Peter Černický", "firma": "nemám", "email": "peter.studiofusion@gmail.com", "telefon": "421904967305", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Košice", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "dostatok klientov"}, {"_id": 757, "jmeno": "Ondřej Livora", "firma": "Www.eurocolors.cz", "email": "livora@eurocolors.cz", "telefon": "420725556161", "stav": "volat", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Dobrý den. Jsme dovozce a distributor malířských a fasádních barev. Zajímá mě více informací o produktovém videu. Ondřej Livora, Euro Colors, livora@eurocolors.cz, 725 55 61 61", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Neznalost značky"}, {"_id": 758, "jmeno": "Gábi Dagmar Pajurková", "firma": "https://gabriela-pajurkova.cz/", "email": "gabriela.pajurkova@gmail.com", "telefon": "420608071333", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Jihomoravský kraj", "sluzba": "reklama/marketing", "datum": "8. 6.", "problem": "automatizace reklam na sociální sítě"}, {"_id": 759, "jmeno": "ContentBiaCreativ", "firma": "Instagram: ContentBiaCreativ  Web nemám", "email": "sardinia.kniha0@gmail.com", "telefon": "421915158451", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "Neviem kde začať"}, {"_id": 760, "jmeno": "Pavel Jaslovsky", "firma": "www.realitnedomeny.sk", "email": "paveld@centrum.sk", "telefon": "421902466510", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "neviem"}, {"_id": 761, "jmeno": "Marian Paták", "firma": "etrimo.com", "email": "patakmaros@gmail.com", "telefon": "421944191517", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "slovensko", "sluzba": "jiné", "datum": "8. 6.", "problem": "este nevieem"}, {"_id": 762, "jmeno": "Ondřej Karel Teichmann", "firma": "EHelper.cz", "email": "teichmann.ondrej@seznam.cz", "telefon": "420605771171", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Systém péče o seniory formou asistivní technologie eHelper  Ostrava", "sluzba": "video_produkce", "datum": "8. 6.", "problem": "Edukace klientů"}, {"_id": 763, "jmeno": "Miri Jersáková", "firma": "refinity.cz", "email": "m.jersakova@seznam.cz", "telefon": "420775572727", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "8. 6.", "problem": "tezky marketin na pujcky"}, {"_id": 764, "jmeno": "Rasťo Farkaš", "firma": "wolf-stav potery omietky", "email": "farkasrasto6@gmail.com", "telefon": "421948734786", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "celá Slovensko", "sluzba": "video_produkce", "datum": "8. 6.", "problem": "potrebujeme viac zakaznikov"}, {"_id": 765, "jmeno": "Veronika Hejbalová", "firma": "Jaku", "email": "veronika.hejbalova@gmail.com", "telefon": "420770620377", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Instagram", "sluzba": "", "datum": "15. 6.", "problem": "Bojím se že mě lidi zhejtí, a běk"}, {"_id": 766, "jmeno": "Tomáš Dobrý", "firma": "Tomasdobry.cz", "email": "tomas@tomasdobry.cz", "telefon": "420732719137", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Olomouc", "sluzba": "", "datum": "15. 6.", "problem": "Stagnace"}, {"_id": 767, "jmeno": "Tomas = OFT", "firma": "Nemam", "email": "zralytomas1@gmail.com", "telefon": "733342312", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Uštěk", "sluzba": "", "datum": "15. 6.", "problem": "Nedokaz si vydelat"}, {"_id": 768, "jmeno": "Arpad Szajko", "firma": "Nemam", "email": "alarmont@alarmont.sk", "telefon": "421907351541", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Lucenec", "sluzba": "", "datum": "15. 6.", "problem": "Zaakazky"}, {"_id": 769, "jmeno": "michael", "firma": "Nemam", "email": "misamory1@seznam.cz", "telefon": "420605890200", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Nemam firmu", "sluzba": "", "datum": "15. 6.", "problem": "Mam málo sledujících"}, {"_id": 770, "jmeno": "Alex Nosek", "firma": "https://ghostarchive.base44.app", "email": "nosekalex7@gmail.com", "telefon": "420602688706", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Královehradecký kraj", "sluzba": "", "datum": "15. 6.", "problem": "prodeje a viditelnost"}, {"_id": 771, "jmeno": "Alena Boksanska", "firma": "Nemam", "email": "alena1972boksanska@gmail.com", "telefon": "421915926658", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "Rucna praca", "sluzba": "", "datum": "15. 6.", "problem": "Malo ludi kupuje"}, {"_id": 772, "jmeno": "Oliver Zvarik", "firma": "nemám", "email": "oliverzvarik@gmail.com", "telefon": "421944856955", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "Rosina", "sluzba": "", "datum": "15. 6.", "problem": "Cvičenie"}, {"_id": 773, "jmeno": "Maty Maty", "firma": "Žial este nemam", "email": "matussosake@gmail.com", "telefon": "421910629024", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "", "datum": "15. 6.", "problem": "Zatial ziadne"}, {"_id": 774, "jmeno": "Miloš Brontvaj", "firma": "www.kuzminovo.sk", "email": "brontvaj.milos@gmail.com", "telefon": "421903565177", "stav": "kontaktovan", "volat_date": "", "poznamka": "", "lokace": "Orava", "sluzba": "", "datum": "15. 6.", "problem": "Potreba zvýšiť obsadenost"}, {"_id": 775, "jmeno": "Aranka Pavla Macháčková", "firma": "ateliermozaika.cz", "email": "pavla@ateliermozaika.cz", "telefon": "420724583331", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "ateliermozaika.cz", "sluzba": "", "datum": "15. 6.", "problem": "ppc nwgungují"}, {"_id": 776, "jmeno": "Tomáš", "firma": "improsvet.sk", "email": "info@improsvet.sk", "telefon": "421910389314", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Škola improvizácie Bratislava", "sluzba": "", "datum": "15. 6.", "problem": "Malo klientov. Chcel by som vytvorit kampane ktore by voli na na 8 a 9 mesiac v roku. Ktore by promovali moje služby na ďalšiu sezónu."}, {"_id": 777, "jmeno": "Milan Kepeňa", "firma": "Nemám žiadnu eše ale mam ig : Milan_gaming shop", "email": "milankepena14@gmail.com", "telefon": "421974236695", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Bánska Bystrica", "sluzba": "", "datum": "15. 6.", "problem": "Mam maľo odberov"}, {"_id": 778, "jmeno": "Jiri Zimmer", "firma": "zimmer - reality.cz", "email": "zimmereality@atlas.cz", "telefon": "420777325801", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Praha - Západ", "sluzba": "", "datum": "15. 6.", "problem": "Nedostatek klientů"}, {"_id": 779, "jmeno": "Jana Vacková", "firma": "Nemam", "email": "info@daenrico.cz", "telefon": "420778745957", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Praha", "sluzba": "", "datum": "15. 6.", "problem": "Nevim, neumím nastavit reklamu"}, {"_id": 780, "jmeno": "Karel Vencovský", "firma": "okna-pro.cz", "email": "vencovsky.karel@oknp.cz", "telefon": "420608817953", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Královéhradecký kraj", "sluzba": "", "datum": "15. 6.", "problem": "10"}, {"_id": 781, "jmeno": "Zuzana Medeková", "firma": "www.royalbeauty.sk", "email": "medekovazuzana@gmail.com", "telefon": "421907295184", "stav": "volat", "volat_date": "", "poznamka": "Volat:po 18:00 🗓️", "lokace": "Topolcany", "sluzba": "", "datum": "15. 6.", "problem": "Neviem koľko bude treba"}, {"_id": 782, "jmeno": "Osa Tibor Osztatni", "firma": "wineclub.sk", "email": "ossa@ossa.sk", "telefon": "421940749847", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Južné Slovensko Nové Zámky", "sluzba": "", "datum": "15. 6.", "problem": "Neviem"}, {"_id": 783, "jmeno": "Frantisek Fekete", "firma": "frantisekfekete009@gmail.com", "email": "frantisekfekete009@gmail.com", "telefon": "421908134484", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "pizza", "sluzba": "", "datum": "15. 6.", "problem": "veľa firiem dookola"}, {"_id": 784, "jmeno": "Ferda Sulik", "firma": "Nerozumim", "email": "saminkamilujeferdu@seznam.cz", "telefon": "420606924487", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Zkusím to", "sluzba": "", "datum": "15. 6.", "problem": "Budu rád"}, {"_id": 785, "jmeno": "Tobias Bambuch", "firma": "Nevim", "email": "tobiasbambuch@seznam.cz", "telefon": "420775700166", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Loučja", "sluzba": "", "datum": "15. 6.", "problem": "Špatná tekstura"}, {"_id": 786, "jmeno": "Lucie Nedomová", "firma": "Www.noeyes.cz", "email": "lucie.nedomova@seznam.cz", "telefon": "420724750191", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Pardubice", "sluzba": "", "datum": "15. 6.", "problem": "Jsme noví na trhu"}, {"_id": 787, "jmeno": "Tomáš Bušek", "firma": "@Twistcafe_tenerife", "email": "tom.busek@gmail.com", "telefon": "420608140180", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 2☎️", "lokace": "Tenerife", "sluzba": "", "datum": "15. 6.", "problem": "Šaptný marketing na soc. sitích a mám na to málo času tvořit content, videa a následnou propagaci"}, {"_id": 788, "jmeno": "Josef Vyskocil", "firma": "Senditrack.cz", "email": "josefvyskoc@seznam.cz", "telefon": "420776472120", "stav": "volat", "volat_date": "26.7.", "poznamka": "Volat: 26.7.🗓️", "lokace": "Praha", "sluzba": "", "datum": "15. 6.", "problem": "Složitost aplikace"}, {"_id": 789, "jmeno": "Iveta Bukovská Szántová", "firma": "Nemám", "email": "ivetabukovska@gmail.com", "telefon": "421908122009", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Banská Bystrica", "sluzba": "", "datum": "15. 6.", "problem": "Neznalosť tvorby videí"}, {"_id": 790, "jmeno": "Aneel Askari", "firma": "Www.newtex.sk", "email": "aneelinntex@yahoo.com", "telefon": "421911768512", "stav": "volat", "volat_date": "28.6.", "poznamka": "Volat: 28.6.🗓️", "lokace": "Bratislava", "sluzba": "", "datum": "15. 6.", "problem": "Vysoké náklady na reklam"}, {"_id": 791, "jmeno": "Ondra_13", "firma": "Kdnbˇsi", "email": "ondrejcihanek@gmail.com", "telefon": "420603204123", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "V Ostravě", "sluzba": "", "datum": "15. 6.", "problem": "Nevím"}, {"_id": 792, "jmeno": "Ro Man", "firma": "Mm", "email": "romanpodrany342@gmail.com", "telefon": "421944800052", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Bracovce", "sluzba": "", "datum": "15. 6.", "problem": "1p1p joutube"}, {"_id": 793, "jmeno": "Martin  Levai", "firma": "Nemám", "email": "tradecz78@seznam.cz", "telefon": "420797674400", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Praha", "sluzba": "", "datum": "15. 6.", "problem": "Nevím"}, {"_id": 794, "jmeno": "Luboš Petraš", "firma": "flexart.sk", "email": "maximmax26@gmail.com", "telefon": "421908599713", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Detva", "sluzba": "", "datum": "15. 6.", "problem": "marketing  reklama"}, {"_id": 795, "jmeno": "Dzej Ti JT", "firma": "https://www.dzejti.sk/", "email": "jozefturiak@zoznam.sk", "telefon": "421910658548", "stav": "volat", "volat_date": "26.6.", "poznamka": "Volat: 26.6.🗓️ xx", "lokace": "Servis Detailing", "sluzba": "reklama/marketing", "datum": "15. 6.", "problem": "Klientela"}, {"_id": 796, "jmeno": "Okenní Pohotovost", "firma": "www.okennipohotovost.cz", "email": "info@okennipohotovost.cz", "telefon": "420731815440", "stav": "konec", "volat_date": "", "poznamka": "Nezvedá 3☎️", "lokace": "Česká republika", "sluzba": "reklama/marketing", "datum": "15. 6.", "problem": "Mala poptávka"}, {"_id": 797, "jmeno": "მძიმე ცხოვრება", "firma": "Nemam", "email": "anakuce123@gmail.com", "telefon": "420604389512", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Nepodnikám", "sluzba": "tvorba_ai_videí", "datum": "15. 6.", "problem": "Nepodnikám"}, {"_id": 798, "jmeno": "𝔻𝕠𝕧𝕠𝕫 𝕒 𝕡𝕣𝕠𝕙𝕝𝕚𝕕𝕜𝕪 𝕒𝕦𝕥", "firma": "www.dovoznaklic.cz", "email": "janulik@valtice.cz", "telefon": "420723243570", "stav": "volat", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Břeclavsko", "sluzba": "reklama/marketing", "datum": "15. 6.", "problem": "Nedostatek zakázek a povědomí o mojich službách"}, {"_id": 799, "jmeno": "František Balog", "firma": "www.khetanespolocnefest.com", "email": "frantisekbalog30@gmail.com", "telefon": "421948095769", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Košice", "sluzba": "", "datum": "16. 6.", "problem": "10"}, {"_id": 800, "jmeno": "meandmaty", "firma": "Meandmaty.com", "email": "sa@meandmaty.com", "telefon": "420704571517", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Praha", "sluzba": "", "datum": "16. 6.", "problem": "10"}, {"_id": 801, "jmeno": "Misc boy", "firma": "68", "email": "domilenka@gmail.com", "telefon": "944056226", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Dej mi reklamu o fotbalovéy dres", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "79"}, {"_id": 802, "jmeno": "HELLO", "firma": "@helllo1230987", "email": "salamko373@gmail.com", "telefon": "420602192191", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Na počítačích", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "Hodně treninku"}, {"_id": 803, "jmeno": "Itz Martin", "firma": "Nemam webovu stranku", "email": "mirgamalgin@gmail.com", "telefon": "421952185506", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Chcem zarabať viac ako zarabaju bohači", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "Ja ma 14 rokov a chcem len si vitvoriť IA VIDEO"}, {"_id": 804, "jmeno": "Damik", "firma": "Nvm", "email": "damianjedinak25@gmail.com", "telefon": "421903746597", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Nvm", "sluzba": "video_produkce", "datum": "16. 6.", "problem": "Nvm"}, {"_id": 805, "jmeno": "Tůma Jiří", "firma": "Thomelighting.com", "email": "tuma@thomelighting.com", "telefon": "420777110384", "stav": "volat", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Liberecký kraj", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "Nevím"}, {"_id": 806, "jmeno": "Kristián Horňák", "firma": "www.kristep.sk", "email": "kristianhornak96@gmail.com", "telefon": "421907269927", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Košický kraj", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "Asi to že sa hanbím rozprávať do kamery a natáčať virálny obsah"}, {"_id": 807, "jmeno": "Umelý Trávnik", "firma": "www.bezkosenia.sk", "email": "elisesro@gmail.com", "telefon": "421911140600", "stav": "volat", "volat_date": "24.6.", "poznamka": "Volat: 24.6.🗓️ xxx", "lokace": "Sereď", "sluzba": "reklama/marketing", "datum": "16. 6.", "problem": "slabá reklama"}, {"_id": 808, "jmeno": "David Davud Kubelka", "firma": "Autodily kubelka", "email": "davidkubelka092@gmail.com", "telefon": "420737570961", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Holice okres Pardubice", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "Nemam kliety"}, {"_id": 809, "jmeno": "Jancová Katarína", "firma": "www.alugard.sk", "email": "info@alugard.sk", "telefon": "421940522362", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Žilina", "sluzba": "tvorba_ai_videí", "datum": "16. 6.", "problem": "nemáme ešte veľa realizácií ktoré by sme mohli použiť na predajaschopne video reelska"}, {"_id": 810, "jmeno": "tom.vitek", "firma": "Novela zavinam teprve", "email": "tvitek007@gmail.com", "telefon": "420605732152", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Kolik by to tak stalo ?", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Nevim"}, {"_id": 811, "jmeno": "Creeperino47", "firma": "YouTube.com/@creeperino47", "email": "creeperino47.yt@gmail.com", "telefon": "705937737", "stav": "konec", "volat_date": "", "poznamka": "Nerelevantní☹️", "lokace": "Moravskoslezský kraj", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Cas"}, {"_id": 812, "jmeno": "Dominik Junas", "firma": "Pracuje sa na nej", "email": "junasdominik@gmail.com", "telefon": "421940955833", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Bratislava", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Sociálne siete"}, {"_id": 813, "jmeno": "Pokemonsellcenter_sk", "firma": ".", "email": "maxxmedek@gmail.com", "telefon": "421940366351", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "."}, {"_id": 814, "jmeno": "✦ 𝑱𝒂𝒌𝒖𝒃 𝑹𝒆𝒍̌𝒐𝒗𝒔𝒌𝒚́  𝑺𝒆𝒏𝒊𝒄𝒂", "firma": "Nemám", "email": "jakubdosrelovsky@gmail.com", "telefon": "421948143042", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "SENICA Slovensko", "sluzba": "reklama/marketing", "datum": "22. 6.", "problem": "Pomalé pribúdanie klientov a spolupracovníkov"}, {"_id": 815, "jmeno": "Jozef Mitrík", "firma": "Nemám", "email": "jozo.mitrik135@gmail.com", "telefon": "421918233800", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Marketing"}, {"_id": 816, "jmeno": "Radek Václavík", "firma": "levne-topeni.cz", "email": "tlustec@seznam.cz", "telefon": "420777179279", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "topení", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": ".."}, {"_id": 817, "jmeno": "Jan čureja", "firma": "Instagram hknzik.boris666", "email": "jan.bily520@seznam.cz", "telefon": "420705226746", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "Hodně si přeju mýt spolupráci já sem z Vimperka mirova433", "sluzba": "reklama/marketing", "datum": "22. 6.", "problem": "Nic"}, {"_id": 818, "jmeno": "Živica Pryskyřičná", "firma": "Www.klimatix.sk", "email": "ivica@klimatix.sk", "telefon": "421910590717", "stav": "volat", "volat_date": "26.8.", "poznamka": "Volat: 26.8.🗓️", "lokace": "Stupava", "sluzba": "reklama/marketing", "datum": "22. 6.", "problem": "Slaba reklama, velka konkurencia"}, {"_id": 819, "jmeno": "Andrej Valkovič", "firma": "Andrej valkovic", "email": "andrejvalkovic55@gmail.com", "telefon": "421914657122", "stav": "novy", "volat_date": "", "poznamka": "", "lokace": "", "sluzba": "video_produkce", "datum": "22. 6.", "problem": "chudá"}, {"_id": 820, "jmeno": "Viktor Tekula", "firma": "purneo.sk", "email": "viktor.tekula@gmail.com", "telefon": "421903704099", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "bratislava", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "reklama na socialnych sietach"}, {"_id": 821, "jmeno": "Mladý Swarcy", "firma": "Jo", "email": "filip.schwarzmayer@email.cz", "telefon": "420733738489", "stav": "email_ready", "volat_date": "", "poznamka": "", "lokace": "Ne", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Jo"}, {"_id": 822, "jmeno": "Misc boy", "firma": "68", "email": "domilenka@gmail.com", "telefon": "944056226", "stav": "email_ready", "volat_date": "", "poznamka": "", "lokace": "Dej mi reklamu o fotbalovéy dres", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "79"}, {"_id": 823, "jmeno": "HELLO", "firma": "@helllo1230987", "email": "salamko373@gmail.com", "telefon": "420602192191", "stav": "email_ready", "volat_date": "", "poznamka": "", "lokace": "Na počítačích", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Hodně treninku"}, {"_id": 824, "jmeno": "Itz Martin", "firma": "Nemam webovu stranku", "email": "mirgamalgin@gmail.com", "telefon": "421952185506", "stav": "email_ready", "volat_date": "", "poznamka": "", "lokace": "Chcem zarabať viac ako zarabaju bohači", "sluzba": "tvorba_ai_videí", "datum": "22. 6.", "problem": "Ja ma 14 rokov a chcem len si vitvoriť IA VIDEO"}, {"_id": 825, "jmeno": "Damik", "firma": "Nvm", "email": "damianjedinak25@gmail.com", "telefon": "421903746597", "stav": "email_ready", "volat_date": "", "poznamka": "", "lokace": "Nvm", "sluzba": "video_produkce", "datum": "22. 6.", "problem": "Nvm"}, {"_id": 826, "jmeno": "Jaroslav Sendrei", "firma": "Kryptomeny.com//stránky cash back ...", "email": "sendreijaroslav0@gmail.com", "telefon": "421940891805", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Marketing reklama médiá zábava na sociálnej sieti.", "sluzba": "reklama/marketing", "datum": "25. 6.", "problem": "Monkey:)d dnešnej dobre treba  Rást začne postupne a to budú sledovať."}, {"_id": 827, "jmeno": "Michal", "firma": "Nemám", "email": "brokeragencycar@gmail.com", "telefon": "421911101188", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Slovenská republika", "sluzba": "reklama/marketing", "datum": "25. 6.", "problem": "Slabý rast na ig"}, {"_id": 828, "jmeno": "Tomáš Boldižár", "firma": "Ešte ju nemám, ale budem mat čoskoro.", "email": "boldizartomas@gmail.com", "telefon": "421907054222", "stav": "konec", "volat_date": "", "poznamka": "konec", "lokace": "Košice", "sluzba": "reklama/marketing", "datum": "25. 6.", "problem": "Nemám reklamu. Nízke povedomie o mojom pôsobení ako tréner."}, {"_id": 829, "jmeno": "Damian", "firma": "bfkhxi-es.myshopify.com", "email": "reyli.cdc@gmail.com", "telefon": "421910636004", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Skincare", "sluzba": "", "datum": "25. 6.", "problem": "30+"}, {"_id": 830, "jmeno": "Filip Magát", "firma": "Web ešte neni spustený potrebujem reklamy na produkt", "email": "filip5858@gmail.com", "telefon": "421902461908", "stav": "volat", "volat_date": "27.6.", "poznamka": "Volat: 27.6.🗓️", "lokace": "Bratislava - Pezinok", "sluzba": "", "datum": "25. 6.", "problem": "Vôbec netuším možno do 10"}, {"_id": 831, "jmeno": "Luboš Němec", "firma": "realitynemec", "email": "lnemecl@seznam.cz", "telefon": "420734222206", "stav": "volat", "volat_date": "29.6.", "poznamka": "Volat: 29.6.🗓️", "lokace": "Praha a Praha východ", "sluzba": "", "datum": "25. 6.", "problem": "4"}, {"_id": 832, "jmeno": "Tomáš Švec", "firma": "dovolenka.net", "email": "tomas.svec@yahoo.com", "telefon": "421940170370", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "sr", "sluzba": "tvorba_ai_videí", "datum": "25. 6.", "problem": "kreativa"}, {"_id": 833, "jmeno": "Oliver Ivanovič", "firma": "www.MŠKSpartakMedzilaborce.sk", "email": "oliverko.ivanovic@gmail.com", "telefon": "421907467066", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "Nevím", "sluzba": "tvorba_ai_videí", "datum": "25. 6.", "problem": "Nevím"}, {"_id": 834, "jmeno": "Petr Petr Kuska", "firma": "www.kvalitnikrmeni.com", "email": "srosenitagroup@gmail.com", "telefon": "420721996633", "stav": "volat", "volat_date": "26.6.", "poznamka": "Volat: 26.6.🗓️", "lokace": "Karviná", "sluzba": "tvorba_ai_videí", "datum": "25. 6.", "problem": "Kvalitní reklama a propagace"}, {"_id": 835, "jmeno": "Radek Václavík", "firma": "levne-topeni.cz", "email": "tlustec@seznam.cz", "telefon": "420777179278", "stav": "novy", "volat_date": "", "poznamka": "Nezvedá 1☎️", "lokace": "topení", "sluzba": "tvorba_ai_videí", "datum": "25. 6.", "problem": ".."}];
+
+const SLUZBA = {'tvorba_ai_videí':'🎬 AI videa','reklama/marketing':'📢 Reklama','video_produkce':'📹 Video','jiné':'🔧 Jiné',''  :''};
+
+let leads = [];
+let draftMap = {};   // email → draft object
+let currentTab = 'volat';
+let synced = false;
+let searchQ = '';
+
+// ── INIT ──
+function init() {
+  // Load user edits from main CRM localStorage
+  let userEdits = {};
+  try {
+    const s = localStorage.getItem(STORED_KEY);
+    if (s) { const p = JSON.parse(s); p.forEach(l => { userEdits[l._id] = l; }); }
+  } catch(e) {}
+
+  leads = LEADS_DATA.map(l => {
+    const u = userEdits[l._id] || {};
+    return { ...l, stav: u.stav || l.stav, followup: u.followup || '', myNotes: u.myNotes || '',
+             prodej_castka: u.prodej_castka || '', prodej_produkt: u.prodej_produkt || '' };
   });
-  const totSpendAll=camps.reduce((s,c)=>s+(parseFloat(fbSpend[c.name])||0),0);
-  const totCpl=totSpendAll&&fbLeads?totSpendAll/fbLeads:0;
-  const totRoi=totSpendAll&&totalObrat?(totalObrat-totSpendAll)/totSpendAll*100:null;
-  h+=`<tr style="border-top:2px solid var(--border);font-weight:700;background:var(--bg3)"><td>CELKEM</td><td></td><td style="text-align:right">${fbLeads}</td><td style="text-align:right;color:var(--red)">${totSpendAll?Number(totSpendAll).toLocaleString('cs')+' €':'—'}</td><td style="text-align:right">${totCpl?Number(totCpl.toFixed(2)).toLocaleString('cs')+' €':'—'}</td><td style="text-align:right;color:var(--accent2)">${totalClosed}</td><td style="text-align:right;color:var(--green)">${totalObrat?Number(totalObrat).toLocaleString('cs')+' €':'—'}</td><td style="text-align:right;color:${totRoi===null?'var(--text3)':totRoi>=0?'var(--green)':'var(--red)'}">${totRoi!==null?Math.round(totRoi)+'%':'—'}</td></tr>`;
-  h+=`</tbody></table></div></div>`;
-  const fbOnly=leads.filter(l=>l.platform==='facebook').length,igOnly=leads.filter(l=>l.platform==='instagram').length;
-  if(fbOnly||igOnly){const tot=fbOnly+igOnly;h+=`<div class="chart-box"><h3>📱 Facebook vs Instagram</h3><div class="bar-row"><div class="bar-label">📘 Facebook</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(fbOnly/tot*100)}%;background:#3b82f6">${fbOnly}</div></div><div class="bar-count">${fbOnly}</div></div><div class="bar-row"><div class="bar-label">📸 Instagram</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(igOnly/tot*100)}%;background:#ec4899">${igOnly}</div></div><div class="bar-count">${igOnly}</div></div></div>`;}
-  if(noCamp&&noCamp.leads.length){h+=`<div style="font-size:.72rem;color:var(--text3);margin-top:8px">⚠️ ${noCamp.leads.length} leadů bez přiřazené kampaně (importováno mimo FB Lead Ads)</div>`;}
-  h+=`</div>`;kv.innerHTML=h;
+
+  // Load cached draft map from previous sync
+  try {
+    const ds = localStorage.getItem(SLIM_KEY);
+    if (ds) {
+      const cached = JSON.parse(ds);
+      draftMap = cached.map || {};
+      synced = true;
+      document.getElementById('syncStatus').textContent = 'Naposledy: ' + (cached.time || '?');
+    }
+  } catch(e) {}
+
+  renderStats();
+  renderContent();
 }
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-let _resizeT;window.addEventListener('resize',()=>{clearTimeout(_resizeT);_resizeT=setTimeout(()=>setTab(currentTab),150);});
-checkAuth();if(sessionStorage.getItem(AUTH_KEY)==='1'){init();setTab('table');}
+
+// ── SYNC ──
+async function doSync() {
+  const btn = document.getElementById('syncBtn');
+  const icon = document.getElementById('syncIcon');
+  btn.disabled = true;
+  icon.innerHTML = '<span class="spinner"></span>';
+  document.getElementById('syncStatus').textContent = 'Načítám drafty…';
+
+  try {
+    const allDrafts = [];
+    let pageToken = '';
+    let page = 0;
+    do {
+      const args = { pageSize: 50, view: 'DRAFT_VIEW_FULL' };
+      if (pageToken) args.pageToken = pageToken;
+      const r = await window.cowork.callMcpTool(
+        'mcp__10e3268c-06b9-4a9e-9e5c-89490496ccbb__list_drafts', args
+      );
+      const data = r.structuredContent ?? JSON.parse(r.content[0].text);
+      if (data.drafts) allDrafts.push(...data.drafts);
+      pageToken = data.nextPageToken || '';
+      page++;
+      if (page > 10) break; // safety
+    } while (pageToken);
+
+    // Build email → draft map
+    draftMap = {};
+    allDrafts.forEach(d => {
+      (d.toRecipients || []).forEach(email => {
+        draftMap[email.toLowerCase().trim()] = {
+          id: d.id, subject: d.subject, date: d.date
+        };
+      });
+    });
+
+    synced = true;
+    const now = new Date().toLocaleTimeString('cs', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('syncStatus').textContent = `✅ ${allDrafts.length} draftů · ${now}`;
+
+    // Cache
+    try {
+      localStorage.setItem(SLIM_KEY, JSON.stringify({ map: draftMap, time: now, count: allDrafts.length }));
+    } catch(e) {}
+
+    renderStats();
+    renderContent();
+  } catch(e) {
+    document.getElementById('syncStatus').textContent = '❌ Chyba: ' + e.message;
+  }
+
+  icon.textContent = '🔄';
+  btn.disabled = false;
+}
+
+// ── TABS ──
+function setTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', ['volat','drafts'][i]===t));
+  renderContent();
+}
+
+// ── STATS ──
+function renderStats() {
+  const today = new Date().toISOString().slice(0,10);
+  const volatL = leads.filter(l=>l.stav==='volat');
+  const emailR = leads.filter(l=>l.stav==='email_ready');
+  const fuOv   = leads.filter(l=>l.followup&&l.followup<today);
+  const fuTd   = leads.filter(l=>l.followup===today);
+  const fuUp   = leads.filter(l=>l.followup>today);
+  const hasDraft = leads.filter(l=>l.email&&draftMap[l.email.toLowerCase()]);
+  const draftCount = Object.keys(draftMap).length;
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-chip"><span class="num c-orange">${volatL.length}</span><span>Naplánováno volat</span></div>
+    <div class="stat-chip"><span class="num c-purple">${emailR.length}</span><span>Odeslat email</span></div>
+    <div class="stat-chip"><span class="num c-red">${fuOv.length}</span><span>Prošlé follow-upy</span></div>
+    <div class="stat-chip"><span class="num c-green">${fuTd.length}</span><span>Follow-up dnes</span></div>
+    ${synced ? `<div class="stat-chip"><span class="num c-green">${hasDraft.length}</span><span>Leadů s draftem</span></div>
+    <div class="stat-chip"><span class="num c-gray">${draftCount}</span><span>Draftů celkem v Gmailu</span></div>` : ''}
+  `;
+}
+
+// ── CONTENT ──
+function renderContent() {
+  if (currentTab === 'volat') renderVolat();
+  else renderAllDrafts();
+}
+
+function hasDraftFor(email) {
+  if (!email || !synced) return null;
+  return draftMap[email.toLowerCase().trim()] || null;
+}
+
+function card(l, dateLabel, dateColor) {
+  const draft = hasDraftFor(l.email);
+  const tel = (l.telefon||'').replace(/[^+0-9]/g,'');
+  const draftBadge = synced
+    ? (draft
+        ? `<span class="badge badge-draft">✉️ Draft připraven</span>`
+        : `<span class="badge badge-nodraft">⚠️ Bez draftu</span>`)
+    : '';
+  const slBadge = l.sluzba && SLUZBA[l.sluzba] ? `<span class="badge badge-sluzba">${SLUZBA[l.sluzba]}</span>` : '';
+  const locBadge = l.lokace ? `<span class="badge badge-lokace">📍 ${esc(l.lokace)}</span>` : '';
+  return `<div class="card">
+    <div class="card-date" style="color:${dateColor}">${dateLabel}</div>
+    <div class="card-info">
+      <div class="card-name">${esc(l.jmeno||'')}${l.firma?' · <span style="font-weight:400;color:#64748b">'+esc(l.firma)+'</span>':''}</div>
+      <div class="card-sub">${esc(l.poznamka||l.problem||'')}${l.lokace?' · 📍'+esc(l.lokace):''}</div>
+      <div class="card-badges">${draftBadge}${slBadge}</div>
+    </div>
+    <div class="card-actions">
+      ${tel?`<a class="btn-ic" href="tel:${tel}">📞 Volat</a>`:''}
+      ${l.email?`<a class="btn-ic" href="mailto:${esc(l.email)}">✉️</a>`:''}
+      ${draft?`<a class="btn-ic green" href="https://mail.google.com/mail/u/0/#drafts/${draft.id}" target="_blank">📨 Otevřít draft</a>`:''}
+    </div>
+  </div>`;
+}
+
+function renderVolat() {
+  const today = new Date().toISOString().slice(0,10);
+  const q = searchQ.toLowerCase();
+
+  function flt(arr) {
+    if (!q) return arr;
+    return arr.filter(l => (l.jmeno||'').toLowerCase().includes(q)||(l.firma||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.telefon||'').includes(q));
+  }
+
+  const emailReady = flt(leads.filter(l=>l.stav==='email_ready'));
+  const volatL     = flt(leads.filter(l=>l.stav==='volat')).sort((a,b)=>(a.volat_date||'zzz').localeCompare(b.volat_date||'zzz'));
+  const fuOv       = flt(leads.filter(l=>l.followup&&l.followup<today)).sort((a,b)=>a.followup.localeCompare(b.followup));
+  const fuTd       = flt(leads.filter(l=>l.followup===today));
+  const fuUp       = flt(leads.filter(l=>l.followup>today)).sort((a,b)=>a.followup.localeCompare(b.followup));
+
+  const sec = (title, arr, color) => {
+    if (!arr.length) return '';
+    // Split: s draftem / bez draftu
+    const wDraft  = arr.filter(l=>hasDraftFor(l.email));
+    const noDraft = arr.filter(l=>!hasDraftFor(l.email));
+    const displayArr = synced ? [...wDraft, ...noDraft] : arr;
+    return `<div class="section">
+      <div class="section-title" style="color:${color}">${title} <span class="section-count">${arr.length}</span>
+        ${synced&&wDraft.length?`<span style="background:#dcfce7;color:#15803d;border-radius:8px;padding:1px 8px;font-size:.68rem">✉️ ${wDraft.length} s draftem</span>`:''}
+      </div>
+      ${displayArr.map(l => card(l, l.volat_date||l.followup||'📧', color)).join('')}
+    </div>`;
+  };
+
+  let h = `<div class="search-bar"><input type="text" placeholder="🔍 Hledat…" oninput="searchQ=this.value;renderContent()" value="${esc(searchQ)}"></div>`;
+  if (!synced) h += `<div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:#78350f">⚠️ Klikni <strong>Synchronizovat Gmail</strong> nahoře — zjistíme, které leady mají připravený draft.</div>`;
+
+  h += sec('📧 Odeslat email', emailReady, '#7c3aed');
+  h += sec('📞 Naplánovaná volání', volatL, '#f97316');
+  h += sec('⚠️ Prošlé follow-upy', fuOv, '#dc2626');
+  h += sec('✅ Follow-up dnes', fuTd, '#16a34a');
+  h += sec('📅 Nadcházející follow-upy', fuUp, '#3b82f6');
+
+  if (!emailReady.length && !volatL.length && !fuOv.length && !fuTd.length && !fuUp.length)
+    h += `<div class="empty">Žádné naplánované aktivity.</div>`;
+
+  document.getElementById('contentArea').innerHTML = h;
+}
+
+function renderAllDrafts() {
+  if (!synced) {
+    document.getElementById('contentArea').innerHTML = `<div class="empty">Nejdřív klikni <strong>Synchronizovat Gmail</strong> nahoře.</div>`;
+    return;
+  }
+  const entries = Object.entries(draftMap);
+  const q = searchQ.toLowerCase();
+  const flt = q ? entries.filter(([e])=>e.includes(q)) : entries;
+  // Cross-ref with leads
+  const leadMap = {};
+  leads.forEach(l => { if(l.email) leadMap[l.email.toLowerCase().trim()] = l; });
+
+  let h = `<div class="search-bar"><input type="text" placeholder="🔍 Hledat email…" oninput="searchQ=this.value;renderContent()" value="${esc(searchQ)}"></div>`;
+  h += `<div class="section"><div class="section-title">✉️ Drafty v Gmailu <span class="section-count">${entries.length}</span></div>
+  <table class="draft-table"><thead><tr>
+    <th>Email</th><th>Lead</th><th>Shoda</th><th>Předmět draftu</th><th>Datum</th><th>Akce</th>
+  </tr></thead><tbody>`;
+
+  flt.sort((a,b)=>{
+    const la = leadMap[a[0]], lb = leadMap[b[0]];
+    return (lb?1:0)-(la?1:0);
+  }).forEach(([email, draft]) => {
+    const lead = leadMap[email];
+    h += `<tr>
+      <td class="draft-email">${esc(email)}</td>
+      <td>${lead?`<div class="draft-name">${esc(lead.jmeno)}</div><div style="font-size:.72rem;color:#64748b">${esc(lead.firma||'')}</div>`:'<span style="color:#94a3b8">Nenalezen</span>'}</td>
+      <td>${lead?`<span class="match-yes">✅ Ano</span>`:`<span class="match-no">—</span>`}</td>
+      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475569">${esc(draft.subject||'')}</td>
+      <td class="draft-date">${draft.date ? new Date(draft.date).toLocaleDateString('cs') : '—'}</td>
+      <td><a class="btn-ic" href="https://mail.google.com/mail/u/0/#drafts/${draft.id}" target="_blank">📨 Otevřít</a>${lead&&lead.telefon?`<a class="btn-ic" href="tel:${lead.telefon.replace(/[^+0-9]/g,'')}">📞</a>`:''}</td>
+    </tr>`;
+  });
+  h += '</tbody></table></div>';
+  document.getElementById('contentArea').innerHTML = h;
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+init();
 </script>
 </body>
 </html>
