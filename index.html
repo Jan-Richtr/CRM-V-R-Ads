@@ -494,8 +494,15 @@ const SB='https://tvokxlkxnevlstavtibf.supabase.co';
 const SK='sb_publishable_uKdObAaBizal_WC5dbNJfQ_wJszavGB';
 const H={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
 
-async function sbGet(p){const r=await fetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
-async function sbPost(p,b){const r=await fetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
+async function sbFetch(url,opts={},ms=20000){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),ms);
+  try{return await fetch(url,{...opts,signal:ctrl.signal});}
+  catch(e){if(e.name==='AbortError')throw new Error('Timeout – Supabase neodpověděl ('+ms/1000+'s)');throw e;}
+  finally{clearTimeout(t);}
+}
+async function sbGet(p){const r=await sbFetch(SB+p,{headers:H});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):[];}
+async function sbPost(p,b){const r=await sbFetch(SB+p,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());}
 
 // ── Helpers ───────────────────────────────────────────────────
 function isMobile(){return window.innerWidth<=700;}
@@ -1237,7 +1244,12 @@ function doFile(file){
         };
       }).filter(r=>r.jmeno||r.email);
       document.getElementById('impPrev').style.display='';
-      document.getElementById('impInfo').innerHTML=`<b style="color:var(--green)">✅ Nalezeno ${impD.length} řádků</b> v "${esc(file.name)}"${isFB?' <span style="color:#3b82f6;font-size:.75rem">· FB Lead Ads</span>':''}`;
+      // Ukáž kolik je nových vs. duplikátů
+      const existingNow=new Set(leads.map(l=>l.email).filter(Boolean));
+      const newCount=impD.filter(r=>!r.email||!existingNow.has(r.email)).length;
+      const dupCount=impD.length-newCount;
+      const dupInfo=dupCount?` · <span style="color:var(--yellow)">⚠️ ${dupCount} duplikát${dupCount>4?'ů':dupCount>1?'y':''}  přeskočeno</span>`:'';
+      document.getElementById('impInfo').innerHTML=`<b style="color:var(--green)">✅ Nalezeno ${impD.length} řádků</b> v "${esc(file.name)}"${isFB?' <span style="color:#3b82f6;font-size:.75rem">· FB Lead Ads</span>':''}${dupInfo}${newCount<impD.length?` · <b style="color:var(--green)">${newCount} nových</b>`:''}`;
       document.getElementById('impBtn').style.display='';
     }catch(err){alert('Chyba: '+err.message);}
   };
@@ -1247,23 +1259,35 @@ function doFile(file){
 async function doImport(){
   if(!impD.length)return;
   const btn=document.getElementById('impBtn');btn.disabled=true;btn.textContent='⏳ Importuji…';
-  const prog=document.getElementById('progF'),st=document.getElementById('impSt');let done=0;
-  for(let i=0;i<impD.length;i+=100){
-    try{
-      const batch=impD.slice(i,i+100);
-      const emails=batch.map(r=>r.email).filter(Boolean);
-      if(emails.length){
-        const filter=emails.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
-        await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
-      }
-      await sbPost('/rest/v1/leads',batch);
-      done+=Math.min(100,impD.length-i);
-      prog.style.width=Math.round(done/impD.length*100)+'%';
-      st.textContent='Importováno '+done+' / '+impD.length;
-    }catch(err){st.textContent='❌ '+err.message;btn.disabled=false;btn.textContent='✅ Importovat';return;}
+  const prog=document.getElementById('progF'),st=document.getElementById('impSt');
+
+  // ── Deduplication: přeskoč leady, které už v CRM jsou (podle emailu) ──
+  const existingEmails=new Set(leads.map(l=>l.email).filter(Boolean));
+  const toImport=impD.filter(r=>!r.email||!existingEmails.has(r.email));
+  const skipped=impD.length-toImport.length;
+
+  if(!toImport.length){
+    if(st)st.innerHTML=`<span style="color:var(--yellow)">⚠️ Všechny leady (${skipped}) již v CRM existují — nic importováno.</span>`;
+    btn.disabled=false;btn.textContent='✅ Importovat';
+    return;
   }
-  st.textContent='✅ Hotovo!';
-  setTimeout(()=>{closeImport();init();},1000);
+
+  let done=0;
+  for(let i=0;i<toImport.length;i+=100){
+    try{
+      const batch=toImport.slice(i,i+100);
+      await sbPost('/rest/v1/leads',batch);
+      done+=Math.min(100,toImport.length-i);
+      if(prog)prog.style.width=Math.round(done/toImport.length*100)+'%';
+      if(st)st.textContent=(skipped?`Přeskočeno ${skipped} duplikátů · `:'')+'Importováno '+done+' / '+toImport.length;
+    }catch(err){
+      if(st)st.textContent='❌ '+err.message;
+      btn.disabled=false;btn.textContent='✅ Importovat';
+      return;
+    }
+  }
+  if(st)st.innerHTML=`✅ Hotovo! <b style="color:var(--green)">${toImport.length} nových</b>${skipped?` · <span style="color:var(--text3)">${skipped} přeskočeno (již existují)</span>`:''}`;
+  setTimeout(()=>{closeImport();init();},1500);
 }
 
 // ── Kampaně view ──────────────────────────────────────────────
