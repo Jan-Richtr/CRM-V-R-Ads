@@ -780,7 +780,7 @@ function renderTable(){
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
       <td style="color:var(--text3);min-width:55px">${formatDatum(l.datum)}</td>
       <td style="font-weight:600;max-width:130px">${esc(l.jmeno||'')}</td>
-      <td style="color:var(--text2);max-width:120px">${esc(l.firma||'')}</td>
+      <td style="color:var(--text2);max-width:120px">${l.firma?`<a class="link" href="${l.website&&l.website.startsWith('http')?esc(l.website):'https://www.google.com/search?q='+encodeURIComponent(l.firma)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(l.firma)}</a>`:''}</td>
       <td style="min-width:110px">${tel?`<a class="link" href="tel:${tel}" onclick="event.stopPropagation()">${esc(phoneDisplay)}</a>`:esc(phoneDisplay)}</td>
       <td style="max-width:150px"><a class="link" href="mailto:${esc(l.email||'')}" onclick="event.stopPropagation()">${esc(l.email||'')}</a></td>
       <td style="color:var(--text2);max-width:160px">${esc(l.problem||'')}</td>
@@ -792,7 +792,7 @@ function renderTable(){
       <td>${produkt}</td>
       <td style="color:${l.followup&&l.followup<today?'var(--red)':'var(--text2)'}">${l.followup||'—'}</td>
       <td style="color:var(--text2);max-width:220px;font-size:.72rem">${esc(l.myNotes||l.notes||'')}</td>
-      <td style="max-width:160px;white-space:nowrap">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span> `:''}${l.campaign_name?`<span class="camp-tag" title="${esc(l.campaign_name)}">${esc(l.campaign_name)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="max-width:160px;white-space:nowrap">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span> `:''}${(l.ad_name||l.campaign_name)?`<span class="camp-tag" title="${esc(l.campaign_name||'')}">${esc(l.ad_name||l.campaign_name)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -814,8 +814,8 @@ function renderCards(){
       <div class="lead-card-top">
         <div>
           <div class="lead-card-name">${esc(l.jmeno||'Neznámý')}</div>
-          ${l.firma?`<div class="lead-card-firma">${esc(l.firma)}</div>`:''}
-          ${l.campaign_name?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:''}<span class="camp-tag">${esc(l.campaign_name)}</span></div>`:''}
+          ${l.firma?`<div class="lead-card-firma"><a class="link" href="${l.website&&l.website.startsWith('http')?esc(l.website):'https://www.google.com/search?q='+encodeURIComponent(l.firma)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(l.firma)}</a></div>`:''}
+          ${(l.ad_name||l.campaign_name)?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:''}<span class="camp-tag" title="${esc(l.campaign_name||'')}">${esc(l.ad_name||l.campaign_name)}</span></div>`:''}
         </div>
         <div class="lead-card-badges">
           <span class="badge ${finfo.cls}" style="color:${finfo.color}">${finfo.label}</span>
