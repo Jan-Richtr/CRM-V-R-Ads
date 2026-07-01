@@ -1130,6 +1130,7 @@ function doFile(file){
           firma:fi(['company','firma','web'])>=0?fi(['company','firma','web']):-1,
           telefon:fi(['phone','tel','číslo'])>=0?fi(['phone','tel','číslo']):-1,
           problem:fi(['message','zpráv','problém','problem','prekážka','spomaľ','najväčšia'])>=0?fi(['message','zpráv','problém','problem','prekážka','spomaľ','najväčšia']):-1,
+          pocet_videi:fi(['počet_videí','počet videí','očakávaný_počet','ocakavany_pocet','počet_video'])>=0?fi(['počet_videí','počet videí','očakávaný_počet','ocakavany_pocet','počet_video']):-1,
           email:fi(['email','mail'])>=0?fi(['email','mail']):-1,
           datum:fi(['created_time','datum','date'])>=0?fi(['created_time','datum','date']):-1,
           poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):-1,
@@ -1150,6 +1151,7 @@ function doFile(file){
           firma:fi(['firma','company'])>=0?fi(['firma','company']):1,
           telefon:fi(['tel','phone','číslo'])>=0?fi(['tel','phone','číslo']):2,
           problem:fi(['problém','problem','prekážka','spomaľ','najväčšia'])>=0?fi(['problém','problem','prekážka','spomaľ','najväčšia']):3,
+          pocet_videi:fi(['počet_videí','počet videí','očakávaný_počet','ocakavany_pocet','počet_video'])>=0?fi(['počet_videí','počet videí','očakávaný_počet','ocakavany_pocet','počet_video']):-1,
           email:fi(['email','mail'])>=0?fi(['email','mail']):4,
           datum:fi(['datum','date'])>=0?fi(['datum','date']):5,
           poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):6,
@@ -1208,9 +1210,11 @@ function doFile(file){
         const rawSlz=cm.sluzba>=0?String(row[cm.sluzba]||'').trim().toLowerCase():'';
         let rawZajem=cm.mam_zajem>=0?String(row[cm.mam_zajem]||'').trim().toLowerCase():'';
         rawZajem=rawZajem.replace(/^mám_zájem_o:\s*/,'').replace(/^mam_zajem_o:\s*/,'').trim();
+        const rawPocetVidei=cm.pocet_videi>=0?String(row[cm.pocet_videi]||'').trim():'';
         const slzSrc=rawSlz||rawZajem;
         let sluzba='';
-        if(slzSrc.includes('reklam')||slzSrc.includes('marketing'))sluzba='reklama_marketing';
+        if(rawPocetVidei)sluzba='tvorba_ai_videi'; // počet videí → automaticky AI videa
+        else if(slzSrc.includes('reklam')||slzSrc.includes('marketing'))sluzba='reklama_marketing';
         else if(slzSrc.includes('ai vid')||slzSrc.includes('ai videí')||slzSrc.includes('ai videa'))sluzba='tvorba_ai_videi';
         else if(slzSrc.includes('video'))sluzba='video_produkce';
         else if(slzSrc&&slzSrc!=='0')sluzba='jine';
@@ -1234,7 +1238,7 @@ function doFile(file){
           jmeno,
           firma:cm.firma>=0?String(row[cm.firma]||'').trim():'',
           telefon,
-          problem:cm.problem>=0?String(row[cm.problem]||'').trim():'',
+          problem:(cm.problem>=0?String(row[cm.problem]||'').trim():'')||(rawPocetVidei?'Počet videí: '+rawPocetVidei:''),
           email:String(cm.email>=0?row[cm.email]||'':'').trim().toLowerCase(),
           datum,mesic,poznamka:poz,
           lokace:cm.lokace>=0?String(row[cm.lokace]||'').trim():'',
