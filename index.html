@@ -766,7 +766,8 @@ function renderTable(){
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
-    const fazeCell=`<select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select>`;
+    const fuColor=l.followup&&l.followup<today?'var(--red)':l.followup?'var(--accent2)':'var(--text3)';
+    const fazeCell=`<div style="display:flex;flex-direction:column;gap:2px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select><div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:2px;font-size:.64rem;color:${fuColor}">📅<input type="date" value="${l.followup||''}" onchange="changeFollowup('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" title="Datum volání" style="background:transparent;border:none;color:${fuColor};font-size:.64rem;cursor:pointer;outline:none;font-family:inherit;width:88px;padding:0"></div></div>`;
     const phoneDisplay=fixPhone(l.telefon||'');
     return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
@@ -841,6 +842,12 @@ async function changePoz(email,newPoz){
   lead.poz=newPoz;
   savePozLocal(email,newPoz);
   renderStatsBar();renderTable();
+}
+async function changeFollowup(email,newDate){
+  const lead=leads.find(l=>l.email===email);if(!lead)return;
+  lead.followup=newDate;
+  await saveToApi(lead);
+  renderTable();
 }
 
 // ── Stats view ────────────────────────────────────────────────
@@ -1115,12 +1122,13 @@ function doFile(file){
           jmeno:fi(['full name','full_name','jmén','jmeno','first name','first_name'])>=0?fi(['full name','full_name','jmén','jmeno','first name','first_name']):-1,
           firma:fi(['company','firma','web'])>=0?fi(['company','firma','web']):-1,
           telefon:fi(['phone','tel','číslo'])>=0?fi(['phone','tel','číslo']):-1,
-          problem:fi(['message','zpráv','problém','problem'])>=0?fi(['message','zpráv','problém','problem']):-1,
+          problem:fi(['message','zpráv','problém','problem','prekážka','spomaľ','najväčšia'])>=0?fi(['message','zpráv','problém','problem','prekážka','spomaľ','najväčšia']):-1,
           email:fi(['email','mail'])>=0?fi(['email','mail']):-1,
           datum:fi(['created_time','datum','date'])>=0?fi(['created_time','datum','date']):-1,
           poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):-1,
           lokace:fi(['city','lok','schůzky'])>=0?fi(['city','lok','schůzky']):-1,
           sluzba:fi(['služba','sluzba','schuzka'])>=0?fi(['služba','sluzba','schuzka']):-1,
+          mam_zajem:fi(['zájem_o','mám_zájem','zajem_o'])>=0?fi(['zájem_o','mám_zájem','zajem_o']):-1,
           stav:fi(['stav','status','fáze','faze'])>=0?fi(['stav','status','fáze','faze']):-1,
           notes:fi(['notes'])>=0?fi(['notes']):-1,
           campaign_name:fi(['campaign_name'])>=0?fi(['campaign_name']):-1,
@@ -1134,12 +1142,13 @@ function doFile(file){
           jmeno:fi(['jmén','jmeno','full name','first name'])>=0?fi(['jmén','jmeno','full name','first name']):0,
           firma:fi(['firma','company'])>=0?fi(['firma','company']):1,
           telefon:fi(['tel','phone','číslo'])>=0?fi(['tel','phone','číslo']):2,
-          problem:fi(['problém','problem'])>=0?fi(['problém','problem']):3,
+          problem:fi(['problém','problem','prekážka','spomaľ','najväčšia'])>=0?fi(['problém','problem','prekážka','spomaľ','najväčšia']):3,
           email:fi(['email','mail'])>=0?fi(['email','mail']):4,
           datum:fi(['datum','date'])>=0?fi(['datum','date']):5,
           poznamka:fi(['poznámka','poznamka','hovoru'])>=0?fi(['poznámka','poznamka','hovoru']):6,
           lokace:fi(['lok','schůzky'])>=0?fi(['lok','schůzky']):7,
           sluzba:fi(['služba','sluzba','schuzka'])>=0?fi(['služba','sluzba','schuzka']):8,
+          mam_zajem:fi(['zájem_o','mám_zájem','zajem_o'])>=0?fi(['zájem_o','mám_zájem','zajem_o']):-1,
           ai_info:fi(['ai info','ai_info'])>=0?fi(['ai info','ai_info']):9,
           stav:fi(['stav','status','fáze','faze'])>=0?fi(['stav','status','fáze','faze']):10,
           notes:fi(['notes'])>=0?fi(['notes']):11,
@@ -1190,11 +1199,14 @@ function doFile(file){
         }
         const stav=mapStavStr(sv)||mapStavStr(gv)||mapStavStr(al)||'';
         const rawSlz=cm.sluzba>=0?String(row[cm.sluzba]||'').trim().toLowerCase():'';
+        let rawZajem=cm.mam_zajem>=0?String(row[cm.mam_zajem]||'').trim().toLowerCase():'';
+        rawZajem=rawZajem.replace(/^mám_zájem_o:\s*/,'').replace(/^mam_zajem_o:\s*/,'').trim();
+        const slzSrc=rawSlz||rawZajem;
         let sluzba='';
-        if(rawSlz.includes('reklam')||rawSlz.includes('marketing'))sluzba='reklama_marketing';
-        else if(rawSlz.includes('ai vid'))sluzba='tvorba_ai_videi';
-        else if(rawSlz.includes('video'))sluzba='video_produkce';
-        else if(rawSlz&&rawSlz!=='0')sluzba='jine';
+        if(slzSrc.includes('reklam')||slzSrc.includes('marketing'))sluzba='reklama_marketing';
+        else if(slzSrc.includes('ai vid')||slzSrc.includes('ai videí')||slzSrc.includes('ai videa'))sluzba='tvorba_ai_videi';
+        else if(slzSrc.includes('video'))sluzba='video_produkce';
+        else if(slzSrc&&slzSrc!=='0')sluzba='jine';
         let telefon=String(cm.telefon>=0?row[cm.telefon]||'':'').replace(/^p:/i,'').trim();
         telefon=fixPhone(telefon);
         // FB-specific fields
