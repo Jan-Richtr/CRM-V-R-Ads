@@ -540,6 +540,11 @@ let statsMonth=null,impD=[];
 let selected=new Set();
 let fbSpend={};
 
+// ── Poznámka (poz) — uložena lokálně, nezávislá na fázi ──────
+function savePozLocal(email,poz){try{localStorage.setItem('vp_'+btoa(unescape(encodeURIComponent(email))).slice(0,20),poz);}catch{}}
+function loadPozLocal(email){try{return localStorage.getItem('vp_'+btoa(unescape(encodeURIComponent(email))).slice(0,20))||'';}catch{return'';}}
+
+
 function toggleSel(email,checked){
   if(checked)selected.add(email);else selected.delete(email);
   updateSelBar();
@@ -615,6 +620,7 @@ async function init(){
         prodej_note:c.prodej_note||'',
         followup:c.followup||'',
         myNotes:c.my_notes||'',
+        poz:loadPozLocal(l.email)||'',
       };
     });
     showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
@@ -669,7 +675,7 @@ function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){
 // ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
   return leads.filter(l=>{
-    const poz=getPoz(l.stav);
+    const poz=l.poz||'';
     if(filterPoz&&poz!==filterPoz)return false;
     if(filterFaze&&l.stav!==filterFaze)return false;
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
@@ -725,10 +731,10 @@ function render(){
 // ── Stats bar ─────────────────────────────────────────────────
 function renderStatsBar(){
   const bar=document.getElementById('statsBar');
-  const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length;
-  const uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length;
-  const ko=leads.filter(l=>getPoz(l.stav)==='konec').length;
-  const no=leads.filter(l=>!getPoz(l.stav)).length;
+  const ot=leads.filter(l=>(l.poz||'')==='otevreno').length;
+  const uz=leads.filter(l=>(l.poz||'')==='uzavreno').length;
+  const ko=leads.filter(l=>(l.poz||'')==='konec').length;
+  const no=leads.filter(l=>!(l.poz||'')).length;
   const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
     <div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
@@ -752,7 +758,7 @@ function renderTable(){
   const today=new Date().toISOString().slice(0,10);
   tb.innerHTML=sorted.map(l=>{
     const finfo=getFazeInfo(l.stav);
-    const poz=getPoz(l.stav);
+    const poz=l.poz||'';
     const tel=telNum(l.telefon);
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
@@ -832,10 +838,8 @@ async function changeFaze(email,newStav){
 }
 async function changePoz(email,newPoz){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
-  // Set fáze to default for that category (only if current fáze doesn't match)
-  const curPoz=getPoz(lead.stav);
-  if(curPoz!==newPoz){lead.stav=POZ_DEFAULT[newPoz]||'';}
-  await saveToApi(lead);
+  lead.poz=newPoz;
+  savePozLocal(email,newPoz);
   renderStatsBar();renderTable();
 }
 
@@ -854,7 +858,7 @@ function renderStatsView(){
     const mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
     return{month:m,name:MONTH_NAMES[m],leads:ml.length,prodano:mp.length,
       obrat:mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0),
-      konec:ml.filter(l=>getPoz(l.stav)==='konec').length};
+      konec:ml.filter(l=>(l.poz||'')==='konec').length};
   });
   let h=`<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 18px 0;position:sticky;top:0;z-index:5">`;
   h+=`<div style="display:flex;align-items:center;gap:18px;margin-bottom:8px;flex-wrap:wrap">
@@ -899,7 +903,7 @@ function renderStatsView(){
       <td>CELKEM</td><td style="text-align:right">${leads.length}</td>
       <td style="text-align:right;color:var(--accent2)">${allProd.length}</td>
       <td style="text-align:right;color:var(--green)">${totKonv}%</td>
-      <td style="text-align:right;color:var(--red)">${leads.filter(l=>getPoz(l.stav)==='konec').length}</td>
+      <td style="text-align:right;color:var(--red)">${leads.filter(l=>(l.poz||'')==='konec').length}</td>
       <td style="text-align:right;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</td>
     </tr></tbody></table></div>`;
   }else{
@@ -913,9 +917,9 @@ function renderStatsView(){
       <h2 style="flex:1;text-align:center;font-size:1rem">${MONTH_NAMES[statsMonth]} 2026</h2>
       ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">${MONTH_NAMES[nxt]} →</button>`:'<div></div>'}
     </div>`;
-    const ot=ml.filter(l=>getPoz(l.stav)==='otevreno').length;
-    const uz=ml.filter(l=>getPoz(l.stav)==='uzavreno').length;
-    const ko=ml.filter(l=>getPoz(l.stav)==='konec').length;
+    const ot=ml.filter(l=>(l.poz||'')==='otevreno').length;
+    const uz=ml.filter(l=>(l.poz||'')==='uzavreno').length;
+    const ko=ml.filter(l=>(l.poz||'')==='konec').length;
     h+=`<div class="stats-grid">
       <div class="kpi"><div class="kpi-val" style="color:var(--green)">${Number(mTotal).toLocaleString('cs')} €</div><div class="kpi-label">Obrat</div></div>
       <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${mp.length}</div><div class="kpi-label">Prodáno</div><div class="kpi-sub">z ${ml.length} leadů (${ml.length?Math.round(mp.length/ml.length*100):0}%)</div></div>
@@ -989,7 +993,7 @@ function openLead(id){
   document.getElementById('pName').textContent=l.jmeno||'Neznámý';
   document.getElementById('pFirma').textContent=l.firma||(l.datum?'Datum: '+l.datum:'');
   document.getElementById('pStage').value=l.stav||'';
-  document.getElementById('pPoz').value=getPoz(l.stav);
+  document.getElementById('pPoz').value=l.poz||'';
   document.getElementById('pFollowup').value=l.followup||'';
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
@@ -1036,7 +1040,7 @@ function savePanel(){
   currentLead.prodej_castka=document.getElementById('pCastka').value;
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
-  document.getElementById('pPoz').value=getPoz(currentLead.stav);
+  // poz zůstává nezávislá — neaktualizujeme ji při změně fáze
   saveToApi(currentLead);
   renderStatsBar();
   if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
@@ -1044,18 +1048,17 @@ function savePanel(){
 
 function savePozFromPanel(){
   if(!currentLead)return;
-  const newPoz=document.getElementById('pPoz').value;
-  const curPoz=getPoz(currentLead.stav);
-  if(curPoz!==newPoz){
-    currentLead.stav=POZ_DEFAULT[newPoz]||'';
-    document.getElementById('pStage').value=currentLead.stav;
-  }
-  savePanel();
+  currentLead.poz=document.getElementById('pPoz').value;
+  savePozLocal(currentLead.email,currentLead.poz);
+  renderStatsBar();
+  if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
 }
 
 function closePanel(){
   if(currentLead){
     currentLead.stav=document.getElementById('pStage').value;
+    currentLead.poz=document.getElementById('pPoz').value;
+    savePozLocal(currentLead.email,currentLead.poz);
     currentLead.followup=document.getElementById('pFollowup').value;
     currentLead.myNotes=document.getElementById('pNotes').value;
     currentLead.prodej_castka=document.getElementById('pCastka').value;
@@ -1109,7 +1112,7 @@ function doFile(file){
       let cm;
       if(isFB){
         cm={
-          jmeno:fi(['full name','jmén','jmeno','first name'])>=0?fi(['full name','jmén','jmeno','first name']):fi(['name'])>=0?fi(['name']):-1,
+          jmeno:fi(['full name','full_name','jmén','jmeno','first name','first_name'])>=0?fi(['full name','full_name','jmén','jmeno','first name','first_name']):-1,
           firma:fi(['company','firma','web'])>=0?fi(['company','firma','web']):-1,
           telefon:fi(['phone','tel','číslo'])>=0?fi(['phone','tel','číslo']):-1,
           problem:fi(['message','zpráv','problém','problem'])>=0?fi(['message','zpráv','problém','problem']):-1,
@@ -1128,7 +1131,7 @@ function doFile(file){
         };
       }else{
         cm={
-          jmeno:fi(['jmén','jmeno','name'])>=0?fi(['jmén','jmeno','name']):0,
+          jmeno:fi(['jmén','jmeno','full name','first name'])>=0?fi(['jmén','jmeno','full name','first name']):0,
           firma:fi(['firma','company'])>=0?fi(['firma','company']):1,
           telefon:fi(['tel','phone','číslo'])>=0?fi(['tel','phone','číslo']):2,
           problem:fi(['problém','problem'])>=0?fi(['problém','problem']):3,
@@ -1185,7 +1188,7 @@ function doFile(file){
           if(s.includes('volat'))return'nezvedan1';
           return null;
         }
-        const stav=mapStavStr(sv)||mapStavStr(gv)||mapStavStr(al)||'nezvedan1';
+        const stav=mapStavStr(sv)||mapStavStr(gv)||mapStavStr(al)||'';
         const rawSlz=cm.sluzba>=0?String(row[cm.sluzba]||'').trim().toLowerCase():'';
         let sluzba='';
         if(rawSlz.includes('reklam')||rawSlz.includes('marketing'))sluzba='reklama_marketing';
