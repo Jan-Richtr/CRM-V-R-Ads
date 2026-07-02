@@ -43,11 +43,13 @@ td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:midd
 tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
 /* Fáze badge colors */
-.b-nz1{background:rgba(249,115,22,.2);color:#f97316}
-.b-nz2{background:rgba(251,146,60,.2);color:#fb923c}
-.b-nz3{background:rgba(253,186,116,.2);color:#fbbf24}
+.b-nz1{background:rgba(234,179,8,.2);color:#eab308}
+.b-nz2{background:rgba(249,115,22,.2);color:#f97316}
+.b-nz3{background:rgba(239,68,68,.2);color:#ef4444}
 .b-em{background:rgba(168,85,247,.2);color:#a855f7}
 .b-nr{background:rgba(100,116,139,.2);color:#94a3b8}
+.b-wa{background:rgba(37,211,102,.2);color:#25d366}
+.b-konec{background:rgba(239,68,68,.2);color:#ef4444}
 .b-ds{background:rgba(34,197,94,.2);color:#22c55e}
 /* Poznámka category badges */
 .p-ot{background:rgba(234,179,8,.15);color:#eab308}
@@ -237,7 +239,9 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <option value="nezvedan2">Nezvedá 2 ☎️</option>
       <option value="nezvedan3">Nezvedá 3 ☎️</option>
       <option value="odeslat_email">Odeslat email 📧</option>
+      <option value="komunikace_wa">Komunikace na WA 💬</option>
       <option value="nerelevantni">Nerelevantní ☹️</option>
+      <option value="konec">Konec ❌</option>
       <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
       <option value="odeslana_faktura">Odeslana faktura 🧾</option>
       <option value="uzavreno">Uzavřeno 💚</option>
@@ -338,7 +342,9 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
           <option value="nezvedan2">Nezvedá 2 ☎️</option>
           <option value="nezvedan3">Nezvedá 3 ☎️</option>
           <option value="odeslat_email">Odeslat email 📧</option>
+          <option value="komunikace_wa">Komunikace na WA 💬</option>
           <option value="nerelevantni">Nerelevantní ☹️</option>
+          <option value="konec">Konec ❌</option>
           <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
           <option value="odeslana_faktura">Odeslana faktura 🧾</option>
           <option value="uzavreno">Uzavřeno 💚</option>
@@ -439,7 +445,9 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <option value="nezvedan2">Nezvedá 2 ☎️</option>
     <option value="nezvedan3">Nezvedá 3 ☎️</option>
     <option value="odeslat_email">Odeslat email 📧</option>
+    <option value="komunikace_wa">Komunikace na WA 💬</option>
     <option value="nerelevantni">Nerelevantní ☹️</option>
+    <option value="konec">Konec ❌</option>
     <option value="domluvena_schuzka">Domluvena schuzka ✅</option>
     <option value="odeslana_faktura">Odeslana faktura 🧾</option>
     <option value="uzavreno">Uzavřeno 💚</option>
@@ -513,11 +521,13 @@ function formatDatum(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{
 // ── Fáze system ───────────────────────────────────────────────
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
-  {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#f97316'},
-  {id:'nezvedan2',label:'Nezvedá 2 ☎️',poz:'otevreno',cls:'b-nz2',color:'#fb923c'},
-  {id:'nezvedan3',label:'Nezvedá 3 ☎️',poz:'otevreno',cls:'b-nz3',color:'#fbbf24'},
+  {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#eab308'},
+  {id:'nezvedan2',label:'Nezvedá 2 ☎️',poz:'otevreno',cls:'b-nz2',color:'#f97316'},
+  {id:'nezvedan3',label:'Nezvedá 3 ☎️',poz:'otevreno',cls:'b-nz3',color:'#ef4444'},
   {id:'odeslat_email',label:'Odeslat email 📧',poz:'otevreno',cls:'b-em',color:'#a855f7'},
+  {id:'komunikace_wa',label:'Komunikace na WA 💬',poz:'otevreno',cls:'b-wa',color:'#25d366'},
   {id:'nerelevantni',label:'Nerelevantní ☹️',poz:'konec',cls:'b-nr',color:'#94a3b8'},
+  {id:'konec',label:'Konec ❌',poz:'konec',cls:'b-konec',color:'#ef4444'},
   {id:'domluvena_schuzka',label:'Domluvena schuzka ✅',poz:'otevreno',cls:'b-ds',color:'#22c55e'},
   {id:'odeslana_faktura',label:'Odeslana faktura 🧾',poz:'otevreno',cls:'b-ds',color:'#3b82f6'},
   {id:'uzavreno',label:'Uzavřeno 💚',poz:'uzavreno',cls:'b-ds',color:'#16a34a'},
