@@ -50,6 +50,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .b-nr{background:rgba(100,116,139,.2);color:#94a3b8}
 .b-wa{background:rgba(37,211,102,.2);color:#25d366}
 .b-konec{background:rgba(239,68,68,.2);color:#ef4444}
+.b-volat{background:rgba(234,179,8,.2);color:#eab308}
 .b-ds{background:rgba(34,197,94,.2);color:#22c55e}
 /* Poznámka category badges */
 .p-ot{background:rgba(234,179,8,.15);color:#eab308}
@@ -235,6 +236,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <div class="filter-row d-desktop">
     <select class="flt" id="fazeFilter" onchange="applyFilters()">
       <option value="">Všechny fáze</option>
+      <option value="volat">Volat 📞</option>
       <option value="nezvedan1">Nezvedá 1 ☎️</option>
       <option value="nezvedan2">Nezvedá 2 ☎️</option>
       <option value="nezvedan3">Nezvedá 3 ☎️</option>
@@ -338,7 +340,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
         <span class="p-label">Fáze</span>
         <select class="p-select" id="pStage" onchange="savePanel()">
           <option value="">— nevybráno —</option>
-          <option value="nezvedan1">Nezvedá 1 ☎️</option>
+          <option value="volat">Volat 📞</option>
+      <option value="nezvedan1">Nezvedá 1 ☎️</option>
           <option value="nezvedan2">Nezvedá 2 ☎️</option>
           <option value="nezvedan3">Nezvedá 3 ☎️</option>
           <option value="odeslat_email">Odeslat email 📧</option>
@@ -521,6 +524,7 @@ function formatDatum(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{
 // ── Fáze system ───────────────────────────────────────────────
 const FAZE=[
   {id:'',label:'—',poz:'',cls:'',color:'#64748b'},
+  {id:'volat',label:'Volat 📞',poz:'otevreno',cls:'b-volat',color:'#eab308'},
   {id:'nezvedan1',label:'Nezvedá 1 ☎️',poz:'otevreno',cls:'b-nz1',color:'#eab308'},
   {id:'nezvedan2',label:'Nezvedá 2 ☎️',poz:'otevreno',cls:'b-nz2',color:'#f97316'},
   {id:'nezvedan3',label:'Nezvedá 3 ☎️',poz:'otevreno',cls:'b-nz3',color:'#ef4444'},
