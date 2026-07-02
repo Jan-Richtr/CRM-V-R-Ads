@@ -1294,32 +1294,42 @@ async function doImport(){
   setTimeout(()=>{closeImport();init();},1500);
 }
 
-// ── Kampaně view ──────────────────────────────────────────────
+// ── Kampaně view (seskupeno po kreativách / ad_name) ──────────
 function renderKampane(){
   const kv=document.getElementById('view-kampane');
   if(!kv)return;
-  // Group leads by campaign
-  const camps={};
+  // Group leads by ad_name (kreativa); fallback na campaign_name
+  const kreativy={};
   leads.forEach(l=>{
-    const cn=l.campaign_name||'(bez kampaně)';
-    if(!camps[cn])camps[cn]={name:cn,platform:l.platform||'',leads:[],spend:fbSpend[cn]||0};
-    camps[cn].leads.push(l);
+    const key=l.ad_name||l.campaign_name||'(bez kreativy)';
+    if(!kreativy[key])kreativy[key]={
+      name:key,
+      campaign:l.campaign_name||'',
+      platform:l.platform||'',
+      leads:[],
+      spend:fbSpend[key]||0
+    };
+    kreativy[key].leads.push(l);
   });
-  const arr=Object.values(camps).sort((a,b)=>b.leads.length-a.leads.length);
-  if(!arr.length){kv.innerHTML='<div style="text-align:center;color:var(--text3);padding:40px">Žádné kampaně.</div>';return;}
+  const arr=Object.values(kreativy).sort((a,b)=>b.leads.length-a.leads.length);
+  if(!arr.length){kv.innerHTML='<div style="text-align:center;color:var(--text3);padding:40px">Žádné kreativy.</div>';return;}
   let h='<div style="padding:8px 0">';
   arr.forEach(c=>{
     const prod=c.leads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
     const obrat=prod.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
     const konv=c.leads.length?Math.round(prod.length/c.leads.length*100):0;
     const roas=c.spend>0?(obrat/c.spend).toFixed(2):null;
+    const cpl=c.spend>0&&c.leads.length>0?(c.spend/c.leads.length).toFixed(2):null;
     h+=`<div class="camp-card">
       <div class="camp-top">
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-          ${c.platform?`<span class="plat-tag plat-${c.platform}">${c.platform.toUpperCase()}</span>`:''}
-          <span style="font-weight:600;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span>
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${c.platform?`<span class="plat-tag plat-${c.platform}">${c.platform.toUpperCase()}</span>`:''}
+            <span style="font-weight:600;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.name)}">${esc(c.name)}</span>
+          </div>
+          ${c.campaign&&c.campaign!==c.name?`<div style="font-size:.67rem;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📣 ${esc(c.campaign)}</div>`:''}
         </div>
-        <span style="font-size:.75rem;color:var(--text3);white-space:nowrap">${c.leads.length} leadů</span>
+        <span style="font-size:.75rem;color:var(--text3);white-space:nowrap;flex-shrink:0;margin-left:8px">${c.leads.length} leadů</span>
       </div>
       <div class="camp-stats">
         <div class="camp-stat"><div class="camp-stat-val">${c.leads.length}</div><div class="camp-stat-label">Leady</div></div>
@@ -1335,6 +1345,7 @@ function renderKampane(){
             <button onclick="editFbSpend('${esc(c.name)}')" style="background:none;border:none;cursor:pointer;font-size:.65rem;color:var(--accent);padding:1px 3px;margin-left:2px">✏️</button>
           </div>
         </div>
+        ${cpl?`<div class="camp-stat"><div class="camp-stat-val" style="color:var(--orange)">${cpl} €</div><div class="camp-stat-label">Cena/lead</div></div>`:''}
         ${roas?`<div class="camp-stat"><div class="camp-stat-val" style="color:var(--green)">${roas}x</div><div class="camp-stat-label">ROAS</div></div>`:''}
       </div>
     </div>`;
