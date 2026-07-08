@@ -227,7 +227,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <span id="syncLbl" style="font-size:.68rem;color:#64748b;flex-shrink:0;white-space:nowrap;display:none" class="d-desktop"></span>
   <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
   <button class="icon-btn" onclick="doLogout()" title="Odhlásit" style="font-size:.7rem;color:var(--text3);border-color:transparent;background:none">🚪</button>
-  <button class="icon-btn d-desktop" onclick="openImport()" title="Import" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
+  <button class="icon-btn d-desktop" onclick="openImport()" title="Import XLS" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
+  <button class="icon-btn" onclick="openEmailLead()" title="Přidat lead z emailu" style="background:var(--bg3);border-color:var(--border);color:var(--text2)">📧</button>
   <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
     <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
     <button onclick="deleteSelected()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">🗑️</button>
@@ -434,6 +435,24 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <div class="imp-foot">
       <button class="imp-btn imp-btn-s" onclick="closeImport()">Zrušit</button>
       <button class="imp-btn imp-btn-p" id="impBtn" style="display:none" onclick="doImport()">✅ Importovat</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL LEAD MODAL -->
+<div class="imp-ov" id="emailLeadOv">
+  <div class="imp-modal" style="max-width:460px">
+    <h3>📧 Přidat lead z emailu</h3>
+    <p style="font-size:.75rem;color:var(--text3);margin-bottom:10px">Zkopíruj celý text emailu z formuláře a vlož sem:</p>
+    <textarea id="emailLeadText" placeholder="Jméno: Jan Novák&#10;Email: jan@example.com&#10;Tel. číslo: 777123456&#10;Zpráva: Text zprávy..." style="width:100%;height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem;padding:10px;resize:vertical;font-family:inherit;outline:none" oninput="parseEmailLead()"></textarea>
+    <div id="emailLeadPrev" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:.78rem">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--accent2)">✅ Rozpoznáno:</div>
+      <div id="emailLeadInfo"></div>
+    </div>
+    <div id="emailLeadErr" style="display:none;margin-top:6px;font-size:.75rem;color:var(--red)"></div>
+    <div class="imp-foot" style="margin-top:12px">
+      <button class="imp-btn imp-btn-s" onclick="closeEmailLead()">Zrušit</button>
+      <button class="imp-btn imp-btn-p" id="emailLeadBtn" style="display:none" onclick="doEmailLead()">➕ Přidat lead</button>
     </div>
   </div>
 </div>
@@ -787,8 +806,9 @@ function renderTable(){
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
-    const fuColor=l.followup&&l.followup<today?'var(--red)':l.followup?'var(--accent2)':'var(--text3)';
-    const fazeCell=`<div style="display:flex;flex-direction:column;gap:2px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select><div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:2px;font-size:.64rem;color:${fuColor}">📅<input type="date" value="${l.followup||''}" onchange="changeFollowup('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" title="Datum volání" style="background:transparent;border:none;color:${fuColor};font-size:.64rem;cursor:pointer;outline:none;font-family:inherit;width:88px;padding:0"></div></div>`;
+    const isKonec=l.stav==='konec';
+    const fuColor=isKonec?'var(--text3)':l.followup&&l.followup<=today?'var(--red)':l.followup?'var(--accent2)':'var(--text3)';
+    const fazeCell=`<div style="display:flex;flex-direction:column;gap:2px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select><div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:2px;font-size:.64rem;color:${fuColor};opacity:${isKonec?'0.25':'1'}">📅<input type="date" value="${l.followup||''}" onchange="changeFollowup('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" title="Datum volání" style="background:transparent;border:none;color:${fuColor};font-size:.64rem;cursor:pointer;outline:none;font-family:inherit;width:88px;padding:0"></div></div>`;
     const phoneDisplay=fixPhone(l.telefon||'');
     return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
@@ -804,7 +824,7 @@ function renderTable(){
       <td style="min-width:160px">${fazeCell}</td>
       <td>${castka}</td>
       <td>${produkt}</td>
-      <td style="color:${l.followup&&l.followup<today?'var(--red)':'var(--text2)'}">${l.followup||'—'}</td>
+      <td style="color:${isKonec?'var(--text3)':l.stav==='uzavreno'&&l.followup?'var(--green)':l.followup&&l.followup<=today?'var(--red)':'var(--text2)'}">${l.followup||'—'}</td>
       <td style="color:var(--text2);max-width:220px;font-size:.72rem">${esc(l.myNotes||l.notes||'')}</td>
       <td style="max-width:160px;white-space:nowrap">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span> `:''}${(l.ad_name||l.campaign_name)?`<span class="camp-tag" title="${esc(l.campaign_name||'')}">${esc(l.ad_name||l.campaign_name)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
@@ -823,7 +843,8 @@ function renderCards(){
     const tel=telNum(l.telefon);
     const note=l.myNotes||l.notes||'';
     const castka=l.prodej_castka?`<span style="color:var(--green);font-weight:700;font-size:.8rem">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'';
-    const fu=l.followup?`<span style="font-size:.7rem;color:${l.followup<today?'var(--red)':'var(--text3)'}">📅 ${l.followup}</span>`:'';
+    const fuC=l.stav==='konec'?'var(--text3)':l.stav==='uzavreno'?'var(--green)':l.followup<=today?'var(--red)':'var(--text3)';
+    const fu=l.followup?`<span style="font-size:.7rem;color:${fuC};opacity:${l.stav==='konec'?'0.35':'1'}">📅 ${l.followup}</span>`:'';
     return`<div class="lead-card" onclick="openLead(${l._id})">
       <div class="lead-card-top">
         <div>
@@ -1385,6 +1406,80 @@ async function saveFbSpend(campaign_name,spend){
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── Přidání leadu z emailu ────────────────────────────────────
+function openEmailLead(){
+  document.getElementById('emailLeadOv').classList.add('open');
+  document.getElementById('emailLeadText').value='';
+  document.getElementById('emailLeadPrev').style.display='none';
+  document.getElementById('emailLeadErr').style.display='none';
+  document.getElementById('emailLeadBtn').style.display='none';
+  setTimeout(()=>document.getElementById('emailLeadText').focus(),100);
+}
+function closeEmailLead(){
+  document.getElementById('emailLeadOv').classList.remove('open');
+}
+let parsedEmailLead=null;
+function parseEmailLead(){
+  const txt=document.getElementById('emailLeadText').value;
+  const get=(keys)=>{
+    for(const k of keys){
+      const m=txt.match(new RegExp(k+'\\s*[:\\-]\\s*(.+?)(?=\\n[A-ZÁÉÍÓÚŮŽŠČŘĎŤŇ][a-záéíóúůžščřďťň]|$)','is'));
+      if(m)return m[1].trim();
+    }
+    return '';
+  };
+  const jmeno=get(['Jméno','Jmeno','Name','Meno']);
+  const email=(txt.match(/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i)||[])[1]||'';
+  const telefon=(txt.match(/(?:Tel\.?\s*(?:číslo|cislo|number)?|Phone|Telefon)\s*[:\-]?\s*([\d\s\+\-]{7,})/i)||[])[1]||'';
+  const zprava=get(['Zpráva','Zprava','Message','Správa','Sprava','Obsah','Text']);
+  const prev=document.getElementById('emailLeadPrev');
+  const err=document.getElementById('emailLeadErr');
+  if(!email&&!jmeno){
+    prev.style.display='none';
+    err.style.display='none';
+    document.getElementById('emailLeadBtn').style.display='none';
+    parsedEmailLead=null;
+    return;
+  }
+  parsedEmailLead={jmeno,email:email.toLowerCase(),telefon:telefon.replace(/\s/g,''),problem:zprava};
+  document.getElementById('emailLeadInfo').innerHTML=
+    `<div>👤 <b>${esc(jmeno||'—')}</b></div>`+
+    `<div>✉️ ${esc(email||'—')}</div>`+
+    `<div>📞 ${esc(telefon||'—')}</div>`+
+    (zprava?`<div style="margin-top:4px;color:var(--text2);font-size:.73rem">💬 ${esc(zprava.slice(0,120))}${zprava.length>120?'…':''}</div>`:'');
+  prev.style.display='';
+  err.style.display='none';
+  document.getElementById('emailLeadBtn').style.display=email||jmeno?'':'none';
+}
+async function doEmailLead(){
+  if(!parsedEmailLead)return;
+  const btn=document.getElementById('emailLeadBtn');
+  btn.disabled=true;btn.textContent='⏳ Ukládám…';
+  const err=document.getElementById('emailLeadErr');
+  try{
+    const today=new Date();
+    const datum=today.toISOString().slice(0,10);
+    const mesic=today.getFullYear()*100+(today.getMonth()+1);
+    const lead={...parsedEmailLead,datum,mesic,stav:'',sluzba:''};
+    // Zkontroluj duplicitu
+    const exists=leads.find(l=>l.email&&l.email===lead.email);
+    if(exists){
+      err.innerHTML='⚠️ Lead s tímto emailem již v CRM existuje (<b>'+esc(exists.jmeno||exists.email)+'</b>).';
+      err.style.display='';
+      btn.disabled=false;btn.textContent='➕ Přidat lead';
+      return;
+    }
+    await sbPost('/rest/v1/leads',[lead]);
+    closeEmailLead();
+    await init();
+    showSync('✅ Lead '+esc(lead.jmeno||lead.email)+' přidán','#16a34a');
+  }catch(e){
+    err.textContent='❌ '+e.message;
+    err.style.display='';
+    btn.disabled=false;btn.textContent='➕ Přidat lead';
+  }
+}
 
 window.addEventListener('resize',()=>{if(currentTab==='table')render();});
 
