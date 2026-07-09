@@ -47,6 +47,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .b-nz2{background:rgba(249,115,22,.2);color:#f97316}
 .b-nz3{background:rgba(239,68,68,.2);color:#ef4444}
 .b-em{background:rgba(168,85,247,.2);color:#a855f7}
+.b-eo{background:rgba(99,102,241,.2);color:#6366f1}
+.b-eod{background:rgba(14,165,233,.2);color:#0ea5e9}
 .b-nr{background:rgba(100,116,139,.2);color:#94a3b8}
 .b-wa{background:rgba(37,211,102,.2);color:#25d366}
 .b-konec{background:rgba(239,68,68,.2);color:#ef4444}
@@ -82,7 +84,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .pt td{padding:6px 9px;border-bottom:1px solid rgba(46,52,84,.3)}
 @media(max-width:700px){.charts-row{grid-template-columns:1fr}}
 /* VOLAT VIEW */
-#view-volat{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
+#view-email{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 .vl-section{margin-bottom:18px}
 .vl-section h3{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
 .vl-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;margin-bottom:5px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
@@ -152,7 +154,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   .d-desktop{display:none!important}
   #view-table{display:none}
   #view-stats{max-height:calc(100vh - 110px - var(--safe-bottom))}
-  #view-volat{max-height:calc(100vh - 110px - var(--safe-bottom))}
+  #view-email{max-height:calc(100vh - 110px - var(--safe-bottom))}
   #view-kampane{max-height:calc(100vh - 110px - var(--safe-bottom))}
   .topbar{padding:0 10px;gap:7px;height:48px}
 }
@@ -217,7 +219,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
-    <button class="tab" onclick="setTab('volat')">📞 Volat</button>
+    <button class="tab" onclick="setTab('email')">📧 Email</button>
     <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
   </div>
   <div class="search-wrap">
@@ -242,6 +244,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <option value="nezvedan2">Nezvedá 2 ☎️</option>
       <option value="nezvedan3">Nezvedá 3 ☎️</option>
       <option value="odeslat_email">Odeslat email 📧</option>
+      <option value="email_odeslano">Email odeslán 📤</option>
+      <option value="email_odpoved">Email - odpověď 💬</option>
       <option value="komunikace_wa">Komunikace na WA 💬</option>
       <option value="nerelevantni">Nerelevantní ☹️</option>
       <option value="konec">Konec ❌</option>
@@ -294,7 +298,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 </div>
 <div id="view-cards"></div>
 <div id="view-stats"></div>
-<div id="view-volat"></div>
+<div id="view-email"></div>
 <div id="view-kampane"></div>
 
 <!-- LOGIN MODAL -->
@@ -346,6 +350,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
           <option value="nezvedan2">Nezvedá 2 ☎️</option>
           <option value="nezvedan3">Nezvedá 3 ☎️</option>
           <option value="odeslat_email">Odeslat email 📧</option>
+          <option value="email_odeslano">Email odeslán 📤</option>
+          <option value="email_odpoved">Email - odpověď 💬</option>
           <option value="komunikace_wa">Komunikace na WA 💬</option>
           <option value="nerelevantni">Nerelevantní ☹️</option>
           <option value="konec">Konec ❌</option>
@@ -467,6 +473,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <option value="nezvedan2">Nezvedá 2 ☎️</option>
     <option value="nezvedan3">Nezvedá 3 ☎️</option>
     <option value="odeslat_email">Odeslat email 📧</option>
+    <option value="email_odeslano">Email odeslán 📤</option>
+    <option value="email_odpoved">Email - odpověď 💬</option>
     <option value="komunikace_wa">Komunikace na WA 💬</option>
     <option value="nerelevantni">Nerelevantní ☹️</option>
     <option value="konec">Konec ❌</option>
@@ -493,7 +501,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <nav class="bottom-nav">
   <button class="bn-btn active" id="bn-table" onclick="setTab('table')"><span class="bn-ic">📋</span>Tabulka</button>
   <button class="bn-btn" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span>Statistiky</button>
-  <button class="bn-btn" id="bn-volat" onclick="setTab('volat')"><span class="bn-ic">📞</span>Volat</button>
+  <button class="bn-btn" id="bn-email" onclick="setTab('email')"><span class="bn-ic">📧</span>Email</button>
   <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📣</span>Kampaně</button>
   <button class="bn-btn" id="bn-import" onclick="openImport()"><span class="bn-ic">📥</span>Import</button>
 </nav>
@@ -548,6 +556,8 @@ const FAZE=[
   {id:'nezvedan2',label:'Nezvedá 2 ☎️',poz:'otevreno',cls:'b-nz2',color:'#f97316'},
   {id:'nezvedan3',label:'Nezvedá 3 ☎️',poz:'otevreno',cls:'b-nz3',color:'#ef4444'},
   {id:'odeslat_email',label:'Odeslat email 📧',poz:'otevreno',cls:'b-em',color:'#a855f7'},
+  {id:'email_odeslano',label:'Email odeslán 📤',poz:'otevreno',cls:'b-eo',color:'#6366f1'},
+  {id:'email_odpoved',label:'Email - odpověď 💬',poz:'otevreno',cls:'b-eod',color:'#0ea5e9'},
   {id:'komunikace_wa',label:'Komunikace na WA 💬',poz:'otevreno',cls:'b-wa',color:'#25d366'},
   {id:'nerelevantni',label:'Nerelevantní ☹️',poz:'konec',cls:'b-konec',color:'#ef4444'},
   {id:'konec',label:'Konec ❌',poz:'konec',cls:'b-konec',color:'#ef4444'},
@@ -741,13 +751,13 @@ function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','volat','kampane'][i]===t));
-  ['table','stats','volat','kampane'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane'][i]===t));
+  ['table','stats','email','kampane'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   const mob=isMobile();
   document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
   document.getElementById('view-cards').style.display=(t==='table'&&mob)?'block':'none';
   document.getElementById('view-stats').style.display=t==='stats'?'block':'none';
-  document.getElementById('view-volat').style.display=t==='volat'?'block':'none';
+  document.getElementById('view-email').style.display=t==='email'?'block':'none';
   document.getElementById('view-kampane').style.display=t==='kampane'?'block':'none';
   render();
 }
@@ -765,7 +775,7 @@ function render(){
   if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
   else if(currentTab==='stats')renderStatsView();
   else if(currentTab==='kampane')renderKampane();
-  else renderVolat();
+  else if(currentTab==='email')renderEmail();
 }
 
 // ── Stats bar ─────────────────────────────────────────────────
@@ -998,41 +1008,109 @@ function renderStatsView(){
 }
 
 // ── Volat view ────────────────────────────────────────────────
-function renderVolat(){
-  const vv=document.getElementById('view-volat');
-  const today=new Date().toISOString().slice(0,10);
-  const emailLeads=leads.filter(l=>l.stav==='odeslat_email');
-  const nezvedaLeads=leads.filter(l=>['nezvedan1','nezvedan2','nezvedan3'].includes(l.stav));
-  const fuAll=leads.filter(l=>l.followup).sort((a,b)=>a.followup.localeCompare(b.followup));
-  const fuOv=fuAll.filter(l=>l.followup<today);
-  const fuTd=fuAll.filter(l=>l.followup===today);
-  const fuUp=fuAll.filter(l=>l.followup>today);
-  let h='';
-  const sec=(title,arr,color)=>{
-    if(!arr.length)return'';
-    let s=`<div class="vl-section"><h3 style="color:${color}">${title} (${arr.length})</h3>`;
-    arr.forEach(l=>{
-      const tel=telNum(l.telefon);
-      s+=`<div class="vl-card" onclick="openLead(${l._id})">
-        <div class="vl-date" style="color:${color}">${l.datum||'—'}</div>
-        <div class="vl-info">
-          <div class="vl-name">${esc(l.jmeno||'')}${l.firma?` · <span style="color:var(--text2)">${esc(l.firma)}</span>`:''}</div>
-          <div class="vl-sub">${esc(l.myNotes||l.problem||'')}${l.lokace?` · 📍${esc(l.lokace)}`:''}</div>
-        </div>
-        <div class="vl-acts">
-          ${tel?`<a class="btn-ic" href="tel:${tel}" onclick="event.stopPropagation()">📞</a>`:''}
-          ${l.email?`<a class="btn-ic" href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">✉️</a>`:''}
-        </div>
-      </div>`;
-    });
-    return s+'</div>';
+// ── Email Marketing ───────────────────────────────────────────
+function renderEmail(){
+  const vv=document.getElementById('view-email');
+  const EMAIL_STAGES=['odeslat_email','email_odeslano','email_odpoved'];
+  const cekaji=leads.filter(l=>l.stav==='odeslat_email');
+  const odeslano=leads.filter(l=>l.stav==='email_odeslano');
+  const odpoved=leads.filter(l=>l.stav==='email_odpoved');
+  // Uzavřeno: leady kteří prošli emailem (email v jejich historii není sledován, ale zobrazíme uzavřené co mají email adresu jako approximaci)
+  const uzavreno=leads.filter(l=>l.stav==='uzavreno'&&l.email);
+  const totalEmail=cekaji.length+odeslano.length+odpoved.length+uzavreno.length;
+  const konverzRate=totalEmail>0?Math.round(uzavreno.length/totalEmail*100):0;
+
+  // ── KPI cards ──────────────────────────────────────────────
+  let h=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:#a855f7">${cekaji.length}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:2px">📧 Čeká na email</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:#6366f1">${odeslano.length}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:2px">📤 Odesláno</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:#0ea5e9">${odpoved.length}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:2px">💬 Odpověděli</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:#22c55e">${uzavreno.length}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:2px">✅ Uzavřeno</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:${konverzRate>=20?'#22c55e':konverzRate>=10?'#eab308':'#ef4444'}">${konverzRate}%</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:2px">🎯 Konverze</div>
+    </div>
+  </div>`;
+
+  // ── Funnel bar ──────────────────────────────────────────────
+  if(totalEmail>0){
+    const pct=(n)=>Math.max(4,Math.round(n/totalEmail*100));
+    h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px">
+      <div style="font-size:.75rem;color:var(--text3);margin-bottom:8px;font-weight:600">FUNNEL</div>
+      <div style="display:flex;gap:3px;border-radius:6px;overflow:hidden;height:12px">
+        <div style="width:${pct(cekaji.length)}%;background:#a855f7" title="Čeká: ${cekaji.length}"></div>
+        <div style="width:${pct(odeslano.length)}%;background:#6366f1" title="Odesláno: ${odeslano.length}"></div>
+        <div style="width:${pct(odpoved.length)}%;background:#0ea5e9" title="Odpovědi: ${odpoved.length}"></div>
+        <div style="width:${pct(uzavreno.length)}%;background:#22c55e" title="Uzavřeno: ${uzavreno.length}"></div>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
+        <span style="font-size:.68rem;color:#a855f7">● Čeká ${cekaji.length}</span>
+        <span style="font-size:.68rem;color:#6366f1">● Odesláno ${odeslano.length}</span>
+        <span style="font-size:.68rem;color:#0ea5e9">● Odpovědi ${odpoved.length}</span>
+        <span style="font-size:.68rem;color:#22c55e">● Uzavřeno ${uzavreno.length}</span>
+      </div>
+    </div>`;
+  }
+
+  // ── Zpracovat drafty button ──────────────────────────────────
+  if(cekaji.length>0){
+    h+=`<div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:600;font-size:.85rem;color:#a855f7">📤 ${cekaji.length} leadů čeká na email draft</div>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:2px">Řekni mi "zpracuj emaily" a vytvořím Gmail drafty podle šablon</div>
+      </div>
+      <button onclick="alert('Přejdi do chatu a napiš: zpracuj emaily')" style="background:#a855f7;border:none;color:#fff;border-radius:7px;padding:8px 14px;cursor:pointer;font-size:.78rem;font-weight:600;white-space:nowrap">📧 Zpracovat drafty</button>
+    </div>`;
+  }
+
+  // ── Lead cards helper ────────────────────────────────────────
+  const emailCard=(l,stageColor)=>{
+    const tel=telNum(l.telefon);
+    return`<div class="vl-card" onclick="openLead(${l._id})" style="border-left:3px solid ${stageColor}">
+      <div style="display:flex;flex-direction:column;gap:1px;min-width:52px">
+        <div class="vl-date" style="color:var(--text3)">${formatDatum(l.datum)}</div>
+        ${l.followup?`<div style="font-size:.65rem;color:#0ea5e9">📅 ${l.followup}</div>`:''}
+      </div>
+      <div class="vl-info">
+        <div class="vl-name">${esc(l.jmeno||'—')}${l.firma?` · <span style="color:var(--text2);font-weight:400">${esc(l.firma)}</span>`:''}</div>
+        <div class="vl-sub" style="max-width:320px">${esc((l.myNotes||l.problem||'').slice(0,90))}</div>
+      </div>
+      <div class="vl-acts">
+        ${l.email?`<a class="btn-ic" href="mailto:${esc(l.email)}" onclick="event.stopPropagation()" title="${esc(l.email)}">✉️</a>`:''}
+        ${tel?`<a class="btn-ic" href="tel:${tel}" onclick="event.stopPropagation()">📞</a>`:''}
+      </div>
+    </div>`;
   };
-  h+=sec('📧 Odeslat email',emailLeads,'#a855f7');
-  h+=sec('☎️ Nezvedá',nezvedaLeads,'#f97316');
-  h+=sec('⚠️ Prošlé follow-upy',fuOv,'#ef4444');
-  h+=sec('✅ Dnes',fuTd,'#22c55e');
-  h+=sec('📅 Nadcházející',fuUp,'#3b82f6');
-  if(!h)h='<div style="color:var(--text3);text-align:center;padding:40px">Žádné naplánované aktivity.</div>';
+
+  // ── Sections ─────────────────────────────────────────────────
+  const sec=(title,arr,color)=>{
+    if(!arr.length)return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;opacity:.5">
+      <div style="font-size:.8rem;font-weight:600;color:${color};margin-bottom:4px">${title} <span style="opacity:.6">(0)</span></div>
+      <div style="font-size:.72rem;color:var(--text3)">Žádné leady</div>
+    </div>`;
+    return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="font-size:.82rem;font-weight:700;color:${color};margin-bottom:10px">${title} <span style="background:${color}22;padding:2px 7px;border-radius:10px">${arr.length}</span></div>
+      ${arr.map(l=>emailCard(l,color)).join('')}
+    </div>`;
+  };
+
+  h+=sec('📧 Čeká na odeslání',cekaji,'#a855f7');
+  h+=sec('📤 Email odeslán',odeslano,'#6366f1');
+  h+=sec('💬 Odpověděli',odpoved,'#0ea5e9');
+  h+=sec('✅ Uzavřeno',uzavreno,'#22c55e');
+
   vv.innerHTML=h;
 }
 
@@ -1074,7 +1152,7 @@ function openLead(id){
     document.getElementById('pImportedNotes').textContent=importedNote;
   }else{iw.style.display='none';}
   let acts='';
-  if(tel)acts+=`<a class="btn" href="tel:${tel}">📞 Volat</a>`;
+  if(tel)acts+=`<a class="btn" href="tel:${tel}">📧 Email</a>`;
   if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
   document.getElementById('pActions').innerHTML=acts;
   document.getElementById('overlay').classList.add('open');
