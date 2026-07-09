@@ -49,6 +49,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .b-em{background:rgba(168,85,247,.2);color:#a855f7}
 .b-eo{background:rgba(99,102,241,.2);color:#6366f1}
 .b-eod{background:rgba(14,165,233,.2);color:#0ea5e9}
+.b-uze{background:rgba(22,163,74,.2);color:#16a34a}
 .b-nr{background:rgba(100,116,139,.2);color:#94a3b8}
 .b-wa{background:rgba(37,211,102,.2);color:#25d366}
 .b-konec{background:rgba(239,68,68,.2);color:#ef4444}
@@ -246,6 +247,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <option value="odeslat_email">Odeslat email 📧</option>
       <option value="email_odeslano">Email odeslán 📤</option>
       <option value="email_odpoved">Email - odpověď 💬</option>
+      <option value="uzavreno_emailem">Uzavřeno emailem 💚</option>
       <option value="komunikace_wa">Komunikace na WA 💬</option>
       <option value="nerelevantni">Nerelevantní ☹️</option>
       <option value="konec">Konec ❌</option>
@@ -352,6 +354,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
           <option value="odeslat_email">Odeslat email 📧</option>
           <option value="email_odeslano">Email odeslán 📤</option>
           <option value="email_odpoved">Email - odpověď 💬</option>
+          <option value="uzavreno_emailem">Uzavřeno emailem 💚</option>
           <option value="komunikace_wa">Komunikace na WA 💬</option>
           <option value="nerelevantni">Nerelevantní ☹️</option>
           <option value="konec">Konec ❌</option>
@@ -475,6 +478,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <option value="odeslat_email">Odeslat email 📧</option>
     <option value="email_odeslano">Email odeslán 📤</option>
     <option value="email_odpoved">Email - odpověď 💬</option>
+    <option value="uzavreno_emailem">Uzavřeno emailem 💚</option>
     <option value="komunikace_wa">Komunikace na WA 💬</option>
     <option value="nerelevantni">Nerelevantní ☹️</option>
     <option value="konec">Konec ❌</option>
@@ -558,6 +562,7 @@ const FAZE=[
   {id:'odeslat_email',label:'Odeslat email 📧',poz:'otevreno',cls:'b-em',color:'#a855f7'},
   {id:'email_odeslano',label:'Email odeslán 📤',poz:'otevreno',cls:'b-eo',color:'#6366f1'},
   {id:'email_odpoved',label:'Email - odpověď 💬',poz:'otevreno',cls:'b-eod',color:'#0ea5e9'},
+  {id:'uzavreno_emailem',label:'Uzavřeno emailem 💚',poz:'uzavreno',cls:'b-uze',color:'#16a34a'},
   {id:'komunikace_wa',label:'Komunikace na WA 💬',poz:'otevreno',cls:'b-wa',color:'#25d366'},
   {id:'nerelevantni',label:'Nerelevantní ☹️',poz:'konec',cls:'b-konec',color:'#ef4444'},
   {id:'konec',label:'Konec ❌',poz:'konec',cls:'b-konec',color:'#ef4444'},
@@ -834,7 +839,7 @@ function renderTable(){
       <td style="min-width:160px">${fazeCell}</td>
       <td>${castka}</td>
       <td>${produkt}</td>
-      <td style="color:${isKonec?'var(--text3)':l.stav==='uzavreno'&&l.followup?'var(--green)':l.followup&&l.followup<=today?'var(--red)':'var(--text2)'};opacity:${isKonec?'0.35':'1'}">${l.followup||'—'}</td>
+      <td style="color:${isKonec?'var(--text3)':(l.stav==='uzavreno'||l.stav==='uzavreno_emailem')&&l.followup?'var(--green)':l.followup&&l.followup<=today?'var(--red)':'var(--text2)'};opacity:${isKonec?'0.35':'1'}">${l.followup||'—'}</td>
       <td style="color:var(--text2);max-width:220px;font-size:.72rem">${esc(l.myNotes||l.notes||'')}</td>
       <td style="max-width:160px;white-space:nowrap">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span> `:''}${(l.ad_name||l.campaign_name)?`<span class="camp-tag" title="${esc(l.campaign_name||'')}">${esc(l.ad_name||l.campaign_name)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
@@ -854,7 +859,7 @@ function renderCards(){
     const note=l.myNotes||l.notes||'';
     const castka=l.prodej_castka?`<span style="color:var(--green);font-weight:700;font-size:.8rem">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'';
     const isKonecCard=l.stav==='konec'||l.stav==='nerelevantni';
-    const fuC=isKonecCard?'var(--text3)':l.stav==='uzavreno'?'var(--green)':l.followup<=today?'var(--red)':'var(--text3)';
+    const fuC=isKonecCard?'var(--text3)':(l.stav==='uzavreno'||l.stav==='uzavreno_emailem')?'var(--green)':l.followup<=today?'var(--red)':'var(--text3)';
     const fu=l.followup?`<span style="font-size:.7rem;color:${fuC};opacity:${isKonecCard?'0.35':'1'}">📅 ${l.followup}</span>`:'';
     return`<div class="lead-card" onclick="openLead(${l._id})">
       <div class="lead-card-top">
@@ -1016,7 +1021,7 @@ function renderEmail(){
   const odeslano=leads.filter(l=>l.stav==='email_odeslano');
   const odpoved=leads.filter(l=>l.stav==='email_odpoved');
   // Uzavřeno: leady kteří prošli emailem (email v jejich historii není sledován, ale zobrazíme uzavřené co mají email adresu jako approximaci)
-  const uzavreno=leads.filter(l=>l.stav==='uzavreno'&&l.email);
+  const uzavreno=leads.filter(l=>l.stav==='uzavreno_emailem');
   const totalEmail=cekaji.length+odeslano.length+odpoved.length+uzavreno.length;
   const konverzRate=totalEmail>0?Math.round(uzavreno.length/totalEmail*100):0;
 
@@ -1109,7 +1114,7 @@ function renderEmail(){
   h+=sec('📧 Čeká na odeslání',cekaji,'#a855f7');
   h+=sec('📤 Email odeslán',odeslano,'#6366f1');
   h+=sec('💬 Odpověděli',odpoved,'#0ea5e9');
-  h+=sec('✅ Uzavřeno',uzavreno,'#22c55e');
+  h+=sec('✅ Uzavřeno emailem',uzavreno,'#16a34a');
 
   vv.innerHTML=h;
 }
