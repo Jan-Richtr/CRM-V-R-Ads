@@ -821,7 +821,7 @@ function renderTable(){
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
-    const isKonec=l.stav==='konec'||l.stav==='nerelevantni';
+    const isKonec=l.stav==='konec'||l.stav==='nerelevantni'||l.stav==='nezvedan3';
     const fuColor=isKonec?'var(--text3)':l.followup&&l.followup<=today?'var(--red)':l.followup?'var(--accent2)':'var(--text3)';
     const fazeCell=`<div style="display:flex;flex-direction:column;gap:2px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select><div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:2px;font-size:.64rem;color:${fuColor};opacity:${isKonec?'0.25':'1'}">📅<input type="date" value="${l.followup||''}" onchange="changeFollowup('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" title="Datum volání" style="background:transparent;border:none;color:${fuColor};font-size:.64rem;cursor:pointer;outline:none;font-family:inherit;width:88px;padding:0"></div></div>`;
     const phoneDisplay=fixPhone(l.telefon||'');
@@ -858,7 +858,7 @@ function renderCards(){
     const tel=telNum(l.telefon);
     const note=l.myNotes||l.notes||'';
     const castka=l.prodej_castka?`<span style="color:var(--green);font-weight:700;font-size:.8rem">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'';
-    const isKonecCard=l.stav==='konec'||l.stav==='nerelevantni';
+    const isKonecCard=l.stav==='konec'||l.stav==='nerelevantni'||l.stav==='nezvedan3';
     const fuC=isKonecCard?'var(--text3)':(l.stav==='uzavreno'||l.stav==='uzavreno_emailem')?'var(--green)':l.followup<=today?'var(--red)':'var(--text3)';
     const fu=l.followup?`<span style="font-size:.7rem;color:${fuC};opacity:${isKonecCard?'0.35':'1'}">📅 ${l.followup}</span>`:'';
     return`<div class="lead-card" onclick="openLead(${l._id})">
