@@ -231,6 +231,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
   <button class="icon-btn" onclick="doLogout()" title="Odhlásit" style="font-size:.7rem;color:var(--text3);border-color:transparent;background:none">🚪</button>
   <button class="icon-btn d-desktop" onclick="openImport()" title="Import XLS" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
+  <button class="icon-btn d-desktop" id="gsheetBtn" onclick="syncGSheets()" title="Sync Google Sheets" style="background:#16a34a;border-color:#16a34a;color:#fff">📊</button>
   <button class="icon-btn" onclick="openEmailLead()" title="Přidat lead z emailu" style="background:var(--bg3);border-color:var(--border);color:var(--text2)">📧</button>
   <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
     <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
@@ -1490,6 +1491,126 @@ async function saveFbSpend(campaign_name,spend){
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── Google Sheets sync ───────────────────────────────────────
+const GSHEET_URL='https://docs.google.com/spreadsheets/d/1awtMI1e8NYxbvwrQ8P5b3SRq5H5ppcBJw0Ks51cGcjo/export?format=csv&gid=0';
+
+function parseCSV(text){
+  const rows=[];
+  const lines=text.split('\n');
+  for(const line of lines){
+    if(!line.trim())continue;
+    const cols=[];let cur='';let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+      else if(c===','&&!inQ){cols.push(cur);cur='';}
+      else cur+=c;
+    }
+    cols.push(cur);
+    rows.push(cols);
+  }
+  return rows;
+}
+
+function mapSluzbaFromZajem(z){
+  const s=(z||'').toLowerCase();
+  if(s.includes('ai')&&(s.includes('video')||s.includes('produkc')))return'tvorba_ai_videi';
+  if(s.includes('reklam')||s.includes('market'))return'reklama_marketing';
+  if(s.includes('video')||s.includes('produkc'))return'video_produkce';
+  if(s&&s!=='0')return'jine';
+  return'';
+}
+
+async function syncGSheets(){
+  const btn=document.getElementById('gsheetBtn');
+  if(!btn||btn.disabled)return;
+  btn.disabled=true;btn.textContent='⏳';
+  try{
+    // Fetch CSV
+    const resp=await sbFetch(GSHEET_URL,{},20000);
+    if(!resp.ok)throw new Error('Chyba při načítání tabulky: '+resp.status);
+    const text=await resp.text();
+    const rows=parseCSV(text);
+    if(rows.length<2){showSync('⚠️ Tabulka je prázdná','#eab308');btn.disabled=false;btn.textContent='📊';return;}
+
+    // Parse header
+    const hdr=rows[0].map(h=>h.trim().toLowerCase());
+    const ci=(names)=>{for(const n of names){const i=hdr.indexOf(n);if(i>=0)return i;}return-1;};
+    const iDatum=ci(['datum']);
+    const iJmeno=ci(['jméno','jmeno','name']);
+    const iEmail=ci(['email','e-mail']);
+    const iTel=ci(['telefon','tel','phone']);
+    const iWeb=ci(['web','website']);
+    const iZajem=ci(['zájem','zajem','zájem o','interest']);
+    const iProb=ci(['bolest / poznámka','bolest','poznámka','problem','note','notes']);
+    const iPlatform=ci(['utm source','utm_source']);
+    const iCamp=ci(['utm campaign','utm_campaign']);
+    const iAdName=ci(['utm content','utm_content']);
+
+    if(iEmail<0)throw new Error('Nenašel jsem sloupec Email v tabulce');
+
+    // Map rows to leads
+    const existingEmails=new Set(leads.map(l=>(l.email||'').toLowerCase()).filter(Boolean));
+    const newLeads=[];
+    const skipped=[];
+
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i];
+      const email=(r[iEmail]||'').trim().toLowerCase();
+      if(!email)continue;
+      if(existingEmails.has(email)){skipped.push(email);continue;}
+      existingEmails.add(email); // prevent in-batch duplicates
+
+      // Parse datum
+      const rawDatum=iDatum>=0?r[iDatum]:'';
+      const datum=rawDatum?rawDatum.slice(0,10):new Date().toISOString().slice(0,10);
+      const dObj=new Date(datum);
+      const mesic=dObj.getFullYear()*100+(dObj.getMonth()+1);
+
+      // Telefon cleanup
+      let telefon=(r[iTel]||'').trim();
+      if(telefon&&!telefon.startsWith('+'))telefon='+'+telefon;
+
+      const lead={
+        jmeno:(r[iJmeno]||'').trim(),
+        email,
+        telefon,
+        website:(r[iWeb]||'').trim(),
+        firma:(r[iWeb]||'').trim(),
+        sluzba:mapSluzbaFromZajem(r[iZajem]),
+        problem:(r[iProb]||'').trim(),
+        platform:(r[iPlatform]||'').trim().toLowerCase()||'facebook',
+        campaign_name:(r[iCamp]||'').trim(),
+        ad_name:(r[iAdName]||'').trim(),
+        datum,
+        mesic,
+        stav:'',
+      };
+      newLeads.push(lead);
+    }
+
+    if(!newLeads.length){
+      showSync(`✅ Vše aktuální — 0 nových (${skipped.length} duplikátů přeskočeno)`,'#16a34a');
+      btn.disabled=false;btn.textContent='📊';
+      return;
+    }
+
+    // Import in batches of 100
+    let done=0;
+    for(let i=0;i<newLeads.length;i+=100){
+      await sbPost('/rest/v1/leads',newLeads.slice(i,i+100));
+      done+=Math.min(100,newLeads.length-i);
+    }
+
+    showSync(`✅ Importováno ${done} nových leadů${skipped.length?` · ${skipped.length} duplikátů přeskočeno`:''}`, '#16a34a');
+    await init();
+  }catch(e){
+    showSync('❌ '+e.message,'#ef4444');
+  }finally{
+    btn.disabled=false;btn.textContent='📊';
+  }
+}
 
 // ── Přidání leadu z emailu ────────────────────────────────────
 function openEmailLead(){
