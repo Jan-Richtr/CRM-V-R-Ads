@@ -791,13 +791,17 @@ function renderStatsBar(){
   const uz=leads.filter(l=>(l.poz||'')==='uzavreno').length;
   const ko=leads.filter(l=>(l.poz||'')==='konec').length;
   const no=leads.filter(l=>!(l.poz||'')).length;
+  const today=new Date().toISOString().slice(0,10);
+  const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3').length;
   const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
     <div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
     ${mk('Otevřeno',ot,'otevreno','#eab308')}
     ${mk('Uzavřeno',uz,'uzavreno','#22c55e')}
     ${mk('Konec',ko,'konec','#ef4444')}
-    ${no>0?mk('Bez statusu',no,'NONE','#64748b'):''}
+    ${no>0?mk('Bez statusu',no,'','#64748b'):''}
+    <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
+    <div class="stt" onclick="setTab('table')" title="Leady s prošlým follow-up"><span class="stt-n" style="color:${fuRed>0?'#ef4444':'var(--text3)'}">${fuRed}</span><span class="stt-l">⏰ Follow-up</span></div>
   `;
 }
 
