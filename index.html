@@ -922,7 +922,7 @@ function renderStatsView(){
   const monthData=months.map(m=>{
     const ml=leads.filter(l=>getLeadMonth(l)===m);
     const mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
-    return{month:m,name:MONTH_NAMES[m],leads:ml.length,prodano:mp.length,
+    return{month:m,name:MONTH_NAMES[m%100],leads:ml.length,prodano:mp.length,
       obrat:mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0),
       konec:ml.filter(l=>(l.poz||'')==='konec').length};
   });
@@ -979,9 +979,9 @@ function renderStatsView(){
     const mths=getMonths();const idx=mths.indexOf(statsMonth);
     const prev=idx>0?mths[idx-1]:null;const nxt=idx<mths.length-1?mths[idx+1]:null;
     h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      ${prev?`<button onclick="statsMonth=${prev};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">← ${MONTH_NAMES[prev]}</button>`:'<div></div>'}
-      <h2 style="flex:1;text-align:center;font-size:1rem">${MONTH_NAMES[statsMonth]} 2026</h2>
-      ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">${MONTH_NAMES[nxt]} →</button>`:'<div></div>'}
+      ${prev?`<button onclick="statsMonth=${prev};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">← ${MONTH_NAMES[prev%100]}</button>`:'<div></div>'}
+      <h2 style="flex:1;text-align:center;font-size:1rem">${MONTH_NAMES[statsMonth%100]} ${Math.floor(statsMonth/100)}</h2>
+      ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">${MONTH_NAMES[nxt%100]} →</button>`:'<div></div>'}
     </div>`;
     const ot=ml.filter(l=>(l.poz||'')==='otevreno').length;
     const uz=ml.filter(l=>(l.poz||'')==='uzavreno').length;
@@ -1003,7 +1003,7 @@ function renderStatsView(){
     h+=`</div>`;
     if(mp.length>0){
       const sorted=[...mp].sort((a,b)=>(parseFloat(b.prodej_castka)||0)-(parseFloat(a.prodej_castka)||0));
-      h+=`<div class="chart-box"><h3>💰 Prodeje – ${MONTH_NAMES[statsMonth]}</h3>
+      h+=`<div class="chart-box"><h3>💰 Prodeje – ${MONTH_NAMES[statsMonth%100]}</h3>
       <table class="pt"><thead><tr><th>Jméno</th><th>Firma</th><th>Produkt</th><th style="text-align:right">Částka</th></tr></thead><tbody>`;
       sorted.forEach(l=>{h+=`<tr style="cursor:pointer" onclick="openLead(${l._id})"><td style="font-weight:600">${esc(l.jmeno||'')}</td><td>${esc(l.firma||'')}</td><td>${SLUZBA[l.prodej_produkt]||'—'}</td><td style="text-align:right;color:var(--green);font-weight:600">${Number(l.prodej_castka).toLocaleString('cs')} €</td></tr>`;});
       h+=`<tr style="border-top:2px solid var(--border)"><td colspan="3" style="font-weight:600">CELKEM</td><td style="text-align:right;color:var(--green);font-weight:700;font-size:.95rem">${Number(mTotal).toLocaleString('cs')} €</td></tr>`;
