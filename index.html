@@ -792,7 +792,7 @@ function renderStatsBar(){
   const ko=leads.filter(l=>(l.poz||'')==='konec').length;
   const no=leads.filter(l=>!(l.poz||'')).length;
   const today=new Date().toISOString().slice(0,10);
-  const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3').length;
+  const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3'&&l.stav!=='uzavreno'&&l.stav!=='uzavreno_emailem').length;
   const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
     <div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
