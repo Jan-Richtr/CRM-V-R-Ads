@@ -211,6 +211,27 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 #view-cards{padding:8px 10px 80px;display:none}
 /* View kampane container */
 #view-kampane{padding:8px 10px 80px;display:none}
+/* DENNI VIEW */
+#view-denni{padding:14px;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
+@media(max-width:700px){#view-denni{max-height:calc(100vh - 110px - var(--safe-bottom))}}
+.day-nav{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.day-nav::-webkit-scrollbar{display:none}
+.day-btn{flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;text-align:center;transition:all .15s;min-width:60px}
+.day-btn.today{border-color:var(--accent);background:rgba(108,99,255,.12)}
+.day-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.day-btn .dbn-wd{font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.day-btn.active .dbn-wd{color:rgba(255,255,255,.7)}
+.day-btn .dbn-d{font-size:1.1rem;font-weight:700;line-height:1.2}
+.day-btn .dbn-cnt{font-size:.68rem;color:var(--accent2);margin-top:1px}
+.day-btn.active .dbn-cnt{color:rgba(255,255,255,.8)}
+.act-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s}
+.act-item:hover{border-color:var(--accent)}
+.act-time{font-size:.68rem;color:var(--text3);min-width:40px;flex-shrink:0}
+.act-icon{font-size:1rem;flex-shrink:0}
+.act-body{flex:1;min-width:0}
+.act-name{font-weight:600;font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-sub{font-size:.7rem;color:var(--text2);margin-top:1px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.act-arrow{color:var(--text3);font-size:.7rem}
 </style>
 </head>
 <body>
@@ -222,6 +243,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
     <button class="tab" onclick="setTab('email')">📧 Email</button>
     <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
+    <button class="tab" onclick="setTab('denni')">📅 Denní</button>
   </div>
   <div class="search-wrap">
     <span class="si">🔍</span>
@@ -303,6 +325,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <div id="view-stats"></div>
 <div id="view-email"></div>
 <div id="view-kampane"></div>
+<div id="view-denni"></div>
 
 <!-- LOGIN MODAL -->
 <div id="loginModal" class="open">
@@ -508,7 +531,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="bn-btn" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span>Statistiky</button>
   <button class="bn-btn" id="bn-email" onclick="setTab('email')"><span class="bn-ic">📧</span>Email</button>
   <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📣</span>Kampaně</button>
-  <button class="bn-btn" id="bn-import" onclick="openImport()"><span class="bn-ic">📥</span>Import</button>
+  <button class="bn-btn" id="bn-denni" onclick="setTab('denni')"><span class="bn-ic">📅</span>Denní</button>
 </nav>
 
 <script>
@@ -685,7 +708,23 @@ async function init(){
   showLoading(false);
 }
 
-async function saveToApi(lead){
+async function logActivity(lead,oldStav,newStav){
+  if(!oldStav&&!newStav)return;
+  if(oldStav===newStav)return;
+  try{
+    const entry={
+      lead_email:lead.email,
+      lead_name:lead.jmeno||'',
+      lead_firma:lead.firma||'',
+      action:'stav_zmena',
+      old_stav:oldStav||'',
+      new_stav:newStav||''
+    };
+    await fetch(SB+'/rest/v1/activity_log',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(entry)});
+  }catch(e){/* log silently */}
+}
+
+async function saveToApi(lead,oldStav){
   showSync('💾 Ukládám…','#d97706');
   try{
     const idx=leads.findIndex(l=>l.email===lead.email);
@@ -718,6 +757,7 @@ async function saveToApi(lead){
       if(!ir.ok)throw new Error(await ir.text());
     }
     showSync('✅ Uloženo','#16a34a');
+    if(oldStav!==undefined&&oldStav!==lead.stav)await logActivity(lead,oldStav,lead.stav);
   }catch(e){showSync('⚠️ '+e.message,'#d97706');}
 }
 
@@ -757,14 +797,15 @@ function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane'][i]===t));
-  ['table','stats','email','kampane'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni'][i]===t));
+  ['table','stats','email','kampane','denni'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   const mob=isMobile();
   document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
   document.getElementById('view-cards').style.display=(t==='table'&&mob)?'block':'none';
   document.getElementById('view-stats').style.display=t==='stats'?'block':'none';
   document.getElementById('view-email').style.display=t==='email'?'block':'none';
   document.getElementById('view-kampane').style.display=t==='kampane'?'block':'none';
+  document.getElementById('view-denni').style.display=t==='denni'?'block':'none';
   render();
 }
 function sortBy(col){
@@ -782,6 +823,7 @@ function render(){
   else if(currentTab==='stats')renderStatsView();
   else if(currentTab==='kampane')renderKampane();
   else if(currentTab==='email')renderEmail();
+  else if(currentTab==='denni')renderDenni();
 }
 
 // ── Stats bar ─────────────────────────────────────────────────
@@ -896,8 +938,9 @@ function renderCards(){
 // Inline change handlers
 async function changeFaze(email,newStav){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
+  const oldStav=lead.stav;
   lead.stav=newStav;
-  await saveToApi(lead);
+  await saveToApi(lead,oldStav);
   renderStatsBar();renderTable();
 }
 async function changePoz(email,newPoz){
@@ -1172,6 +1215,7 @@ function openLead(id){
 
 function savePanel(){
   if(!currentLead)return;
+  const oldStav=currentLead.stav;
   currentLead.stav=document.getElementById('pStage').value;
   currentLead.followup=document.getElementById('pFollowup').value;
   currentLead.myNotes=document.getElementById('pNotes').value;
@@ -1179,7 +1223,7 @@ function savePanel(){
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
   // poz zůstává nezávislá — neaktualizujeme ji při změně fáze
-  saveToApi(currentLead);
+  saveToApi(currentLead,oldStav);
   renderStatsBar();
   if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
 }
@@ -1416,6 +1460,99 @@ async function doImport(){
   }
   if(st)st.innerHTML=`✅ Hotovo! <b style="color:var(--green)">${toImport.length} nových</b>${skipped?` · <span style="color:var(--text3)">${skipped} přeskočeno (již existují)</span>`:''}`;
   setTimeout(()=>{closeImport();init();},1500);
+}
+
+// ── Denní view ────────────────────────────────────────────────
+let denniBuf=[],denniDay=null,denniLoading=false;
+const WD=['Ne','Po','Út','St','Čt','Pá','So'];
+
+async function loadDenniDay(day){
+  if(denniLoading)return;
+  denniLoading=true;
+  denniDay=day;
+  renderDenniContent([]);
+  try{
+    const rows=await sbGet('/rest/v1/activity_log?date=eq.'+day+'&order=created_at.desc&limit=200');
+    denniBuf=rows||[];
+  }catch(e){denniBuf=[];}
+  denniLoading=false;
+  renderDenniContent(denniBuf);
+}
+
+function renderDenni(){
+  const dv=document.getElementById('view-denni');
+  // Build last 14 days nav
+  const days=[];
+  for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  if(!denniDay)denniDay=days[0];
+  const todayStr=days[0];
+  const nav=days.map(d=>{
+    const dt=new Date(d+'T12:00:00');
+    const wd=WD[dt.getDay()];
+    const dd=dt.getDate();
+    const isToday=d===todayStr;
+    const isActive=d===denniDay;
+    return`<div class="day-btn${isToday?' today':''}${isActive?' active':''}" onclick="loadDenniDay('${d}')">
+      <div class="dbn-wd">${wd}</div>
+      <div class="dbn-d">${dd}.</div>
+    </div>`;
+  }).join('');
+  dv.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">VYBER DEN</div>
+      <div class="day-nav">${nav}</div>
+    </div>
+    <div id="denni-content"><div style="text-align:center;color:var(--text3);padding:40px">⏳ Načítám…</div></div>
+  `;
+  if(denniDay)loadDenniDay(denniDay);
+}
+
+function renderDenniContent(rows){
+  const el=document.getElementById('denni-content');if(!el)return;
+  if(!rows.length){
+    el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:48px;font-size:.85rem">
+      Pro tento den nejsou žádné záznamy.<br><span style="font-size:.75rem;margin-top:6px;display:block">Změny fází se začnou zaznamenávat od teď.</span>
+    </div>`;return;
+  }
+  // Group by hour
+  const byHour={};
+  rows.forEach(r=>{
+    const h=new Date(r.created_at).toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'});
+    if(!byHour[h])byHour[h]=[];
+    byHour[h].push(r);
+  });
+  const FAZE_ICON={volat:'📞',nezvedan1:'☎️',nezvedan2:'☎️',nezvedan3:'☎️',odeslat_email:'📧',email_odeslano:'📤',email_odpoved:'💬',uzavreno_emailem:'💚',komunikace_wa:'💬',nerelevantni:'☹️',konec:'❌',domluvena_schuzka:'✅',odeslana_faktura:'🧾',uzavreno:'💚','':"—"};
+  // KPI
+  const total=rows.length;
+  const toCall=rows.filter(r=>['volat','nezvedan1','nezvedan2','nezvedan3'].includes(r.new_stav)).length;
+  const closed=rows.filter(r=>['uzavreno','uzavreno_emailem','domluvena_schuzka'].includes(r.new_stav)).length;
+  const ended=rows.filter(r=>['konec','nerelevantni'].includes(r.new_stav)).length;
+  let h=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+    <div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-label">Posunů celkem</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#eab308">${toCall}</div><div class="kpi-label">Na volání</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22c55e">${closed}</div><div class="kpi-label">Uzavřeno</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#ef4444">${ended}</div><div class="kpi-label">Konec</div></div>
+  </div>
+  <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">PŘEHLED ZMĚN</div>`;
+  rows.forEach(r=>{
+    const t=new Date(r.created_at).toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'});
+    const oldF=getFazeInfo(r.old_stav);const newF=getFazeInfo(r.new_stav);
+    const lead=leads.find(l=>l.email===r.lead_email);
+    h+=`<div class="act-item" onclick="${lead?`openLead(${lead._id})`:''}">
+      <span class="act-time">${t}</span>
+      <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
+      <div class="act-body">
+        <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
+        <div class="act-sub">
+          ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
+          <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
+          <span class="act-arrow">→</span>
+          <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=h;
 }
 
 // ── Kampaně view (seskupeno po kreativách / ad_name) ──────────
