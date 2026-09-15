@@ -705,6 +705,25 @@ async function init(){
     });
     showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
     render();
+    // Jednorazová migrace: pošli localStorage POZ do Supabase
+    if(!localStorage.getItem('poz_synced_v1')){
+      const toSync=leads.filter(l=>l.poz&&!(cm[l.email]?.poz));
+      if(toSync.length){
+        showSync('🔄 Synchronizuji stavy ('+toSync.length+')…','#6c63ff');
+        for(const l of toSync){
+          try{
+            const enc=encodeURIComponent(l.email);
+            const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({poz:l.poz})});
+            const updated=await pr.json();
+            if(!updated||updated.length===0){
+              await fetch(SB+'/rest/v1/crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({email:l.email,poz:l.poz})});
+            }
+          }catch(e){}
+        }
+        showSync('✅ Stavy synchronizovány','#16a34a');
+      }
+      localStorage.setItem('poz_synced_v1','1');
+    }
   }catch(e){showSync('❌ '+e.message,'#dc2626');}
   showLoading(false);
 }
