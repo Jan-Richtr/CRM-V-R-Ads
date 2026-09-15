@@ -1473,14 +1473,58 @@ async function doImport(){
 }
 
 // ── Denní view ────────────────────────────────────────────────
-let denniBuf=[],denniDay=null,denniLoading=false;
+let denniBuf=[],denniDay=null,denniLoading=false,denniCounts={};
 const WD=['Ne','Po','Út','St','Čt','Pá','So'];
 
-async function loadDenniDay(day){
+function getDenniDays(){
+  const days=[];
+  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  return days;
+}
+
+async function loadDenniCounts(){
+  const days=getDenniDays();
+  const from=days[days.length-1];
+  try{
+    const rows=await sbGet('/rest/v1/activity_log?date=gte.'+from+'&select=date,action,new_stav&limit=2000');
+    denniCounts={};
+    (rows||[]).forEach(r=>{
+      if(!denniCounts[r.date])denniCounts[r.date]={total:0,closed:0};
+      denniCounts[r.date].total++;
+      if(['uzavreno','uzavreno_emailem','domluvena_schuzka'].includes(r.new_stav))denniCounts[r.date].closed++;
+    });
+  }catch(e){}
+  renderDenniNav();
+}
+
+function renderDenniNav(){
+  const nav=document.getElementById('denni-nav');if(!nav)return;
+  const days=getDenniDays();
+  const todayStr=days[0];
+  nav.innerHTML=days.map(d=>{
+    const dt=new Date(d+'T12:00:00');
+    const wd=WD[dt.getDay()];
+    const dd=dt.getDate();
+    const isToday=d===todayStr;
+    const isActive=d===denniDay;
+    const cnt=denniCounts[d]||{total:0,closed:0};
+    const dot=cnt.closed>0?'#22c55e':cnt.total>0?'#eab308':'transparent';
+    return`<div class="day-btn${isToday?' today':''}${isActive?' active':''}" data-day="${d}" onclick="switchDenniDay('${d}')">
+      <div class="dbn-wd">${wd}</div>
+      <div class="dbn-d">${dd}.</div>
+      <div style="height:6px;width:6px;border-radius:50%;background:${dot};margin:3px auto 0;opacity:.85"></div>
+    </div>`;
+  }).join('');
+}
+
+async function switchDenniDay(day){
   if(denniLoading)return;
-  denniLoading=true;
   denniDay=day;
-  renderDenniContent([]);
+  // update active button without rebuilding nav
+  document.querySelectorAll('#denni-nav .day-btn').forEach(b=>b.classList.toggle('active',b.dataset.day===day));
+  denniLoading=true;
+  const el=document.getElementById('denni-content');
+  if(el)el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:40px">⏳ Načítám…</div>`;
   try{
     const rows=await sbGet('/rest/v1/activity_log?date=eq.'+day+'&order=created_at.desc&limit=200');
     denniBuf=rows||[];
@@ -1491,30 +1535,21 @@ async function loadDenniDay(day){
 
 function renderDenni(){
   const dv=document.getElementById('view-denni');
-  // Build last 14 days nav
-  const days=[];
-  for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  const days=getDenniDays();
   if(!denniDay)denniDay=days[0];
-  const todayStr=days[0];
-  const nav=days.map(d=>{
-    const dt=new Date(d+'T12:00:00');
-    const wd=WD[dt.getDay()];
-    const dd=dt.getDate();
-    const isToday=d===todayStr;
-    const isActive=d===denniDay;
-    return`<div class="day-btn${isToday?' today':''}${isActive?' active':''}" onclick="loadDenniDay('${d}')">
-      <div class="dbn-wd">${wd}</div>
-      <div class="dbn-d">${dd}.</div>
-    </div>`;
-  }).join('');
   dv.innerHTML=`
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
-      <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">VYBER DEN</div>
-      <div class="day-nav">${nav}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">PŘEHLED 7 DNÍ</div>
+        <div style="font-size:.65rem;color:var(--text3)">🟢 uzavřeno &nbsp; 🟡 aktivita</div>
+      </div>
+      <div class="day-nav" id="denni-nav"></div>
     </div>
     <div id="denni-content"><div style="text-align:center;color:var(--text3);padding:40px">⏳ Načítám…</div></div>
   `;
-  if(denniDay)loadDenniDay(denniDay);
+  renderDenniNav();
+  loadDenniCounts();
+  switchDenniDay(denniDay);
 }
 
 function renderDenniContent(rows){
