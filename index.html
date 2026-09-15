@@ -803,7 +803,7 @@ function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){
 // ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
   return leads.filter(l=>{
-    const poz=l.poz||'';
+    const poz=getPoz(l.stav);
     if(filterPoz&&poz!==filterPoz)return false;
     if(filterFaze&&l.stav!==filterFaze)return false;
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
@@ -861,10 +861,10 @@ function render(){
 // ── Stats bar ─────────────────────────────────────────────────
 function renderStatsBar(){
   const bar=document.getElementById('statsBar');
-  const ot=leads.filter(l=>(l.poz||'')==='otevreno').length;
-  const uz=leads.filter(l=>(l.poz||'')==='uzavreno').length;
-  const ko=leads.filter(l=>(l.poz||'')==='konec').length;
-  const no=leads.filter(l=>!(l.poz||'')).length;
+  const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length;
+  const uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length;
+  const ko=leads.filter(l=>getPoz(l.stav)==='konec').length;
+  const no=leads.filter(l=>!getPoz(l.stav)).length;
   const today=new Date().toISOString().slice(0,10);
   const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3'&&l.stav!=='uzavreno'&&l.stav!=='uzavreno_emailem').length;
   const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
@@ -892,7 +892,7 @@ function renderTable(){
   const today=new Date().toISOString().slice(0,10);
   tb.innerHTML=sorted.map(l=>{
     const finfo=getFazeInfo(l.stav);
-    const poz=l.poz||'';
+    const poz=getPoz(l.stav);
     const tel=telNum(l.telefon);
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
@@ -1207,7 +1207,7 @@ function openLead(id){
   document.getElementById('pName').textContent=l.jmeno||'Neznámý';
   document.getElementById('pFirma').textContent=l.firma||(l.datum?'Datum: '+l.datum:'');
   document.getElementById('pStage').value=l.stav||'';
-  document.getElementById('pPoz').value=l.poz||'';
+  document.getElementById('pPoz').value=getPoz(l.stav)||'';
   document.getElementById('pFollowup').value=l.followup||'';
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
@@ -1274,8 +1274,7 @@ function savePozFromPanel(){
 function closePanel(){
   if(currentLead){
     currentLead.stav=document.getElementById('pStage').value;
-    currentLead.poz=document.getElementById('pPoz').value;
-    savePozLocal(currentLead.email,currentLead.poz);
+    currentLead.poz=getPoz(currentLead.stav); // odvozeno ze stav
     currentLead.followup=document.getElementById('pFollowup').value;
     currentLead.myNotes=document.getElementById('pNotes').value;
     currentLead.prodej_castka=document.getElementById('pCastka').value;
