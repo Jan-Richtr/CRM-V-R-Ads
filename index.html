@@ -1555,18 +1555,22 @@ function renderDenniContent(rows){
       </div>`;
     } else {
       const oldF=getFazeInfo(r.old_stav);const newF=getFazeInfo(r.new_stav);
-      h+=`<div class="act-item" onclick="${onclick}">
-        <span class="act-time">${t}</span>
-        <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
-        <div class="act-body">
-          <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
-          <div class="act-sub">
-            ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
-            <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
-            <span class="act-arrow">→</span>
-            <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+      const currentNote=(lead&&(lead.myNotes||lead.notes||'').trim())||'';
+      h+=`<div class="act-item" onclick="${onclick}" style="flex-wrap:wrap;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <span class="act-time">${t}</span>
+          <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
+          <div class="act-body">
+            <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
+            <div class="act-sub">
+              ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
+              <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
+              <span class="act-arrow">→</span>
+              <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+            </div>
           </div>
         </div>
+        ${currentNote?`<div style="width:100%;margin-top:7px;margin-left:90px;font-size:.75rem;color:var(--text2);background:var(--bg3);border-left:2px solid var(--border);border-radius:0 5px 5px 0;padding:5px 9px;white-space:pre-wrap;word-break:break-word">📝 ${esc(currentNote)}</div>`:''}
       </div>`;
     }
   });
