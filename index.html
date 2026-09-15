@@ -708,17 +708,16 @@ async function init(){
   showLoading(false);
 }
 
-async function logActivity(lead,oldStav,newStav){
-  if(!oldStav&&!newStav)return;
-  if(oldStav===newStav)return;
+async function logActivity(lead,action,opts={}){
   try{
     const entry={
       lead_email:lead.email,
       lead_name:lead.jmeno||'',
       lead_firma:lead.firma||'',
-      action:'stav_zmena',
-      old_stav:oldStav||'',
-      new_stav:newStav||''
+      action,
+      old_stav:opts.old_stav||'',
+      new_stav:opts.new_stav||'',
+      note:opts.note||null
     };
     await fetch(SB+'/rest/v1/activity_log',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(entry)});
   }catch(e){/* log silently */}
@@ -728,6 +727,7 @@ async function saveToApi(lead,oldStav){
   showSync('💾 Ukládám…','#d97706');
   try{
     const idx=leads.findIndex(l=>l.email===lead.email);
+    const oldNotes=idx>=0?(leads[idx].myNotes||''):'';
     if(idx>=0)leads[idx]={...leads[idx],...lead};
     const data={
       stav:lead.stav,
@@ -757,7 +757,11 @@ async function saveToApi(lead,oldStav){
       if(!ir.ok)throw new Error(await ir.text());
     }
     showSync('✅ Uloženo','#16a34a');
-    if(oldStav!==undefined&&oldStav!==lead.stav)await logActivity(lead,oldStav,lead.stav);
+    if(oldStav!==undefined&&oldStav!==lead.stav)
+      await logActivity(lead,'stav_zmena',{old_stav:oldStav,new_stav:lead.stav});
+    const newNotes=(lead.myNotes||'').trim();
+    if(newNotes&&newNotes!==oldNotes.trim())
+      await logActivity(lead,'poznamka',{note:newNotes});
   }catch(e){showSync('⚠️ '+e.message,'#d97706');}
 }
 
@@ -1522,35 +1526,49 @@ function renderDenniContent(rows){
     byHour[h].push(r);
   });
   const FAZE_ICON={volat:'📞',nezvedan1:'☎️',nezvedan2:'☎️',nezvedan3:'☎️',odeslat_email:'📧',email_odeslano:'📤',email_odpoved:'💬',uzavreno_emailem:'💚',komunikace_wa:'💬',nerelevantni:'☹️',konec:'❌',domluvena_schuzka:'✅',odeslana_faktura:'🧾',uzavreno:'💚','':"—"};
+  const stavRows=rows.filter(r=>r.action==='stav_zmena');
+  const noteRows=rows.filter(r=>r.action==='poznamka');
   // KPI
-  const total=rows.length;
-  const toCall=rows.filter(r=>['volat','nezvedan1','nezvedan2','nezvedan3'].includes(r.new_stav)).length;
-  const closed=rows.filter(r=>['uzavreno','uzavreno_emailem','domluvena_schuzka'].includes(r.new_stav)).length;
-  const ended=rows.filter(r=>['konec','nerelevantni'].includes(r.new_stav)).length;
+  const toCall=stavRows.filter(r=>['volat','nezvedan1','nezvedan2','nezvedan3'].includes(r.new_stav)).length;
+  const closed=stavRows.filter(r=>['uzavreno','uzavreno_emailem','domluvena_schuzka'].includes(r.new_stav)).length;
+  const ended=stavRows.filter(r=>['konec','nerelevantni'].includes(r.new_stav)).length;
   let h=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-    <div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-label">Posunů celkem</div></div>
+    <div class="kpi"><div class="kpi-val">${stavRows.length}</div><div class="kpi-label">Posunů fází</div></div>
     <div class="kpi"><div class="kpi-val" style="color:#eab308">${toCall}</div><div class="kpi-label">Na volání</div></div>
     <div class="kpi"><div class="kpi-val" style="color:#22c55e">${closed}</div><div class="kpi-label">Uzavřeno</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#ef4444">${ended}</div><div class="kpi-label">Konec</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#a855f7">${noteRows.length}</div><div class="kpi-label">Poznámek</div></div>
   </div>
   <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">PŘEHLED ZMĚN</div>`;
   rows.forEach(r=>{
     const t=new Date(r.created_at).toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'});
-    const oldF=getFazeInfo(r.old_stav);const newF=getFazeInfo(r.new_stav);
     const lead=leads.find(l=>l.email===r.lead_email);
-    h+=`<div class="act-item" onclick="${lead?`openLead(${lead._id})`:''}">
-      <span class="act-time">${t}</span>
-      <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
-      <div class="act-body">
-        <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
-        <div class="act-sub">
-          ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
-          <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
-          <span class="act-arrow">→</span>
-          <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+    const onclick=lead?`openLead(${lead._id})`:'';
+    if(r.action==='poznamka'){
+      h+=`<div class="act-item" onclick="${onclick}">
+        <span class="act-time">${t}</span>
+        <span class="act-icon">📝</span>
+        <div class="act-body">
+          <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
+          ${r.lead_firma?`<div style="font-size:.68rem;color:var(--text3);margin-bottom:2px">${esc(r.lead_firma)}</div>`:''}
+          <div style="font-size:.75rem;color:var(--text2);background:var(--bg3);border-radius:5px;padding:5px 8px;margin-top:4px;white-space:pre-wrap;word-break:break-word">${esc(r.note||'')}</div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
+    } else {
+      const oldF=getFazeInfo(r.old_stav);const newF=getFazeInfo(r.new_stav);
+      h+=`<div class="act-item" onclick="${onclick}">
+        <span class="act-time">${t}</span>
+        <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
+        <div class="act-body">
+          <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
+          <div class="act-sub">
+            ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
+            <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
+            <span class="act-arrow">→</span>
+            <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+          </div>
+        </div>
+      </div>`;
+    }
   });
   el.innerHTML=h;
 }
