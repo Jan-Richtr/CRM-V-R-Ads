@@ -928,7 +928,7 @@ function renderTable(){
 // ── Mobile cards ──────────────────────────────────────────────
 function renderCards(){
   const filtered=getFiltered();
-  const sorted=[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs')*-1);
+  const sorted=[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs'));
   const cb=document.getElementById('view-cards');
   if(!sorted.length){cb.innerHTML=`<div style="text-align:center;color:var(--text3);padding:48px 20px;font-size:.88rem">Žádné výsledky</div>`;return;}
   const today=new Date().toISOString().slice(0,10);
