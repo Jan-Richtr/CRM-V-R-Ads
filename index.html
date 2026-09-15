@@ -692,6 +692,7 @@ async function init(){
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
       const rawStav=c.stav||l.stav||'';
+      const poz=c.poz||loadPozLocal(l.email)||'';
       return{...l,_id:l.id,
         stav:migrateStav(rawStav),
         prodej_castka:c.prodej_castka||'',
@@ -699,7 +700,7 @@ async function init(){
         prodej_note:c.prodej_note||'',
         followup:c.followup||'',
         myNotes:c.my_notes||'',
-        poz:loadPozLocal(l.email)||'',
+        poz,
       };
     });
     showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
@@ -732,6 +733,7 @@ async function saveToApi(lead,oldStav,passedOldNotes){
     if(idx>=0)leads[idx]={...leads[idx],...lead};
     const data={
       stav:lead.stav,
+      poz:lead.poz||null,
       prodej_castka:lead.prodej_castka||null,
       prodej_produkt:lead.prodej_produkt||null,
       prodej_note:lead.prodej_note||null,
@@ -957,7 +959,8 @@ async function changeFaze(email,newStav){
 async function changePoz(email,newPoz){
   const lead=leads.find(l=>l.email===email);if(!lead)return;
   lead.poz=newPoz;
-  savePozLocal(email,newPoz);
+  savePozLocal(email,newPoz); // fallback local
+  await saveToApi(lead);
   renderStatsBar();renderTable();
 }
 async function changeFollowup(email,newDate){
@@ -1243,7 +1246,8 @@ function savePanel(){
 function savePozFromPanel(){
   if(!currentLead)return;
   currentLead.poz=document.getElementById('pPoz').value;
-  savePozLocal(currentLead.email,currentLead.poz);
+  savePozLocal(currentLead.email,currentLead.poz); // fallback local
+  saveToApi(currentLead); // sync to Supabase
   renderStatsBar();
   if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
 }
