@@ -723,11 +723,12 @@ async function logActivity(lead,action,opts={}){
   }catch(e){/* log silently */}
 }
 
-async function saveToApi(lead,oldStav){
+async function saveToApi(lead,oldStav,passedOldNotes){
   showSync('💾 Ukládám…','#d97706');
   try{
     const idx=leads.findIndex(l=>l.email===lead.email);
-    const oldNotes=idx>=0?(leads[idx].myNotes||''):'';
+    // passedOldNotes must be captured BEFORE mutating lead/currentLead
+    const oldNotes=passedOldNotes!==undefined?passedOldNotes:(idx>=0?(leads[idx].myNotes||''):'');
     if(idx>=0)leads[idx]={...leads[idx],...lead};
     const data={
       stav:lead.stav,
@@ -1226,6 +1227,7 @@ function openLead(id){
 function savePanel(){
   if(!currentLead)return;
   const oldStav=currentLead.stav;
+  const oldNotes=currentLead.myNotes||''; // zachytit PŘED přepsáním
   currentLead.stav=document.getElementById('pStage').value;
   currentLead.followup=document.getElementById('pFollowup').value;
   currentLead.myNotes=document.getElementById('pNotes').value;
@@ -1233,7 +1235,7 @@ function savePanel(){
   currentLead.prodej_produkt=document.getElementById('pProdukt').value;
   currentLead.prodej_note=document.getElementById('pProdejNote').value;
   // poz zůstává nezávislá — neaktualizujeme ji při změně fáze
-  saveToApi(currentLead,oldStav);
+  saveToApi(currentLead,oldStav,oldNotes);
   renderStatsBar();
   if(currentTab==='table'){if(isMobile())renderCards();else renderTable();}
 }
@@ -1596,18 +1598,23 @@ function renderDenniContent(rows){
       </div>`;
     } else {
       const oldF=getFazeInfo(r.old_stav);const newF=getFazeInfo(r.new_stav);
-      h+=`<div class="act-item" onclick="${onclick}">
-        <span class="act-time">${t}</span>
-        <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
-        <div class="act-body">
-          <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
-          <div class="act-sub">
-            ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
-            <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
-            <span class="act-arrow">→</span>
-            <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+      const fullNote=(lead&&(lead.myNotes||'').trim())||'';
+      const lastNote=fullNote.includes(',')?fullNote.split(',').pop().trim():fullNote;
+      h+=`<div class="act-item" onclick="${onclick}" style="align-items:flex-start;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <span class="act-time">${t}</span>
+          <span class="act-icon">${FAZE_ICON[r.new_stav]||'🔄'}</span>
+          <div class="act-body">
+            <div class="act-name">${esc(r.lead_name||r.lead_email)}</div>
+            <div class="act-sub">
+              ${r.lead_firma?`<span style="color:var(--text3)">${esc(r.lead_firma)}</span>`:''}
+              <span class="badge ${oldF.cls}" style="color:${oldF.color};padding:1px 5px;font-size:.62rem">${oldF.label}</span>
+              <span class="act-arrow">→</span>
+              <span class="badge ${newF.cls}" style="color:${newF.color};padding:1px 5px;font-size:.62rem">${newF.label}</span>
+            </div>
           </div>
         </div>
+        ${lastNote?`<div style="width:100%;margin-top:6px;padding-left:90px;font-size:.75rem;color:var(--text2);white-space:pre-wrap;word-break:break-word">${esc(lastNote)}</div>`:''}
       </div>`;
     }
   });
