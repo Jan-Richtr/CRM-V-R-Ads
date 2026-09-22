@@ -685,10 +685,10 @@ async function init(){
     const[ls,cs,fs]=await Promise.all([
       sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
       sbGet('/rest/v1/crm_data?limit=5000'),
-      sbGet('/rest/v1/fb_spend?limit=1000')
+      sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000')
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
-    fbSpend={};(fs||[]).forEach(r=>{fbSpend[r.campaign_name]=r.spend;});
+    fbSpend={};(fs||[]).forEach(r=>{const k=r.ad_name||r.campaign_name;if(k)fbSpend[k]=parseFloat(r.spend)||0;});
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
       const rawStav=c.stav||l.stav||'';
@@ -1662,7 +1662,14 @@ function renderKampane(){
   });
   const arr=Object.values(kreativy).sort((a,b)=>b.leads.length-a.leads.length);
   if(!arr.length){kv.innerHTML='<div style="text-align:center;color:var(--text3);padding:40px">Žádné kreativy.</div>';return;}
-  let h='<div style="padding:8px 0">';
+  const hasFbData=Object.keys(fbSpend).length>0;
+  let h=`<div style="padding:4px 0 8px 0">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg3);border-radius:6px;margin-bottom:8px;font-size:.72rem;color:var(--text3)">
+      ${hasFbData?'📡 <span style="color:var(--accent2)">FB Spend z Windsor</span> · aktualizováno Claudem · aktuální měsíc':'📡 FB Spend: není napojeno — spusť sync přes Claude'}
+      <span style="margin-left:auto;font-size:.65rem">✏️ = manuální přepis</span>
+    </div>
+  </div>
+  <div style="padding:0">`;
   arr.forEach(c=>{
     const prod=c.leads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
     const obrat=prod.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
@@ -1711,10 +1718,14 @@ function editFbSpend(campName){
   saveFbSpend(campName,n);
 }
 
-async function saveFbSpend(campaign_name,spend){
-  fbSpend[campaign_name]=spend;
+async function saveFbSpend(ad_name,spend){
+  fbSpend[ad_name]=spend;
+  const month=new Date().getMonth()+1;
   try{
-    await sbPost('/rest/v1/fb_spend',{campaign_name,spend});
+    // PATCH by ad_name+month, fallback POST
+    const r=await fetch(`${SB}/rest/v1/fb_spend?ad_name=eq.${encodeURIComponent(ad_name)}&month=eq.${month}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({spend,updated_at:new Date().toISOString()})});
+    const d=await r.json();
+    if(!d||!d.length){await fetch(`${SB}/rest/v1/fb_spend`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({ad_name,spend,month,updated_at:new Date().toISOString()})});}
     renderKampane();
   }catch(e){alert('Chyba uložení: '+e.message);}
 }
