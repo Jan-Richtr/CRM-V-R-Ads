@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>V&R Ads CRM</title>
+<title>V&R Ads CRM — Obchodník</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230d1340'/%3E%3Ctext x='32' y='26' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EV%26R%3C/text%3E%3Ctext x='32' y='50' font-family='Arial,sans-serif' font-size='16' font-weight='800' fill='%2322c55e' text-anchor='middle' letter-spacing='2'%3EADS%3C/text%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -237,14 +237,13 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <body>
 
 <div class="topbar">
-  <div class="logo">V&R Ads</div>
+  <div class="logo">V&R Ads <span style="font-size:.7rem;color:var(--text3);font-weight:400">· Obchodník</span></div>
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
     <button class="tab" onclick="setTab('email')">📧 Email</button>
     <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
-    <button class="tab" onclick="setTab('sales')" style="border-left:1px solid var(--border);margin-left:4px;padding-left:10px">👤 Obchodník</button>
   </div>
   <div class="search-wrap">
     <span class="si">🔍</span>
@@ -327,7 +326,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <div id="view-email"></div>
 <div id="view-kampane"></div>
 <div id="view-denni"></div>
-<div id="view-sales"></div>
 
 <!-- LOGIN MODAL -->
 <div id="loginModal" class="open">
@@ -657,10 +655,10 @@ async function deleteSelected(){
       const batch=emails.slice(i,i+50);
       const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
       // Delete from crm_data first
-      const r1=await fetch(SB+'/rest/v1/crm_data?or=('+filter+')',{method:'DELETE',headers:H});
+      const r1=await fetch(SB+'/rest/v1/sales_crm_data?or=('+filter+')',{method:'DELETE',headers:H});
       if(!r1.ok)throw new Error(await r1.text());
       // Delete from leads
-      const r2=await fetch(SB+'/rest/v1/leads?or=('+filter+')',{method:'DELETE',headers:H});
+      const r2=await fetch(SB+'/rest/v1/sales_leads?or=('+filter+')',{method:'DELETE',headers:H});
       if(!r2.ok)throw new Error(await r2.text());
     }
     leads=leads.filter(l=>!selected.has(l.email));
@@ -685,8 +683,8 @@ async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
     const[ls,cs,fs]=await Promise.all([
-      sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
-      sbGet('/rest/v1/crm_data?limit=5000'),
+      sbGet('/rest/v1/sales_leads?order=mesic.asc,id.asc&limit=5000'),
+      sbGet('/rest/v1/sales_crm_data?limit=5000'),
       sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000')
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
@@ -715,10 +713,10 @@ async function init(){
         for(const l of toSync){
           try{
             const enc=encodeURIComponent(l.email);
-            const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({poz:l.poz})});
+            const pr=await fetch(SB+'/rest/v1/sales_crm_data?email=eq.'+enc,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({poz:l.poz})});
             const updated=await pr.json();
             if(!updated||updated.length===0){
-              await fetch(SB+'/rest/v1/crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({email:l.email,poz:l.poz})});
+              await fetch(SB+'/rest/v1/sales_crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({email:l.email,poz:l.poz})});
             }
           }catch(e){}
         }
@@ -741,7 +739,7 @@ async function logActivity(lead,action,opts={}){
       new_stav:opts.new_stav||'',
       note:opts.note||null
     };
-    await fetch(SB+'/rest/v1/activity_log',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(entry)});
+    await fetch(SB+'/rest/v1/sales_activity_log',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(entry)});
   }catch(e){/* log silently */}
 }
 
@@ -764,7 +762,7 @@ async function saveToApi(lead,oldStav,passedOldNotes){
     };
     const enc=encodeURIComponent(lead.email);
     // PATCH first — return=representation gives us the updated rows as JSON (CORS-safe)
-    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{
+    const pr=await fetch(SB+'/rest/v1/sales_crm_data?email=eq.'+enc,{
       method:'PATCH',
       headers:{...H,'Prefer':'return=representation'},
       body:JSON.stringify(data)
@@ -773,7 +771,7 @@ async function saveToApi(lead,oldStav,passedOldNotes){
     const updated=await pr.json();
     // If PATCH updated 0 rows → row doesn't exist yet, INSERT it
     if(!updated||updated.length===0){
-      const ir=await fetch(SB+'/rest/v1/crm_data',{
+      const ir=await fetch(SB+'/rest/v1/sales_crm_data',{
         method:'POST',
         headers:{...H,'Prefer':'return=minimal'},
         body:JSON.stringify({email:lead.email,...data})
@@ -831,7 +829,7 @@ function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni','sales'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni'][i]===t));
   ['table','stats','email','kampane','denni'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   const mob=isMobile();
   document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
@@ -840,8 +838,7 @@ function setTab(t){
   document.getElementById('view-email').style.display=t==='email'?'block':'none';
   document.getElementById('view-kampane').style.display=t==='kampane'?'block':'none';
   document.getElementById('view-denni').style.display=t==='denni'?'block':'none';
-  document.getElementById('view-sales').style.display=t==='sales'?'block':'none';
-  if(t==='sales')renderSales();else render();
+  render();
 }
 function sortBy(col){
   if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
@@ -1485,7 +1482,7 @@ async function doImport(){
   for(let i=0;i<toImport.length;i+=100){
     try{
       const batch=toImport.slice(i,i+100);
-      await sbPost('/rest/v1/leads',batch);
+      await sbPost('/rest/v1/sales_leads',batch);
       done+=Math.min(100,toImport.length-i);
       if(prog)prog.style.width=Math.round(done/toImport.length*100)+'%';
       if(st)st.textContent=(skipped?`Přeskočeno ${skipped} duplikátů · `:'')+'Importováno '+done+' / '+toImport.length;
@@ -1513,7 +1510,7 @@ async function loadDenniCounts(){
   const days=getDenniDays();
   const from=days[days.length-1];
   try{
-    const rows=await sbGet('/rest/v1/activity_log?date=gte.'+from+'&select=date,action,new_stav&limit=2000');
+    const rows=await sbGet('/rest/v1/sales_activity_log?date=gte.'+from+'&select=date,action,new_stav&limit=2000');
     denniCounts={};
     (rows||[]).forEach(r=>{
       if(!denniCounts[r.date])denniCounts[r.date]={total:0,closed:0};
@@ -1553,7 +1550,7 @@ async function switchDenniDay(day){
   const el=document.getElementById('denni-content');
   if(el)el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:40px">⏳ Načítám…</div>`;
   try{
-    const rows=await sbGet('/rest/v1/activity_log?date=eq.'+day+'&order=created_at.desc&limit=200');
+    const rows=await sbGet('/rest/v1/sales_activity_log?date=eq.'+day+'&order=created_at.desc&limit=200');
     denniBuf=rows||[];
   }catch(e){denniBuf=[];}
   denniLoading=false;
@@ -1733,69 +1730,6 @@ async function saveFbSpend(ad_name,spend){
   }catch(e){alert('Chyba uložení: '+e.message);}
 }
 
-// ── Obchodník view ─────────────────────────────────────────────
-async function renderSales(){
-  const el=document.getElementById('view-sales');
-  if(!el)return;
-  el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">⏳ Načítám data obchodníka…</div>';
-  try{
-    const[ls,cs]=await Promise.all([
-      sbGet('/rest/v1/sales_leads?order=created_at.desc&limit=2000'),
-      sbGet('/rest/v1/sales_crm_data?limit=2000')
-    ]);
-    const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
-    const salesLeads=(ls||[]).map(l=>{
-      const c=cm[l.email]||{};
-      return{...l,stav:c.stav||'',myNotes:c.my_notes||'',followup:c.followup||'',prodej_castka:c.prodej_castka||''};
-    });
-    if(!salesLeads.length){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Obchodník zatím nemá žádné leady.</div>';return;}
-    const total=salesLeads.length;
-    const withPoz=s=>salesLeads.filter(l=>getPoz(l.stav)===s).length;
-    const prodeje=salesLeads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
-    const obrat=prodeje.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
-    let h=`<div style="padding:12px 0">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-        <div style="font-weight:700;font-size:.95rem;color:var(--accent2)">👤 Obchodník — přehled</div>
-        <div style="font-size:.7rem;color:var(--text3)">read-only · ${new Date().toLocaleString('cs',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
-        <button onclick="renderSales()" style="margin-left:auto;font-size:.7rem;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer">🔄 Obnovit</button>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <div class="stat-card" style="min-width:90px"><div class="stat-num">${total}</div><div class="stat-lbl">Celkem leadů</div></div>
-        <div class="stat-card" style="min-width:90px"><div class="stat-num" style="color:var(--yellow)">${withPoz('otevreno')}</div><div class="stat-lbl">Otevřeno</div></div>
-        <div class="stat-card" style="min-width:90px"><div class="stat-num" style="color:var(--green)">${withPoz('uzavreno')}</div><div class="stat-lbl">Uzavřeno</div></div>
-        <div class="stat-card" style="min-width:90px"><div class="stat-num" style="color:var(--red)">${withPoz('konec')}</div><div class="stat-lbl">Konec</div></div>
-        <div class="stat-card" style="min-width:90px"><div class="stat-num" style="color:var(--green)">${obrat>0?Number(obrat).toLocaleString('cs')+' €':'—'}</div><div class="stat-lbl">Obrat</div></div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:.78rem">
-        <thead><tr style="color:var(--text3);border-bottom:1px solid var(--border)">
-          <th style="padding:6px 8px;text-align:left">Jméno</th>
-          <th style="padding:6px 8px;text-align:left">Firma</th>
-          <th style="padding:6px 8px;text-align:left">Fáze</th>
-          <th style="padding:6px 8px;text-align:left">Datum</th>
-          <th style="padding:6px 8px;text-align:left">Followup</th>
-          <th style="padding:6px 8px;text-align:left">Prodej</th>
-          <th style="padding:6px 8px;text-align:left">Poznámka</th>
-        </tr></thead><tbody>`;
-    salesLeads.forEach(l=>{
-      const f=FAZE_MAP[l.stav]||FAZE[0];
-      const poz=getPoz(l.stav);
-      const pozColor=poz==='uzavreno'?'var(--green)':poz==='konec'?'var(--red)':'var(--yellow)';
-      const lastNote=l.myNotes?(l.myNotes.includes(',')?l.myNotes.split(',').pop().trim():l.myNotes):'';
-      h+=`<tr style="border-bottom:1px solid var(--border);color:var(--text2)">
-        <td style="padding:5px 8px;color:var(--text)">${esc(l.jmeno||'—')}</td>
-        <td style="padding:5px 8px">${esc(l.firma||'—')}</td>
-        <td style="padding:5px 8px"><span style="color:${f.color||pozColor};font-size:.72rem">${esc(f.label||l.stav||'—')}</span></td>
-        <td style="padding:5px 8px">${l.datum?l.datum.slice(0,10):'—'}</td>
-        <td style="padding:5px 8px;color:${l.followup?'var(--orange)':'var(--text3)'}">${l.followup||'—'}</td>
-        <td style="padding:5px 8px;color:var(--green)">${l.prodej_castka?l.prodej_castka+' €':'—'}</td>
-        <td style="padding:5px 8px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.myNotes||'')}">${esc(lastNote||'—')}</td>
-      </tr>`;
-    });
-    h+='</tbody></table></div>';
-    el.innerHTML=h;
-  }catch(e){el.innerHTML='<div style="padding:24px;color:var(--red)">Chyba načítání: '+esc(e.message)+'</div>';}
-}
-
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ── Google Sheets sync ───────────────────────────────────────
@@ -1905,7 +1839,7 @@ async function syncGSheets(){
     // Import in batches of 100
     let done=0;
     for(let i=0;i<newLeads.length;i+=100){
-      await sbPost('/rest/v1/leads',newLeads.slice(i,i+100));
+      await sbPost('/rest/v1/sales_leads',newLeads.slice(i,i+100));
       done+=Math.min(100,newLeads.length-i);
     }
 
@@ -1981,7 +1915,7 @@ async function doEmailLead(){
       btn.disabled=false;btn.textContent='➕ Přidat lead';
       return;
     }
-    await sbPost('/rest/v1/leads',[lead]);
+    await sbPost('/rest/v1/sales_leads',[lead]);
     closeEmailLead();
     await init();
     showSync('✅ Lead '+esc(lead.jmeno||lead.email)+' přidán','#16a34a');
