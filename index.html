@@ -258,6 +258,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="icon-btn" onclick="openEmailLead()" title="Přidat lead z emailu" style="background:var(--bg3);border-color:var(--border);color:var(--text2)">📧</button>
   <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
     <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
+    <button onclick="transferToSales()" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">👤 Předat Jakubovi</button>
     <button onclick="deleteSelected()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">🗑️</button>
     <button onclick="clearSel()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.78rem">✕</button>
   </div>
@@ -671,6 +672,43 @@ async function deleteSelected(){
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
 
+// ── Transfer to Sales ─────────────────────────────────────────
+async function transferToSales(){
+  if(!selected.size)return;
+  const toTransfer=leads.filter(l=>selected.has(l.email));
+  if(!toTransfer.length)return;
+  if(!confirm('Předat '+toTransfer.length+' lead'+(toTransfer.length===1?'':'ů')+' Jakubovi?'))return;
+  showSync('👤 Přesouvám…','var(--accent)');
+  try{
+    const salesRecs=toTransfer.map(l=>({
+      email:l.email||'',jmeno:l.jmeno||'',firma:l.firma||'',telefon:l.telefon||'',
+      datum:l.datum?l.datum.slice(0,10):new Date().toISOString().slice(0,10),
+      zdroj:l.campaign_name||'CRM přesun',sluzba:l.sluzba||'',problem:l.problem||'',
+      ad_name:l.ad_name||'',campaign_name:l.campaign_name||'',platform:l.platform||''
+    }));
+    const r1=await sbFetch(SB+'/rest/v1/sales_leads',{
+      method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify(salesRecs)
+    });
+    if(!r1.ok)throw new Error(await r1.text());
+    const emails=[...selected];
+    for(let i=0;i<emails.length;i+=50){
+      const batch=emails.slice(i,i+50);
+      const filter=batch.map(e=>'email.eq.'+encodeURIComponent(e)).join(',');
+      const r2=await sbFetch(SB+'/rest/v1/leads?or=('+filter+')',{
+        method:'PATCH',headers:{...H,'Prefer':'return=minimal'},
+        body:JSON.stringify({sales_assigned:true,sales_assigned_at:new Date().toISOString()})
+      });
+      if(!r2.ok)throw new Error(await r2.text());
+    }
+    const logs=toTransfer.map(l=>({lead_id:l.id||null,jmeno:l.jmeno||'',firma:l.firma||'',telefon:l.telefon||'',sluzba:l.sluzba||''}));
+    await sbFetch(SB+'/rest/v1/sales_transfers',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(logs)});
+    leads.forEach(l=>{if(selected.has(l.email)){l.sales_assigned=true;l.sales_assigned_at=new Date().toISOString();}});
+    selected.clear();updateSelBar();renderTable();
+    showSync('✅ Předáno Jakubovi ('+toTransfer.length+')','#16a34a');
+  }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
+}
+
 // ── Phone fix ─────────────────────────────────────────────────
 function fixPhone(s){
   s=String(s||'').trim();
@@ -900,6 +938,7 @@ function renderTable(){
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
     const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
+    const salesBadge=l.sales_assigned?`<span title="Předáno Jakubovi ${l.sales_assigned_at?new Date(l.sales_assigned_at).toLocaleDateString('cs'):''}" style="font-size:.65rem;background:rgba(108,99,255,.2);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">👤</span>`:'';
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
@@ -910,7 +949,7 @@ function renderTable(){
     return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
       <td style="color:var(--text3);min-width:55px">${formatDatum(l.datum)}</td>
-      <td style="font-weight:600;max-width:130px">${esc(l.jmeno||'')}</td>
+      <td style="font-weight:600;max-width:130px">${esc(l.jmeno||'')}${salesBadge}</td>
       <td style="color:var(--text2);max-width:120px">${l.firma?`<a class="link" href="${l.website&&l.website.startsWith('http')?esc(l.website):'https://www.google.com/search?q='+encodeURIComponent(l.firma)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(l.firma)}</a>`:''}</td>
       <td style="min-width:110px">${tel?`<a class="link" href="tel:${tel}" onclick="event.stopPropagation()">${esc(phoneDisplay)}</a>`:esc(phoneDisplay)}</td>
       <td style="max-width:150px"><a class="link" href="mailto:${esc(l.email||'')}" onclick="event.stopPropagation()">${esc(l.email||'')}</a></td>
@@ -1739,9 +1778,10 @@ async function renderSales(){
   if(!el)return;
   el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">⏳ Načítám data obchodníka…</div>';
   try{
-    const[ls,cs]=await Promise.all([
+    const[ls,cs,tr]=await Promise.all([
       sbGet('/rest/v1/sales_leads?order=created_at.desc&limit=2000'),
-      sbGet('/rest/v1/sales_crm_data?limit=2000')
+      sbGet('/rest/v1/sales_crm_data?limit=2000'),
+      sbGet('/rest/v1/sales_transfers?order=transferred_at.desc&limit=100')
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
     const salesLeads=(ls||[]).map(l=>{
@@ -1791,7 +1831,32 @@ async function renderSales(){
         <td style="padding:5px 8px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.myNotes||'')}">${esc(lastNote||'—')}</td>
       </tr>`;
     });
-    h+='</tbody></table></div>';
+    h+='</tbody></table>';
+    // Přehled přesunů
+    if(tr&&tr.length){
+      h+=`<div style="margin-top:20px">
+        <div style="font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)">📋 Historie přesunů (${tr.length})</div>
+        <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+          <thead><tr style="color:var(--text3)">
+            <th style="padding:4px 8px;text-align:left">Kdy</th>
+            <th style="padding:4px 8px;text-align:left">Jméno</th>
+            <th style="padding:4px 8px;text-align:left">Firma</th>
+            <th style="padding:4px 8px;text-align:left">Telefon</th>
+            <th style="padding:4px 8px;text-align:left">Služba</th>
+          </tr></thead><tbody>`;
+      tr.forEach(t=>{
+        const kdy=t.transferred_at?new Date(t.transferred_at).toLocaleString('cs',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+        h+=`<tr style="border-bottom:1px solid rgba(46,52,84,.3);color:var(--text2)">
+          <td style="padding:4px 8px;color:var(--text3);white-space:nowrap">${esc(kdy)}</td>
+          <td style="padding:4px 8px;color:var(--text)">${esc(t.jmeno||'—')}</td>
+          <td style="padding:4px 8px">${esc(t.firma||'—')}</td>
+          <td style="padding:4px 8px">${esc(t.telefon||'—')}</td>
+          <td style="padding:4px 8px">${esc(t.sluzba||'—')}</td>
+        </tr>`;
+      });
+      h+='</tbody></table></div>';
+    }
+    h+='</div>';
     el.innerHTML=h;
   }catch(e){el.innerHTML='<div style="padding:24px;color:var(--red)">Chyba načítání: '+esc(e.message)+'</div>';}
 }
