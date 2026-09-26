@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>V&R Ads CRM — Obchodník</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230d1340'/%3E%3Ctext x='32' y='26' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EV%26R%3C/text%3E%3Ctext x='32' y='50' font-family='Arial,sans-serif' font-size='16' font-weight='800' fill='%2322c55e' text-anchor='middle' letter-spacing='2'%3EADS%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231c0f1c'/%3E%3Ctext x='32' y='26' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%23ff6ec7' text-anchor='middle'%3EV%26R%3C/text%3E%3Ctext x='32' y='50' font-family='Arial,sans-serif' font-size='16' font-weight='800' fill='%23e91e8c' text-anchor='middle' letter-spacing='2'%3EADS%3C/text%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#0d0f1a;--bg2:#141726;--bg3:#1c2035;--border:#2e3454;--accent:#6c63ff;--accent2:#8b84ff;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--safe-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#120913;--bg2:#1c0f1c;--bg3:#271627;--border:#4a1f4a;--accent:#e91e8c;--accent2:#ff6ec7;--green:#22c55e;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--blue:#3b82f6;--purple:#c026d3;--text:#fce4f3;--text2:#c084ac;--text3:#8b5a7a;--safe-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:52px;position:sticky;top:0;z-index:100}
-.logo{font-size:1rem;font-weight:700;color:var(--accent2);flex-shrink:0}
+.topbar{background:linear-gradient(135deg,#1c0f1c 0%,#2a0e2a 50%,#1c0f1c 100%);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(233,30,140,.15)}
+.logo{font-size:1rem;font-weight:700;color:var(--accent2);flex-shrink:0;text-shadow:0 0 12px rgba(255,110,199,.4)}
 .tabs{display:flex;gap:2px;flex-shrink:0}
 .tab{background:none;border:none;color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:500;transition:all .15s;white-space:nowrap}
-.tab.active{background:var(--accent);color:#fff}
+.tab.active{background:linear-gradient(135deg,var(--accent),#c8007a);color:#fff;box-shadow:0 2px 10px rgba(233,30,140,.4)}
 .tab:hover:not(.active){background:var(--bg3);color:var(--text)}
 .search-wrap{flex:1;max-width:260px;position:relative}
 .search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px 6px 28px;color:var(--text);font-size:.8rem;outline:none}
@@ -28,7 +28,7 @@ select.flt{appearance:none;padding-right:18px;background-image:url("data:image/s
 /* STATS BAR */
 .stats-bar{display:flex;gap:8px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
 .stt{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;flex-shrink:0}
-.stt:hover,.stt.on{border-color:var(--accent);background:rgba(108,99,255,.12)}
+.stt:hover,.stt.on{border-color:var(--accent);background:rgba(233,30,140,.12)}
 .stt-n{font-size:1.15rem;font-weight:700}
 .stt-l{font-size:.68rem;color:var(--text2)}
 /* TABLE */
@@ -40,7 +40,7 @@ th:hover{color:var(--accent2)}
 th .si2{margin-left:3px;opacity:.4;font-size:.65rem}
 th.sorted .si2{opacity:1;color:var(--accent2)}
 td{padding:7px 9px;border-bottom:1px solid rgba(46,52,84,.4);vertical-align:middle;border-right:1px solid rgba(46,52,84,.25);max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
+tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600;white-space:nowrap}
 /* Fáze badge colors */
 .b-nz1{background:rgba(234,179,8,.2);color:#eab308}
@@ -133,7 +133,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .imp-modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;width:480px;max-width:95vw}
 .imp-modal h3{font-size:.95rem;font-weight:700;margin-bottom:12px}
 .drop-z{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
-.drop-z:hover,.drop-z.drag{border-color:var(--accent);background:rgba(108,99,255,.06)}
+.drop-z:hover,.drop-z.drag{border-color:var(--accent);background:rgba(233,30,140,.06)}
 .drop-z .ic{font-size:30px;margin-bottom:7px}
 .imp-prog{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px}
 .imp-prog-f{height:100%;background:var(--accent);transition:width .3s}
@@ -143,7 +143,11 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .imp-btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--accent);opacity:.5;border-radius:4px}
+.kpi{transition:box-shadow .2s}
+.kpi:hover{box-shadow:0 0 16px rgba(233,30,140,.2)}
+.btn-pri{background:linear-gradient(135deg,var(--accent),#c8007a);border-color:var(--accent)}
+.btn-pri:hover{background:linear-gradient(135deg,#ff3da8,var(--accent))}
 /* ICON BUTTONS */
 .icon-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .icon-btn:hover{border-color:var(--accent);color:var(--text)}
@@ -176,7 +180,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .plat-tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:.62rem;font-weight:700}
 .plat-tag.plat-facebook{background:rgba(59,130,246,.2);color:#60a5fa}
 .plat-tag.plat-instagram{background:rgba(236,72,153,.2);color:#f472b6}
-.camp-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.65rem;background:rgba(108,99,255,.15);color:var(--accent2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.camp-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.65rem;background:rgba(233,30,140,.15);color:var(--accent2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
 /* KAMPANE VIEW */
 #view-kampane{padding:0;display:none;overflow-y:auto;max-height:calc(100vh - 125px)}
 /* LOGIN MODAL */
@@ -217,7 +221,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 .day-nav{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
 .day-nav::-webkit-scrollbar{display:none}
 .day-btn{flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;text-align:center;transition:all .15s;min-width:60px}
-.day-btn.today{border-color:var(--accent);background:rgba(108,99,255,.12)}
+.day-btn.today{border-color:var(--accent);background:rgba(233,30,140,.12)}
 .day-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .day-btn .dbn-wd{font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
 .day-btn.active .dbn-wd{color:rgba(255,255,255,.7)}
@@ -237,7 +241,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <body>
 
 <div class="topbar">
-  <div class="logo">V&R Ads <span style="font-size:.7rem;color:var(--text3);font-weight:400">· Obchodník</span></div>
+  <div class="logo">🌸 V&R Ads <span style="font-size:.7rem;color:var(--text3);font-weight:400">· Obchodník</span></div>
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
@@ -330,7 +334,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <!-- LOGIN MODAL -->
 <div id="loginModal" class="open">
   <div class="login-box">
-    <div class="login-logo">V&R Ads</div>
+    <div class="login-logo">🌸 V&R Ads</div>
     <div class="login-title" style="color:var(--text2);font-size:.8rem;font-weight:400;margin-bottom:20px;text-align:center">CRM · Přihlášení</div>
     <div style="margin-bottom:10px">
       <span class="p-label">UŽIVATELSKÉ JMÉNO</span>
@@ -709,7 +713,7 @@ async function init(){
     if(!localStorage.getItem('poz_synced_v1')){
       const toSync=leads.filter(l=>l.poz&&!(cm[l.email]?.poz));
       if(toSync.length){
-        showSync('🔄 Synchronizuji stavy ('+toSync.length+')…','#6c63ff');
+        showSync('🔄 Synchronizuji stavy ('+toSync.length+')…','#e91e8c');
         for(const l of toSync){
           try{
             const enc=encodeURIComponent(l.email);
@@ -795,7 +799,7 @@ async function saveToApi(lead,oldStav,passedOldNotes){
 
 function showLoading(on){
   let el=document.getElementById('loadBar');
-  if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#a855f7);z-index:999';document.body.prepend(el);}
+  if(!el){el=document.createElement('div');el.id='loadBar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#e91e8c,#ff6ec7);z-index:999';document.body.prepend(el);}
   el.style.display=on?'block':'none';
 }
 function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.textContent=msg;el.style.color=color;}}
@@ -896,7 +900,7 @@ function renderTable(){
     const tel=telNum(l.telefon);
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
-    const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
+    const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(233,30,140,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
