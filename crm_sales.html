@@ -820,7 +820,7 @@ function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){
 // ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
   return leads.filter(l=>{
-    const poz=getPoz(l.stav);
+    const poz=l.poz||getPoz(l.stav);
     if(filterPoz&&poz!==filterPoz)return false;
     if(filterFaze&&l.stav!==filterFaze)return false;
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
@@ -909,7 +909,7 @@ function renderTable(){
   const today=new Date().toISOString().slice(0,10);
   tb.innerHTML=sorted.map(l=>{
     const finfo=getFazeInfo(l.stav);
-    const poz=getPoz(l.stav);
+    const poz=l.poz||getPoz(l.stav);
     const tel=telNum(l.telefon);
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
