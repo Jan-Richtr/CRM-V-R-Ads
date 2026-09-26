@@ -258,7 +258,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="icon-btn" onclick="openEmailLead()" title="Přidat lead z emailu" style="background:var(--bg3);border-color:var(--border);color:var(--text2)">📧</button>
   <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
     <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
-    <button onclick="transferToSales()" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">👤 Předat Jakubovi</button>
+    <button onclick="transferToSales()" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">👤 Předat Kubovi</button>
     <button onclick="deleteSelected()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">🗑️</button>
     <button onclick="clearSel()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.78rem">✕</button>
   </div>
@@ -677,7 +677,7 @@ async function transferToSales(){
   if(!selected.size)return;
   const toTransfer=leads.filter(l=>selected.has(l.email));
   if(!toTransfer.length)return;
-  if(!confirm('Předat '+toTransfer.length+' lead'+(toTransfer.length===1?'':'ů')+' Jakubovi?'))return;
+  if(!confirm('Předat '+toTransfer.length+' lead'+(toTransfer.length===1?'':'ů')+' Kubovi?'))return;
   showSync('👤 Přesouvám…','var(--accent)');
   try{
     const salesRecs=toTransfer.map(l=>({
@@ -705,7 +705,7 @@ async function transferToSales(){
     await sbFetch(SB+'/rest/v1/sales_transfers',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(logs)});
     leads.forEach(l=>{if(selected.has(l.email)){l.sales_assigned=true;l.sales_assigned_at=new Date().toISOString();}});
     selected.clear();updateSelBar();renderTable();
-    showSync('✅ Předáno Jakubovi ('+toTransfer.length+')','#16a34a');
+    showSync('✅ Předáno Kubovi ('+toTransfer.length+')','#16a34a');
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
 
@@ -938,7 +938,7 @@ function renderTable(){
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
     const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
-    const salesBadge=l.sales_assigned?`<span title="Předáno Jakubovi ${l.sales_assigned_at?new Date(l.sales_assigned_at).toLocaleDateString('cs'):''}" style="font-size:.65rem;background:rgba(108,99,255,.2);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">👤</span>`:'';
+    const salesBadge=l.sales_assigned?`<span title="Předáno Kubovi ${l.sales_assigned_at?new Date(l.sales_assigned_at).toLocaleDateString('cs'):''}" style="font-size:.65rem;background:rgba(108,99,255,.2);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">👤</span>`:'';
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');

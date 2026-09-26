@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>V&R Ads CRM — Obchodník</title>
+<title>V&R Ads CRM — Kuba</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231c0f1c'/%3E%3Ctext x='32' y='26' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%23ff6ec7' text-anchor='middle'%3EV%26R%3C/text%3E%3Ctext x='32' y='50' font-family='Arial,sans-serif' font-size='16' font-weight='800' fill='%23e91e8c' text-anchor='middle' letter-spacing='2'%3EADS%3C/text%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -241,7 +241,7 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
 <body>
 
 <div class="topbar">
-  <div class="logo">🌸 V&R Ads <span style="font-size:.7rem;color:var(--text3);font-weight:400">· Obchodník</span></div>
+  <div class="logo">🌸 V&R Ads <span style="font-size:.7rem;color:var(--text3);font-weight:400">· Kuba</span></div>
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
@@ -687,7 +687,7 @@ async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
     const[ls,cs,fs]=await Promise.all([
-      sbGet('/rest/v1/sales_leads?order=mesic.asc,id.asc&limit=5000'),
+      sbGet('/rest/v1/sales_leads?order=created_at.desc&limit=5000'),
       sbGet('/rest/v1/sales_crm_data?limit=5000'),
       sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000')
     ]);
@@ -707,6 +707,19 @@ async function init(){
         poz,
       };
     });
+    // Ukázkový lead (demo)
+    const demoLead={
+      id:'demo-1',_id:'demo-1',email:'martin.novak@ukazka.cz',
+      jmeno:'Martin Novák',firma:'Novák Auto s.r.o.',telefon:'+420 602 123 456',
+      datum:new Date().toISOString().slice(0,10),
+      zdroj:'Facebook',sluzba:'fb_ig',problem:'Chce více zákazníků do autoservisu',
+      ad_name:'Auto servis – léto 2026',campaign_name:'CZ – Autoservisy',platform:'facebook',
+      stav:'nz1',poz:'📞 Volat dopoledne, preferuje WhatsApp',
+      prodej_castka:'',prodej_produkt:'',prodej_note:'',
+      followup:'',myNotes:'Ukázkový lead — smazat před ostrým provozem',
+      _demo:true
+    };
+    leads=[demoLead,...leads];
     showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
     render();
     // Jednorazová migrace: pošli localStorage POZ do Supabase
