@@ -444,10 +444,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <span class="p-label">📝 Moje poznámky</span>
       <textarea class="p-textarea" id="pNotes" onblur="savePanel()" style="min-height:90px"></textarea>
     </div>
-    <div id="kubaNoteWrap" style="display:none">
-      <span class="p-label">🟣 Kubovy poznámky <span style="font-size:.65rem;color:var(--text3)">(pouze čtení)</span></span>
-      <div id="kubaNoteTxt" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;color:var(--text2);min-height:40px;white-space:pre-wrap;line-height:1.5"></div>
-    </div>
+    <div id="sharedNoteInfo" style="display:none;font-size:.68rem;color:var(--accent2);padding:3px 0 0">🔗 Sdílená poznámka — vidí i Kuba</div>
   </div>
   <div class="ps">
     <button class="btn btn-pri" style="width:100%" onclick="closePanel()">Zavřít a uložit</button>
@@ -707,6 +704,14 @@ async function transferToSales(){
     }
     const logs=toTransfer.map(l=>({lead_id:l.id||null,jmeno:l.jmeno||'',firma:l.firma||'',telefon:l.telefon||'',sluzba:l.sluzba||''}));
     await sbFetch(SB+'/rest/v1/sales_transfers',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(logs)});
+    // Zkopírovat stávající Janovy poznámky do sales_crm_data jako výchozí sdílenou poznámku
+    const notesRecs=toTransfer.filter(l=>l.myNotes).map(l=>({email:l.email,my_notes:l.myNotes}));
+    if(notesRecs.length){
+      await sbFetch(SB+'/rest/v1/sales_crm_data',{
+        method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify(notesRecs)
+      });
+    }
     leads.forEach(l=>{if(selected.has(l.email)){l.sales_assigned=true;l.sales_assigned_at=new Date().toISOString();}});
     selected.clear();updateSelBar();renderTable();
     showSync('✅ Předáno Kubovi ('+toTransfer.length+')','#16a34a');
@@ -737,16 +742,18 @@ async function init(){
     fbSpend={};(fs||[]).forEach(r=>{const k=r.ad_name||r.campaign_name;if(k)fbSpend[k]=parseFloat(r.spend)||0;});
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
+      const sc=scm[l.email]||{};
       const rawStav=c.stav||l.stav||'';
       const poz=c.poz||loadPozLocal(l.email)||'';
+      // Pro předané leady: sdílená poznámka z sales_crm_data; jinak Janovy vlastní
+      const myNotes=l.sales_assigned?(sc.my_notes||c.my_notes||''):(c.my_notes||'');
       return{...l,_id:l.id,
         stav:migrateStav(rawStav),
         prodej_castka:c.prodej_castka||'',
         prodej_produkt:c.prodej_produkt||'',
         prodej_note:c.prodej_note||'',
         followup:c.followup||'',
-        myNotes:c.my_notes||'',
-        kubaNote:scm[l.email]?.my_notes||'',
+        myNotes,
         poz,
       };
     });
@@ -824,6 +831,18 @@ async function saveToApi(lead,oldStav,passedOldNotes){
         body:JSON.stringify({email:lead.email,...data})
       });
       if(!ir.ok)throw new Error(await ir.text());
+    }
+    // Pro předané leady: synchronizovat poznámky i do sales_crm_data (sdílené s Kubou)
+    if(lead.sales_assigned&&lead.myNotes!==undefined){
+      const senc=encodeURIComponent(lead.email);
+      const sr=await fetch(SB+'/rest/v1/sales_crm_data?email=eq.'+senc,{
+        method:'PATCH',headers:{...H,'Prefer':'return=representation'},
+        body:JSON.stringify({my_notes:lead.myNotes||null,updated_at:new Date().toISOString()})
+      });
+      if(sr.ok){const su=await sr.json();if(!su||!su.length){
+        await fetch(SB+'/rest/v1/sales_crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},
+          body:JSON.stringify({email:lead.email,my_notes:lead.myNotes||null})});
+      }}
     }
     showSync('✅ Uloženo','#16a34a');
     if(oldStav!==undefined&&oldStav!==lead.stav)
@@ -909,10 +928,10 @@ function render(){
 // ── Stats bar ─────────────────────────────────────────────────
 function renderStatsBar(){
   const bar=document.getElementById('statsBar');
-  const ot=leads.filter(l=>getPoz(l.stav)==='otevreno').length;
-  const uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length;
-  const ko=leads.filter(l=>getPoz(l.stav)==='konec').length;
-  const no=leads.filter(l=>!getPoz(l.stav)).length;
+  const ot=leads.filter(l=>(l.poz||getPoz(l.stav))==='otevreno').length;
+  const uz=leads.filter(l=>(l.poz||getPoz(l.stav))==='uzavreno').length;
+  const ko=leads.filter(l=>(l.poz||getPoz(l.stav))==='konec').length;
+  const no=leads.filter(l=>!(l.poz||getPoz(l.stav))).length;
   const today=new Date().toISOString().slice(0,10);
   const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3'&&l.stav!=='uzavreno'&&l.stav!=='uzavreno_emailem').length;
   const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
@@ -1053,7 +1072,7 @@ function renderStatsView(){
     const mp=ml.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
     return{month:m,name:MONTH_NAMES[m%100],leads:ml.length,prodano:mp.length,
       obrat:mp.reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0),
-      konec:ml.filter(l=>(l.poz||'')==='konec').length};
+      konec:ml.filter(l=>(l.poz||getPoz(l.stav))==='konec').length};
   });
   let h=`<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 18px 0;position:sticky;top:0;z-index:5">`;
   h+=`<div style="display:flex;align-items:center;gap:18px;margin-bottom:8px;flex-wrap:wrap">
@@ -1098,7 +1117,7 @@ function renderStatsView(){
       <td>CELKEM</td><td style="text-align:right">${leads.length}</td>
       <td style="text-align:right;color:var(--accent2)">${allProd.length}</td>
       <td style="text-align:right;color:var(--green)">${totKonv}%</td>
-      <td style="text-align:right;color:var(--red)">${leads.filter(l=>(l.poz||'')==='konec').length}</td>
+      <td style="text-align:right;color:var(--red)">${leads.filter(l=>(l.poz||getPoz(l.stav))==='konec').length}</td>
       <td style="text-align:right;color:var(--green)">${Number(totalYear).toLocaleString('cs')} €</td>
     </tr></tbody></table></div>`;
   }else{
@@ -1112,9 +1131,9 @@ function renderStatsView(){
       <h2 style="flex:1;text-align:center;font-size:1rem">${MONTH_NAMES[statsMonth%100]} ${Math.floor(statsMonth/100)}</h2>
       ${nxt?`<button onclick="statsMonth=${nxt};renderStatsView()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">${MONTH_NAMES[nxt%100]} →</button>`:'<div></div>'}
     </div>`;
-    const ot=ml.filter(l=>(l.poz||'')==='otevreno').length;
-    const uz=ml.filter(l=>(l.poz||'')==='uzavreno').length;
-    const ko=ml.filter(l=>(l.poz||'')==='konec').length;
+    const ot=ml.filter(l=>(l.poz||getPoz(l.stav))==='otevreno').length;
+    const uz=ml.filter(l=>(l.poz||getPoz(l.stav))==='uzavreno').length;
+    const ko=ml.filter(l=>(l.poz||getPoz(l.stav))==='konec').length;
     h+=`<div class="stats-grid">
       <div class="kpi"><div class="kpi-val" style="color:var(--green)">${Number(mTotal).toLocaleString('cs')} €</div><div class="kpi-label">Obrat</div></div>
       <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${mp.length}</div><div class="kpi-label">Prodáno</div><div class="kpi-sub">z ${ml.length} leadů (${ml.length?Math.round(mp.length/ml.length*100):0}%)</div></div>
@@ -1262,9 +1281,8 @@ function openLead(id){
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
   document.getElementById('pNotes').value=l.myNotes||'';
-  const kw=document.getElementById('kubaNoteWrap');
-  const kt=document.getElementById('kubaNoteTxt');
-  if(l.kubaNote){kw.style.display='';kt.textContent=l.kubaNote;}else{kw.style.display='none';kt.textContent='';}
+  const si=document.getElementById('sharedNoteInfo');
+  if(si)si.style.display=l.sales_assigned?'':'none';
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
   document.getElementById('pEmail').innerHTML=l.email?`<a class="link" href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—';
