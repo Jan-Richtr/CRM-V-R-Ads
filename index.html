@@ -735,25 +735,23 @@ async function init(){
       sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
       sbGet('/rest/v1/crm_data?limit=5000'),
       sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000'),
-      sbGet('/rest/v1/sales_crm_data?select=email,my_notes&limit=5000')
+      sbGet('/rest/v1/sales_crm_data?limit=5000')
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
     const scm={};(scd||[]).forEach(r=>{scm[r.email]=r;});
     fbSpend={};(fs||[]).forEach(r=>{const k=r.ad_name||r.campaign_name;if(k)fbSpend[k]=parseFloat(r.spend)||0;});
     leads=(ls||[]).map(l=>{
-      const c=cm[l.email]||{};
-      const sc=scm[l.email]||{};
-      const rawStav=c.stav||l.stav||'';
-      const poz=c.poz||loadPozLocal(l.email)||'';
-      // Pro předané leady: sdílená poznámka z sales_crm_data; jinak Janovy vlastní
-      const myNotes=l.sales_assigned?(sc.my_notes||c.my_notes||''):(c.my_notes||'');
+      // Pro předané leady: používáme sales_crm_data jako sdílený zdroj pravdy
+      const d=l.sales_assigned?(scm[l.email]||cm[l.email]||{}):(cm[l.email]||{});
+      const rawStav=d.stav||l.stav||'';
+      const poz=d.poz||loadPozLocal(l.email)||'';
       return{...l,_id:l.id,
         stav:migrateStav(rawStav),
-        prodej_castka:c.prodej_castka||'',
-        prodej_produkt:c.prodej_produkt||'',
-        prodej_note:c.prodej_note||'',
-        followup:c.followup||'',
-        myNotes,
+        prodej_castka:d.prodej_castka||'',
+        prodej_produkt:d.prodej_produkt||'',
+        prodej_note:d.prodej_note||'',
+        followup:d.followup||'',
+        myNotes:d.my_notes||'',
         poz,
       };
     });
@@ -815,34 +813,22 @@ async function saveToApi(lead,oldStav,passedOldNotes){
       updated_at:new Date().toISOString()
     };
     const enc=encodeURIComponent(lead.email);
-    // PATCH first — return=representation gives us the updated rows as JSON (CORS-safe)
-    const pr=await fetch(SB+'/rest/v1/crm_data?email=eq.'+enc,{
+    // Pro předané leady: sdílený zdroj pravdy je sales_crm_data (čte i Kuba)
+    const table=lead.sales_assigned?'sales_crm_data':'crm_data';
+    const pr=await fetch(SB+'/rest/v1/'+table+'?email=eq.'+enc,{
       method:'PATCH',
       headers:{...H,'Prefer':'return=representation'},
       body:JSON.stringify(data)
     });
     if(!pr.ok)throw new Error(await pr.text());
     const updated=await pr.json();
-    // If PATCH updated 0 rows → row doesn't exist yet, INSERT it
     if(!updated||updated.length===0){
-      const ir=await fetch(SB+'/rest/v1/crm_data',{
+      const ir=await fetch(SB+'/rest/v1/'+table,{
         method:'POST',
         headers:{...H,'Prefer':'return=minimal'},
         body:JSON.stringify({email:lead.email,...data})
       });
       if(!ir.ok)throw new Error(await ir.text());
-    }
-    // Pro předané leady: synchronizovat poznámky i do sales_crm_data (sdílené s Kubou)
-    if(lead.sales_assigned&&lead.myNotes!==undefined){
-      const senc=encodeURIComponent(lead.email);
-      const sr=await fetch(SB+'/rest/v1/sales_crm_data?email=eq.'+senc,{
-        method:'PATCH',headers:{...H,'Prefer':'return=representation'},
-        body:JSON.stringify({my_notes:lead.myNotes||null,updated_at:new Date().toISOString()})
-      });
-      if(sr.ok){const su=await sr.json();if(!su||!su.length){
-        await fetch(SB+'/rest/v1/sales_crm_data',{method:'POST',headers:{...H,'Prefer':'return=minimal'},
-          body:JSON.stringify({email:lead.email,my_notes:lead.myNotes||null})});
-      }}
     }
     showSync('✅ Uloženo','#16a34a');
     if(oldStav!==undefined&&oldStav!==lead.stav)
