@@ -445,6 +445,10 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
       <span class="p-label">📝 Moje poznámky</span>
       <textarea class="p-textarea" id="pNotes" onblur="savePanel()" style="min-height:90px"></textarea>
     </div>
+    <div id="janNoteWrap" style="display:none">
+      <span class="p-label">💼 Janovy poznámky <span style="font-size:.65rem;color:var(--text3)">(pouze čtení)</span></span>
+      <div id="janNoteTxt" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;color:var(--text2);min-height:40px;white-space:pre-wrap;line-height:1.5"></div>
+    </div>
   </div>
   <div class="ps">
     <button class="btn btn-pri" style="width:100%" onclick="closePanel()">Zavřít a uložit</button>
@@ -686,12 +690,14 @@ function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
-    const[ls,cs,fs]=await Promise.all([
+    const[ls,cs,fs,jcd]=await Promise.all([
       sbGet('/rest/v1/sales_leads?order=created_at.desc&limit=5000'),
       sbGet('/rest/v1/sales_crm_data?limit=5000'),
-      sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000')
+      sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000'),
+      sbGet('/rest/v1/crm_data?select=email,my_notes&limit=5000')
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
+    const jm={};(jcd||[]).forEach(r=>{jm[r.email]=r;});
     fbSpend={};(fs||[]).forEach(r=>{const k=r.ad_name||r.campaign_name;if(k)fbSpend[k]=parseFloat(r.spend)||0;});
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
@@ -704,22 +710,10 @@ async function init(){
         prodej_note:c.prodej_note||'',
         followup:c.followup||'',
         myNotes:c.my_notes||'',
+        janNote:jm[l.email]?.my_notes||'',
         poz,
       };
     });
-    // Ukázkový lead (demo)
-    const demoLead={
-      id:'demo-1',_id:'demo-1',email:'martin.novak@ukazka.cz',
-      jmeno:'Martin Novák',firma:'Novák Auto s.r.o.',telefon:'+420 602 123 456',
-      datum:new Date().toISOString().slice(0,10),
-      zdroj:'Facebook',sluzba:'fb_ig',problem:'Chce více zákazníků do autoservisu',
-      ad_name:'Auto servis – léto 2026',campaign_name:'CZ – Autoservisy',platform:'facebook',
-      stav:'nz1',poz:'📞 Volat dopoledne, preferuje WhatsApp',
-      prodej_castka:'',prodej_produkt:'',prodej_note:'',
-      followup:'',myNotes:'Ukázkový lead — smazat před ostrým provozem',
-      _demo:true
-    };
-    leads=[demoLead,...leads];
     showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
     render();
     // Jednorazová migrace: pošli localStorage POZ do Supabase
@@ -1229,7 +1223,6 @@ function openLead(id){
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
-  document.getElementById('pNotes').value=l.myNotes||'';
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
   document.getElementById('pEmail').innerHTML=l.email?`<a class="link" href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—';
@@ -1258,6 +1251,12 @@ function openLead(id){
   if(tel)acts+=`<a class="btn" href="tel:${tel}">📧 Email</a>`;
   if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
   document.getElementById('pActions').innerHTML=acts;
+  // Jan's notes (read-only)
+  const jw=document.getElementById('janNoteWrap');
+  const jt=document.getElementById('janNoteTxt');
+  if(l.janNote){jw.style.display='';jt.textContent=l.janNote;}else{jw.style.display='none';jt.textContent='';}
+  // Kuba's own notes
+  document.getElementById('pNotes').value=l.myNotes||'';
   document.getElementById('overlay').classList.add('open');
   document.getElementById('panel').classList.add('open');
   document.body.style.overflow='hidden';

@@ -444,6 +444,10 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
       <span class="p-label">📝 Moje poznámky</span>
       <textarea class="p-textarea" id="pNotes" onblur="savePanel()" style="min-height:90px"></textarea>
     </div>
+    <div id="kubaNoteWrap" style="display:none">
+      <span class="p-label">🟣 Kubovy poznámky <span style="font-size:.65rem;color:var(--text3)">(pouze čtení)</span></span>
+      <div id="kubaNoteTxt" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;color:var(--text2);min-height:40px;white-space:pre-wrap;line-height:1.5"></div>
+    </div>
   </div>
   <div class="ps">
     <button class="btn btn-pri" style="width:100%" onclick="closePanel()">Zavřít a uložit</button>
@@ -722,12 +726,14 @@ function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
-    const[ls,cs,fs]=await Promise.all([
+    const[ls,cs,fs,scd]=await Promise.all([
       sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
       sbGet('/rest/v1/crm_data?limit=5000'),
-      sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000')
+      sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000'),
+      sbGet('/rest/v1/sales_crm_data?select=email,my_notes&limit=5000')
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
+    const scm={};(scd||[]).forEach(r=>{scm[r.email]=r;});
     fbSpend={};(fs||[]).forEach(r=>{const k=r.ad_name||r.campaign_name;if(k)fbSpend[k]=parseFloat(r.spend)||0;});
     leads=(ls||[]).map(l=>{
       const c=cm[l.email]||{};
@@ -740,6 +746,7 @@ async function init(){
         prodej_note:c.prodej_note||'',
         followup:c.followup||'',
         myNotes:c.my_notes||'',
+        kubaNote:scm[l.email]?.my_notes||'',
         poz,
       };
     });
@@ -1249,12 +1256,15 @@ function openLead(id){
   document.getElementById('pName').textContent=l.jmeno||'Neznámý';
   document.getElementById('pFirma').textContent=l.firma||(l.datum?'Datum: '+l.datum:'');
   document.getElementById('pStage').value=l.stav||'';
-  document.getElementById('pPoz').value=getPoz(l.stav)||'';
+  document.getElementById('pPoz').value=l.poz||getPoz(l.stav)||'';
   document.getElementById('pFollowup').value=l.followup||'';
   document.getElementById('pCastka').value=l.prodej_castka||'';
   document.getElementById('pProdukt').value=l.prodej_produkt||'';
   document.getElementById('pProdejNote').value=l.prodej_note||'';
   document.getElementById('pNotes').value=l.myNotes||'';
+  const kw=document.getElementById('kubaNoteWrap');
+  const kt=document.getElementById('kubaNoteTxt');
+  if(l.kubaNote){kw.style.display='';kt.textContent=l.kubaNote;}else{kw.style.display='none';kt.textContent='';}
   const tel=telNum(l.telefon||'');
   const phoneDisplay=fixPhone(l.telefon||'');
   document.getElementById('pEmail').innerHTML=l.email?`<a class="link" href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—';
