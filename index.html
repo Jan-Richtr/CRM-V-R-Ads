@@ -244,6 +244,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <button class="tab" onclick="setTab('email')">📧 Email</button>
     <button class="tab" onclick="setTab('kampane')">📈 Analytika</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
+    <button class="tab" onclick="setTab('klienti')">🏢 Klienti</button>
+    <button class="tab" onclick="setTab('reklamy')">📣 Reklamy</button>
     <button class="tab" onclick="setTab('sales')" style="border-left:1px solid var(--border);margin-left:4px;padding-left:10px">👤 Obchodník</button>
   </div>
   <div class="search-wrap">
@@ -329,6 +331,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <div id="view-email"></div>
 <div id="view-kampane"></div>
 <div id="view-denni"></div>
+<div id="view-klienti" style="display:none"></div>
+<div id="view-reklamy" style="display:none"></div>
 <div id="view-sales"></div>
 
 <!-- LOGIN MODAL -->
@@ -538,6 +542,8 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="bn-btn" id="bn-email" onclick="setTab('email')"><span class="bn-ic">📧</span>Email</button>
   <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📈</span>Analytika</button>
   <button class="bn-btn" id="bn-denni" onclick="setTab('denni')"><span class="bn-ic">📅</span>Denní</button>
+  <button class="bn-btn" id="bn-klienti" onclick="setTab('klienti')"><span class="bn-ic">🏢</span>Klienti</button>
+  <button class="bn-btn" id="bn-reklamy" onclick="setTab('reklamy')"><span class="bn-ic">📣</span>Reklamy</button>
 </nav>
 
 <script>
@@ -948,8 +954,12 @@ function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni','sales'][i]===t));
-  ['table','stats','email','kampane','denni'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni','klienti','reklamy','sales'][i]===t));
+  ['table','stats','email','kampane','denni','klienti','reklamy'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
+  document.getElementById('view-klienti').style.display=t==='klienti'?'block':'none';
+  document.getElementById('view-reklamy').style.display=t==='reklamy'?'block':'none';
+  if(t==='klienti')crmKlientiData=null;   // fresh load on every tab entry
+  if(t==='reklamy')reklamyData=null;
   const mob=isMobile();
   document.getElementById('view-table').style.display=(t==='table'&&!mob)?'':'none';
   document.getElementById('view-cards').style.display=(t==='table'&&mob)?'block':'none';
@@ -976,6 +986,179 @@ function render(){
   else if(currentTab==='kampane')renderKampane();
   else if(currentTab==='email')renderEmail();
   else if(currentTab==='denni')renderDenni();
+  else if(currentTab==='klienti')renderCrmKlienti();
+  else if(currentTab==='reklamy')renderReklamy();
+}
+
+// ══ KLIENTI (crm_klienti – read-only view, Jakub's daily refresh 5:47) ══
+let crmKlientiData=null,crmKlientiFilter='aktivni',crmKlientiQ='',crmKlientiLoading=false;
+async function renderCrmKlienti(){
+  const v=document.getElementById('view-klienti');if(!v)return;
+  if(!crmKlientiData){
+    if(crmKlientiLoading)return;
+    crmKlientiLoading=true;
+    v.innerHTML=`<div style="padding:40px;text-align:center;color:var(--text3)">⏳ Načítám klienty…</div>`;
+    try{crmKlientiData=await sbGet('/rest/v1/crm_klienti?select=*&limit=1000')||[];}
+    catch(e){v.innerHTML=`<div style="padding:30px;color:#ef4444">Chyba načtení crm_klienti: ${esc(e.message)}</div>`;crmKlientiLoading=false;return;}
+    crmKlientiLoading=false;
+  }
+  const q=crmKlientiQ.trim().toLowerCase();
+  const rows=crmKlientiData
+    .filter(k=>crmKlientiFilter==='vsichni'||k.aktivny)
+    .filter(k=>!q||(k.nazov||'').toLowerCase().includes(q))
+    .sort((a,b)=>(b.aktivny?1:0)-(a.aktivny?1:0)||(b.trvanie_mesiace||0)-(a.trvanie_mesiace||0)||(a.nazov||'').localeCompare(b.nazov||'','cs'));
+  const nAct=crmKlientiData.filter(k=>k.aktivny).length;
+  const fb=(f,l)=>`<button onclick="crmKlientiFilter='${f}';renderCrmKlienti()" style="padding:6px 12px;border-radius:6px;border:1px solid ${crmKlientiFilter===f?'var(--accent)':'var(--border)'};background:${crmKlientiFilter===f?'var(--accent)':'var(--bg3)'};color:${crmKlientiFilter===f?'#fff':'var(--text2)'};font-size:.76rem;font-weight:600;cursor:pointer">${l}</button>`;
+  const badge=a=>a?`<span style="font-size:.65rem;padding:2px 8px;border-radius:10px;background:rgba(34,197,94,.15);color:#22c55e;font-weight:600;white-space:nowrap">● Aktivní</span>`
+                  :`<span style="font-size:.65rem;padding:2px 8px;border-radius:10px;background:var(--bg3);color:var(--text3);font-weight:600;white-space:nowrap">○ Neaktivní</span>`;
+  const mob=isMobile();
+  let h=`<div style="padding:10px 10px 80px">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      ${fb('aktivni','🟢 Aktivní ('+nAct+')')}${fb('vsichni','Všichni ('+crmKlientiData.length+')')}
+      <input id="crmKlientiSearch" type="search" placeholder="🔍 Hledat podle názvu…" value="${esc(crmKlientiQ)}"
+        oninput="crmKlientiQ=this.value;renderCrmKlienti();setTimeout(()=>{const i=document.getElementById('crmKlientiSearch');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},0)"
+        style="flex:1;min-width:160px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.8rem">
+    </div>`;
+  if(!rows.length){h+=`<div style="padding:30px;text-align:center;color:var(--text3)">Žádní klienti</div></div>`;v.innerHTML=h;return;}
+  if(mob){
+    h+=rows.map(k=>`<div onclick="showCrmKlientDetail('${esc(k.id)}')" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:.86rem">${esc(k.nazov||'')}</b>${badge(k.aktivny)}</div>
+      <div style="font-size:.7rem;color:var(--text3);margin-top:3px">${esc(k.garant||'—')} · ${k.trvanie_mesiace??'—'} měs. · ${esc(k.kategoria||'')}</div>
+      ${k.stav?`<div style="font-size:.72rem;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.stav)}</div>`:''}
+      <div style="font-size:.65rem;color:var(--text3);margin-top:3px">${esc(k.prva_faktura||'—')} → ${esc(k.posledna_faktura||'—')}</div>
+    </div>`).join('');
+  }else{
+    const th=s=>`<th style="text-align:left;padding:8px 10px;font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap">${s}</th>`;
+    const td=(s,st='')=>`<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:.8rem;${st}">${s}</td>`;
+    h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:auto">
+      <table style="width:100%;border-collapse:collapse">
+      <thead><tr>${th('Název')}${th('Aktivní')}${th('Garant')}${th('Stav')}${th('Trvání')}${th('První faktura')}${th('Poslední faktura')}${th('Kategorie')}</tr></thead><tbody>
+      ${rows.map(k=>`<tr onclick="showCrmKlientDetail('${esc(k.id)}')" style="cursor:pointer" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        ${td(`<b>${esc(k.nazov||'')}</b>`)}${td(badge(k.aktivny))}${td(esc(k.garant||'—'))}
+        ${td(esc(k.stav||'—'),'max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)')}
+        ${td(k.trvanie_mesiace!=null?k.trvanie_mesiace+' měs.':'—','white-space:nowrap')}
+        ${td(esc(k.prva_faktura||'—'),'white-space:nowrap')}${td(esc(k.posledna_faktura||'—'),'white-space:nowrap')}
+        ${td(esc(k.kategoria||'—'),'white-space:nowrap;color:var(--text2)')}
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+  h+=`<div style="font-size:.65rem;color:var(--text3);margin-top:8px">Data: crm_klienti · obnovuje se každé ráno v 5:47 · jen pro čtení</div></div>`;
+  v.innerHTML=h;
+}
+function showCrmKlientDetail(id){
+  const k=(crmKlientiData||[]).find(x=>x.id===id);if(!k)return;
+  let kroky=k.dalsie_kroky;
+  if(typeof kroky==='string'){try{kroky=JSON.parse(kroky);}catch(e){kroky=[];}}
+  if(!Array.isArray(kroky))kroky=[];
+  const row=(l,v)=>v?`<div style="margin-bottom:10px"><div style="font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">${l}</div><div style="font-size:.82rem;line-height:1.45;white-space:pre-wrap">${esc(String(v))}</div></div>`:'';
+  const ov=document.createElement('div');
+  ov.id='crmKlientModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:18px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px">
+      <div><div style="font-size:1.05rem;font-weight:700">${esc(k.nazov||'')}</div>
+        <div style="font-size:.7rem;color:var(--text3);margin-top:2px">${k.aktivny?'<span style="color:#22c55e">● Aktivní</span>':'○ Neaktivní'} · ${esc(k.kategoria||'')} · ${k.trvanie_mesiace??'—'} měs. · ${k.pocet_faktur??'—'} faktur</div></div>
+      <button onclick="document.getElementById('crmKlientModal').remove()" style="background:none;border:none;color:var(--text3);font-size:1.3rem;cursor:pointer">✕</button>
+    </div>
+    ${row('Rozsah',k.rozsah)}
+    <div style="margin-bottom:10px"><div style="font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Další kroky</div>
+      ${kroky.length?kroky.map(s=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;margin-bottom:5px">
+        <div style="font-size:.8rem;font-weight:600">${esc(s.co||'')}</div>
+        <div style="font-size:.7rem;color:var(--text2);margin-top:2px">${s.kto?'👤 '+esc(s.kto):''}${s.kto&&s.rozsah?' · ':''}${esc(s.rozsah||'')}</div>
+      </div>`).join(''):'<div style="font-size:.78rem;color:var(--text3)">—</div>'}
+    </div>
+    ${row('Stav',k.stav)}${row('Garant',k.garant)}${row('Zastřešuje',k.zastresuje)}
+    ${row('Faktury',(k.prva_faktura||'—')+' → '+(k.posledna_faktura||'—')+(k.fakturujuca_firma?' · '+k.fakturujuca_firma:''))}
+    ${row('Poznámka',k.poznamka)}
+  </div>`;
+  document.body.appendChild(ov);
+}
+
+// ══ REKLAMY (crm_spend_mesacne + crm_hot_videa_7d – read-only) ══
+let reklamyData=null,reklamyLoading=false;
+async function renderReklamy(){
+  const v=document.getElementById('view-reklamy');if(!v)return;
+  if(!reklamyData){
+    if(reklamyLoading)return;
+    reklamyLoading=true;
+    v.innerHTML=`<div style="padding:40px;text-align:center;color:var(--text3)">⏳ Načítám reklamy…</div>`;
+    try{
+      const [sm,hv]=await Promise.all([
+        sbGet('/rest/v1/crm_spend_mesacne?select=*&limit=2000'),
+        sbGet('/rest/v1/crm_hot_videa_7d?select=*&limit=500')
+      ]);
+      reklamyData={sm:sm||[],hv:hv||[]};
+    }catch(e){v.innerHTML=`<div style="padding:30px;color:#ef4444">Chyba načtení reklam: ${esc(e.message)}</div>`;reklamyLoading=false;return;}
+    reklamyLoading=false;
+  }
+  const {sm,hv}=reklamyData;
+  const n=x=>parseFloat(x)||0;
+  const fmt=x=>Number(x).toLocaleString('cs',{maximumFractionDigits:2});
+  const eur=x=>fmt(x)+' €';
+  const now=new Date();const ymKey=d=>{const t=new Date(d);return t.getFullYear()*100+t.getMonth()+1;};
+  const curYM=now.getFullYear()*100+now.getMonth()+1;
+  const cur=sm.filter(r=>ymKey(r.mesiac)===curYM);
+  const S=k=>cur.reduce((s,r)=>s+n(r[k]),0);
+  const sp=S('spend'),imp=S('impressions'),cl=S('clicks'),lm=S('leady_meta'),lc=S('leady_crm'),dh=S('dohodnute');
+  const cpl=lc>0?sp/lc:null;
+  const mNames=['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'];
+  const c=(l,val,sub,col='var(--text)')=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+    <div style="font-size:.66rem;color:var(--text3);margin-bottom:3px">${l}</div>
+    <div style="font-size:1.08rem;font-weight:700;color:${col}">${val}</div>${sub?`<div style="font-size:.64rem;color:var(--text3);margin-top:2px">${sub}</div>`:''}</div>`;
+  let h=`<div style="padding:10px 10px 80px">
+    <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📅 ${mNames[now.getMonth()]} ${now.getFullYear()}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px">
+      ${c('Spend',eur(sp),cur.length+' kampaní','#f97316')}
+      ${c('Zobrazení',fmt(imp),cl?`${fmt(cl)} kliků · CTR ${(imp?cl/imp*100:0).toFixed(2)} %`:'')}
+      ${c('Leady Meta',fmt(lm))}
+      ${c('Leady CRM',fmt(lc),'','#3b82f6')}
+      ${c('Dohodnuté',fmt(dh),'','#22c55e')}
+      ${c('Cena za lead (CRM)',cpl!=null?eur(cpl.toFixed(2)):'—','',cpl==null?'var(--text3)':cpl<=15?'#22c55e':cpl<=30?'#f59e0b':'#ef4444')}
+    </div>`;
+  // Hot videa sorted by cena_za_lead_crm asc, nulls last
+  const hot=[...hv].sort((a,b)=>{
+    const A=a.cena_za_lead_crm,B=b.cena_za_lead_crm;
+    if(A==null&&B==null)return n(b.spend)-n(a.spend);
+    if(A==null)return 1;if(B==null)return -1;return n(A)-n(B);
+  });
+  const thumb=u=>u?`<img src="${esc(u)}" loading="lazy" referrerpolicy="no-referrer" style="width:44px;height:44px;object-fit:cover;border-radius:6px;background:var(--bg3);display:block" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'🎬',style:'width:44px;height:44px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center'}))">`
+    :`<div style="width:44px;height:44px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center">🎬</div>`;
+  const cplCol=x=>x==null?'var(--text3)':n(x)<=15?'#22c55e':n(x)<=30?'#f59e0b':'#ef4444';
+  h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔥 Hot videa (7 dní)</div>`;
+  if(!hot.length){h+=`<div style="padding:20px;text-align:center;color:var(--text3)">Žádná data za posledních 7 dní</div>`;}
+  else if(isMobile()){
+    h+=hot.map(r=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 10px;margin-bottom:6px;display:flex;gap:10px;align-items:center">
+      ${thumb(r.thumbnail_url)}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.ad_name||r.ad_id||'?')}</div>
+        <div style="font-size:.63rem;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.campaign||'')}${r.adset_name?' · '+esc(r.adset_name):''}</div>
+        <div style="font-size:.66rem;color:var(--text2);margin-top:2px">${fmt(n(r.leady_crm))} CRM · ${fmt(n(r.leady_meta))} Meta · ${fmt(n(r.dohodnute))} doh. · ${fmt(n(r.thruplay))} thruplay</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-size:.8rem;font-weight:700;color:#f97316">${eur(n(r.spend).toFixed(2))}</div>
+        <div style="font-size:.68rem;font-weight:700;color:${cplCol(r.cena_za_lead_crm)}">${r.cena_za_lead_crm!=null?eur(n(r.cena_za_lead_crm).toFixed(2)):'—'}</div></div>
+    </div>`).join('');
+  }else{
+    const th=(s,al='left')=>`<th style="text-align:${al};padding:8px 10px;font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap">${s}</th>`;
+    const td=(s,st='')=>`<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:.8rem;${st}">${s}</td>`;
+    const R='text-align:right;white-space:nowrap';
+    h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:auto"><table style="width:100%;border-collapse:collapse">
+      <thead><tr>${th('Náhled')}${th('Reklama')}${th('Kampaň')}${th('Adset')}${th('Spend','right')}${th('Leady Meta','right')}${th('Leady CRM','right')}${th('Dohodnuté','right')}${th('Cena/lead CRM','right')}${th('Thruplay','right')}</tr></thead><tbody>
+      ${hot.map(r=>`<tr>
+        ${td(thumb(r.thumbnail_url),'width:56px')}
+        ${td(`<b>${esc(r.ad_name||r.ad_id||'?')}</b>`)}
+        ${td(esc(r.campaign||'—'),'color:var(--text2);white-space:nowrap')}
+        ${td(esc(r.adset_name||'—'),'color:var(--text2);white-space:nowrap')}
+        ${td(eur(n(r.spend).toFixed(2)),R+';color:#f97316;font-weight:600')}
+        ${td(fmt(n(r.leady_meta)),R)}${td(fmt(n(r.leady_crm)),R+';color:#3b82f6;font-weight:600')}
+        ${td(fmt(n(r.dohodnute)),R+';color:#22c55e;font-weight:600')}
+        ${td(r.cena_za_lead_crm!=null?eur(n(r.cena_za_lead_crm).toFixed(2)):'—',R+';font-weight:700;color:'+cplCol(r.cena_za_lead_crm))}
+        ${td(fmt(n(r.thruplay)),R)}
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+  h+=`<div style="font-size:.65rem;color:var(--text3);margin-top:8px">Data: crm_spend_mesacne + crm_hot_videa_7d · spend z Mety se aktualizuje každé ráno · jen pro čtení</div></div>`;
+  v.innerHTML=h;
 }
 
 // ── Stats bar ─────────────────────────────────────────────────
