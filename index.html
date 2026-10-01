@@ -2331,7 +2331,7 @@ async function renderKampane(){
       else{clientMap['jk:'+j.id]={firma:j.nazov||j.id,jmeno:'',email:'',leads:[],totalRev:0,svcs:{},months:{},jk:j};}
     });
     // Invoice total – use whichever amount column the view provides (Jakub can add it later)
-    const jkSum=j=>{if(!j)return 0;for(const k of['suma_faktur','obrat_celkem','fakturovane_celkem','suma','obrat']){if(j[k]!=null&&!isNaN(parseFloat(j[k])))return parseFloat(j[k]);}return 0;};
+    const jkSum=j=>{if(!j)return 0;for(const k of['fakturovane_spolu_eur','suma_faktur','obrat_celkem','fakturovane_celkem','suma','obrat']){if(j[k]!=null&&!isNaN(parseFloat(j[k])))return parseFloat(j[k]);}return 0;};
     // Enrich each client with contract stats
     const enriched=Object.values(clientMap).map(c=>{
       const contracts=contractsByEmail[c.email]||[];
@@ -2369,7 +2369,7 @@ async function renderKampane(){
       ${card('MRR',fmtE(totalMRR),'var(--accent2)')}
     </div>
     ${Object.keys(catCount).length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${Object.entries(catCount).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<span style="font-size:.66rem;padding:3px 8px;border-radius:5px;background:var(--bg3);color:var(--text2)">${esc(k)}: <b>${n}</b></span>`).join('')}</div>`:''}
-    ${noMoney?`<div style="font-size:.68rem;color:#f59e0b;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:7px 10px;margin-bottom:10px">⚠️ U ${noMoney} klientů zatím chybí částky (jsou jen v Jakubových fakturách). Jakmile přibudou do databáze, sečtou se tu automaticky – nebo je doplň přes „Přidat spolupráci“.</div>`:''}
+    ${noMoney?`<div style="font-size:.68rem;color:#f59e0b;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:7px 10px;margin-bottom:10px">⚠️ U ${noMoney} klientů chybí částka (nejsou ve fakturách od 8/2025). Doplnit je můžeš přes „Přidat spolupráci“.</div>`:''}
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
       <button class="ankl-f" data-f="aktivni" onclick="anKlFilter('aktivni')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:.76rem;font-weight:600;cursor:pointer">🟢 Aktivní (${nActive})</button>
       <button class="ankl-f" data-f="vsichni" onclick="anKlFilter('vsichni')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.76rem;font-weight:600;cursor:pointer">Všichni (${enriched.length})</button>
@@ -2386,7 +2386,7 @@ async function renderKampane(){
       // First start year/month
       const sinceLabel=c.firstStart?c.firstStart.slice(0,7).replace('-','/'):(j&&j.prva_faktura?j.prva_faktura:'');
       const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ')||c.contracts.map(ct=>SLUZBA[ct.sluzba]||ct.sluzba||'').filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ');
-      const subLine=[sinceLabel?'od '+sinceLabel:'',j&&j.kategoria?j.kategoria:'',j&&j.garant?'👤 '+j.garant:'',svcLabels].filter(Boolean).join(' · ');
+      const subLine=[sinceLabel?'od '+sinceLabel:'',j&&parseFloat(j.priemer_mesacne_eur)>0?'Ø '+Math.round(parseFloat(j.priemer_mesacne_eur)).toLocaleString('cs')+' €/měs.':'',j&&j.kategoria?j.kategoria:'',j&&j.garant?'👤 '+j.garant:'',svcLabels].filter(Boolean).join(' · ');
       let kroky=j?j.dalsie_kroky:null;
       if(typeof kroky==='string'){try{kroky=JSON.parse(kroky);}catch(e){kroky=[];}}
       if(!Array.isArray(kroky))kroky=[];
@@ -2424,6 +2424,8 @@ async function renderKampane(){
             ${card('Smlouvy',c.contractLTV>0?fmtE(c.contractLTV):'—','var(--text)')}
             ${card('S námi',retLabel,'var(--text)')}
             ${card('Faktur',j&&j.pocet_faktur!=null?j.pocet_faktur:'—','var(--text)')}
+            ${card('Průměr / měsíc',j&&j.priemer_mesacne_eur!=null?fmtE(Math.round(parseFloat(j.priemer_mesacne_eur))):'—','var(--accent2)')}
+            ${card('Poslední faktura',j&&j.posledna_faktura_eur!=null?fmtE(Math.round(parseFloat(j.posledna_faktura_eur)))+(j.posledna_faktura_datum?`<div style="font-size:.6rem;color:var(--text3);font-weight:400">${new Date(j.posledna_faktura_datum).toLocaleDateString('cs')}</div>`:''):'—','var(--text)')}
           </div>
           ${j?`<div style="background:var(--bg3);border-radius:7px;padding:10px 12px;margin-bottom:10px">
             ${infoRow('Stav',j.stav)}
