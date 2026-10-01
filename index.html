@@ -1791,7 +1791,38 @@ async function renderKampane(){
     const mn=r.month||0;
     spendByMonthNum[mn]=(spendByMonthNum[mn]||0)+(parseFloat(r.spend)||0);
   });
-  const totalSpend=Object.values(spendByAd).reduce((s,v)=>s+v,0);
+  // ── Meta data from Jakub's daily sync (marketing schema, exposed as public.mkt_* views) ──
+  let metaDaily=[],hotVidea=[],metaMonthly=[];
+  try{
+    [metaDaily,hotVidea,metaMonthly]=await Promise.all([
+      sbGet('/rest/v1/mkt_ads_vykon_denne?select=date,campaign,adset_name,ad_name,ad_id,spend&limit=20000').catch(()=>[]),
+      sbGet('/rest/v1/mkt_hot_videa_7d?limit=20').catch(()=>[]),
+      sbGet('/rest/v1/mkt_spend_mesacne?order=mesiac.asc&limit=1000').catch(()=>[])
+    ]);
+    metaDaily=metaDaily||[];hotVidea=hotVidea||[];metaMonthly=metaMonthly||[];
+  }catch(e){}
+  if(metaDaily.length){
+    // Meta sync is the source of truth for spend → rebuild maps from it
+    Object.keys(spendByAd).forEach(k=>delete spendByAd[k]);
+    Object.keys(spendByMonthNum).forEach(k=>delete spendByMonthNum[k]);
+    const thisYear=new Date().getFullYear();
+    metaDaily.forEach(r=>{
+      const sp=parseFloat(r.spend)||0;
+      [r.ad_name,r.ad_id].filter(Boolean).forEach(k=>{spendByAd[k]=(spendByAd[k]||0)+sp;});
+      const d=new Date(r.date);
+      if(d.getFullYear()===thisYear){const mn=d.getMonth()+1;spendByMonthNum[mn]=(spendByMonthNum[mn]||0)+sp;}
+    });
+  }
+  // Monthly spend keyed YYYYMM (for chart / ROI)
+  const metaSpendByYM={},metaLeadsByYM={};
+  metaMonthly.forEach(r=>{
+    const d=new Date(r.mesiac);const ym=d.getFullYear()*100+(d.getMonth()+1);
+    metaSpendByYM[ym]=(metaSpendByYM[ym]||0)+(parseFloat(r.spend)||0);
+    metaLeadsByYM[ym]=(metaLeadsByYM[ym]||0)+(parseFloat(r.leady_crm)||0);
+  });
+  const totalSpend=metaDaily.length
+    ?metaDaily.reduce((s,r)=>s+(parseFloat(r.spend)||0),0)
+    :Object.values(spendByAd).reduce((s,v)=>s+v,0);
   const curMonth=new Date().getMonth()+1;const curYear=new Date().getFullYear();
   const curMesic=curYear*100+curMonth;
   const curSpend=spendByMonthNum[curMonth]||0;
@@ -1927,6 +1958,55 @@ async function renderKampane(){
         <div style="font-size:.65rem;color:var(--text3);margin-top:4px">CRM + smlouvy celkem</div>
       </div>
     </div>
+    ${(()=>{
+      // ── Meta spend summary (from daily sync) ──
+      if(!metaMonthly.length&&!hotVidea.length)return'';
+      const yms=Object.keys(metaSpendByYM).map(Number).sort((a,b)=>a-b);
+      const curSp=metaSpendByYM[curMesic]||0;
+      const prevD=new Date(curYear,curMonth-2,1);const prevYM=prevD.getFullYear()*100+(prevD.getMonth()+1);
+      const prevSp=metaSpendByYM[prevYM]||0;
+      const allSp=yms.reduce((s,k)=>s+metaSpendByYM[k],0);
+      const roas=allSp>0?((totalRev+allContracts.reduce((s,c)=>s+cTotal(c),0))/allSp):0;
+      let out=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">💸 Spend v Metě <span style="text-transform:none;letter-spacing:0;font-weight:400">· auto sync každé ráno</span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
+        ${card('Tento měsíc',fmtE(curSp.toFixed(2)),'#f97316')}
+        ${card('Minulý měsíc',fmtE(prevSp.toFixed(2)),'var(--text)')}
+        ${card('Celkem od 7/26',fmtE(allSp.toFixed(2)),'var(--text)')}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        ${yms.map(ym=>{const ld=metaLeadsByYM[ym]||0;const cpl=ld>0?metaSpendByYM[ym]/ld:null;
+          return`<span style="font-size:.65rem;padding:3px 7px;border-radius:5px;background:var(--bg3);color:var(--text2)">${ym%100}/${String(Math.floor(ym/100)).slice(2)}: <b>${fmtE(metaSpendByYM[ym].toFixed(0))}</b> · ${ld} leadů${cpl!=null?` · <b>${fmtE(cpl.toFixed(2))}</b>/lead`:''}</span>`;}).join('')}
+        ${roas?`<span style="font-size:.65rem;padding:3px 7px;border-radius:5px;background:rgba(34,197,94,.12);color:#22c55e">Příjem / spend: <b>${roas.toFixed(1)}×</b></span>`:''}
+      </div>`;
+      // ── Hot videa (7 dní) ──
+      const hv=hotVidea.filter(v=>(parseFloat(v.spend)||0)>0);
+      if(hv.length){
+        out+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔥 Hot videa (7 dní)</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
+        hv.forEach(v=>{
+          const sp=parseFloat(v.spend)||0;
+          const lc=parseFloat(v.leady_crm)||0;const lm=parseFloat(v.leady_meta)||0;const dh=parseFloat(v.dohodnute)||0;
+          const cpl=v.cena_za_lead_crm!=null?parseFloat(v.cena_za_lead_crm):null;
+          const cplColor=cpl==null?'var(--text3)':cpl<=15?'#22c55e':cpl<=30?'#f59e0b':'#ef4444';
+          out+=`<div style="padding:9px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center">
+            ${v.thumbnail_url
+              ?`<img src="${esc(v.thumbnail_url)}" loading="lazy" referrerpolicy="no-referrer" style="width:46px;height:46px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--bg3)" onerror="this.outerHTML='<div style=&quot;width:46px;height:46px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0&quot;>🎬</div>'">`
+              :`<div style="width:46px;height:46px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0">🎬</div>`}
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.ad_name||v.ad_id||'?')}</div>
+              <div style="font-size:.63rem;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.campaign||'')}${v.adset_name?' · '+esc(v.adset_name):''}</div>
+              <div style="font-size:.66rem;color:var(--text2);margin-top:2px">${lc} leadů CRM <span style="color:var(--text3)">(${lm} Meta)</span>${dh?` · <span style="color:#22c55e">${dh} dohodnuto</span>`:''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:.82rem;font-weight:700;color:#f97316">${fmtE(sp.toFixed(2))}</div>
+              <div style="font-size:.66rem;font-weight:700;color:${cplColor}">${cpl!=null?fmtE(cpl.toFixed(2))+'/lead':'— /lead'}</div>
+            </div>
+          </div>`;
+        });
+        out+='</div>';
+      }
+      return out;
+    })()}
 
     <!-- ── BAR CHART ── -->
     <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
