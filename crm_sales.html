@@ -245,8 +245,6 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
-    <button class="tab" onclick="setTab('email')">📧 Email</button>
-    <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
   </div>
   <div class="search-wrap">
@@ -256,9 +254,6 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
   <span id="syncLbl" style="font-size:.68rem;color:#64748b;flex-shrink:0;white-space:nowrap;display:none" class="d-desktop"></span>
   <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
   <button class="icon-btn" onclick="doLogout()" title="Odhlásit" style="font-size:.7rem;color:var(--text3);border-color:transparent;background:none">🚪</button>
-  <button class="icon-btn d-desktop" onclick="openImport()" title="Import XLS" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
-  <button class="icon-btn d-desktop" id="gsheetBtn" onclick="syncGSheets()" title="Sync Google Sheets" style="background:#16a34a;border-color:#16a34a;color:#fff">📊</button>
-  <button class="icon-btn" onclick="openEmailLead()" title="Přidat lead z emailu" style="background:var(--bg3);border-color:var(--border);color:var(--text2)">📧</button>
   <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
     <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
     <button onclick="deleteSelected()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600">🗑️</button>
