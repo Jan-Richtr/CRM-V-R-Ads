@@ -283,6 +283,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <select class="flt" id="sluzbaFilter" onchange="applyFilters()">
       <option value="">Vše – služby</option>
       <option value="tvorba_ai_videi">🎬 AI videa</option>
+      <option value="tvorba_ai_videi_2">🤖 AI videa 2</option>
       <option value="reklama_marketing">📢 Reklama</option>
       <option value="video_produkce">📹 Video</option>
       <option value="jine">🔧 Jiné</option>
@@ -517,6 +518,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <select class="flt" id="sluzbaFilterM" onchange="applyFilters()">
     <option value="">Vše – služby</option>
     <option value="tvorba_ai_videi">🎬 AI videa</option>
+    <option value="tvorba_ai_videi_2">🤖 AI videa 2</option>
     <option value="reklama_marketing">📢 Reklama</option>
     <option value="video_produkce">📹 Video</option>
     <option value="jine">🔧 Jiné</option>
@@ -613,7 +615,7 @@ const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
 // When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'nerelevantni','konec':'domluvena_schuzka','':''};
 
-const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
+const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','tvorba_ai_videi_2':'🤖 AI videa 2','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
 let leads=[],currentLead=null,currentTab='table';
@@ -715,6 +717,71 @@ async function transferToSales(){
     leads.forEach(l=>{if(selected.has(l.email)){l.sales_assigned=true;l.sales_assigned_at=new Date().toISOString();}});
     selected.clear();updateSelBar();renderTable();
     showSync('✅ Předáno Kubovi ('+toTransfer.length+')','#16a34a');
+  }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
+}
+
+// ── Předat jednoho leadu z panelu ─────────────────────────────
+async function transferSingleToSales(){
+  if(!currentLead)return;
+  const l=currentLead;
+  if(!confirm(`Předat ${l.jmeno||'lead'} Kubovi?`))return;
+  showSync('👤 Přesouvám…','var(--accent)');
+  try{
+    const salesRec={
+      email:l.email||'',jmeno:l.jmeno||'',firma:l.firma||'',telefon:l.telefon||'',
+      datum:l.datum?l.datum.slice(0,10):new Date().toISOString().slice(0,10),
+      zdroj:l.campaign_name||'CRM přesun',sluzba:l.sluzba||'',problem:l.problem||'',
+      ad_name:l.ad_name||'',campaign_name:l.campaign_name||'',platform:l.platform||''
+    };
+    const r1=await sbFetch(SB+'/rest/v1/sales_leads',{
+      method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify([salesRec])
+    });
+    if(!r1.ok)throw new Error(await r1.text());
+    const enc=encodeURIComponent(l.email);
+    const r2=await sbFetch(SB+'/rest/v1/leads?email=eq.'+enc,{
+      method:'PATCH',headers:{...H,'Prefer':'return=minimal'},
+      body:JSON.stringify({sales_assigned:true,sales_assigned_at:new Date().toISOString()})
+    });
+    if(!r2.ok)throw new Error(await r2.text());
+    if(l.myNotes){
+      await sbFetch(SB+'/rest/v1/sales_crm_data',{
+        method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify([{email:l.email,my_notes:l.myNotes}])
+      });
+    }
+    const idx=leads.findIndex(x=>x.email===l.email);
+    if(idx>=0){leads[idx].sales_assigned=true;leads[idx].sales_assigned_at=new Date().toISOString();}
+    currentLead.sales_assigned=true;
+    closePanel();renderTable();
+    showSync('✅ Předáno Kubovi','#16a34a');
+  }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
+}
+
+// ── Vrátit lead od Kuby ────────────────────────────────────────
+async function returnFromSalesPanel(){
+  if(!currentLead)return;
+  const l=currentLead;
+  if(!confirm(`Vrátit ${l.jmeno||'lead'} od Kuby? Lead zmizí z Kubova CRM.`))return;
+  showSync('↩️ Vracím…','#f97316');
+  try{
+    const enc=encodeURIComponent(l.email);
+    // 1. Smazat z sales_leads (Kubův CRM ho ztratí)
+    const r1=await sbFetch(SB+'/rest/v1/sales_leads?email=eq.'+enc,{
+      method:'DELETE',headers:H
+    });
+    if(!r1.ok)throw new Error(await r1.text());
+    // 2. Označit v leads jako nepředaný
+    const r2=await sbFetch(SB+'/rest/v1/leads?email=eq.'+enc,{
+      method:'PATCH',headers:{...H,'Prefer':'return=minimal'},
+      body:JSON.stringify({sales_assigned:false,sales_assigned_at:null})
+    });
+    if(!r2.ok)throw new Error(await r2.text());
+    // 3. Aktualizovat lokální stav
+    const idx=leads.findIndex(x=>x.email===l.email);
+    if(idx>=0){leads[idx].sales_assigned=false;leads[idx].sales_assigned_at=null;}
+    closePanel();renderTable();
+    showSync('✅ Vráceno od Kuby','#16a34a');
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
 
@@ -1294,8 +1361,13 @@ function openLead(id){
     document.getElementById('pImportedNotes').textContent=importedNote;
   }else{iw.style.display='none';}
   let acts='';
-  if(tel)acts+=`<a class="btn" href="tel:${tel}">📧 Email</a>`;
+  if(tel)acts+=`<a class="btn" href="tel:${tel}">📞 Volat</a>`;
   if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
+  if(l.sales_assigned){
+    acts+=`<button class="btn" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.4);cursor:pointer" onclick="returnFromSalesPanel()">↩️ Vrátit od Kuby</button>`;
+  }else{
+    acts+=`<button class="btn" style="background:rgba(233,30,140,.15);color:var(--accent2);border:1px solid rgba(233,30,140,.4);cursor:pointer" onclick="transferSingleToSales()">👤 Předat Kubovi</button>`;
+  }
   document.getElementById('pActions').innerHTML=acts;
   document.getElementById('overlay').classList.add('open');
   document.getElementById('panel').classList.add('open');
@@ -1910,22 +1982,42 @@ function mapSluzbaFromZajem(z){
   return'';
 }
 
-function parseSheetRows(rows,existingEmails){
+function parseSheetRows(rows,existingEmails,sheetIndex){
   if(rows.length<2)return{newLeads:[],skipped:[]};
   const hdr=rows[0].map(h=>h.trim().toLowerCase());
   const ci=(names)=>{for(const n of names){const i=hdr.indexOf(n);if(i>=0)return i;}return-1;};
 
-  // Universal column mapping — covers both old format and new Meta Leads export
-  const iDatum   =ci(['datum','created_time']);
-  const iJmeno   =ci(['jméno','jmeno','name','full_name']);
-  const iEmail   =ci(['email','e-mail']);
-  const iTel     =ci(['telefon','tel','phone','phone_number']);
-  const iWeb     =ci(['web','website','uveďte_prosím_vašu_webovú_stránku:']);
-  const iZajem   =ci(['zájem','zajem','zájem o','interest','aký_máte_očakávaný_počet_videí?']);
-  const iProb    =ci(['bolest / poznámka','bolest','poznámka','problem','note','notes','v_akej_lokalite_sídlite_s_vaším_podnikaním?']);
-  const iPlatform=ci(['platform','utm source','utm_source']);
-  const iCamp    =ci(['campaign_name','utm campaign','utm_campaign']);
-  const iAdName  =ci(['ad_name','utm content','utm_content']);
+  // Detekce formátu: tabulka 2 = Meta Leads export (má sloupec full_name nebo created_time)
+  const isMetaFmt=sheetIndex===1||hdr.includes('full_name')||hdr.includes('created_time');
+
+  let iDatum,iJmeno,iEmail,iTel,iWeb,iZajem,iProb,iLokace,iPlatform,iCamp,iAdName;
+  if(isMetaFmt){
+    // Tabulka 2 — Meta Leads export (slovenský formulář)
+    iDatum   =ci(['created_time']);
+    iJmeno   =ci(['full_name']);
+    iEmail   =ci(['email']);
+    iTel     =ci(['phone_number']);
+    iWeb     =ci(['uveďte_prosím_vašu_webovú_stránku:']);
+    iProb    =ci(['aký_máte_očakávaný_počet_videí?']); // počet videí → problem
+    iLokace  =ci(['v_akej_lokalite_sídlite_s_vaším_podnikaním?']); // lokalita → lokace
+    iPlatform=ci(['platform']);
+    iCamp    =ci(['campaign_name']);
+    iAdName  =ci(['ad_name']);
+    iZajem   =-1;
+  }else{
+    // Tabulka 1 — klasický CRM formát
+    iDatum   =ci(['datum']);
+    iJmeno   =ci(['jméno','jmeno','name']);
+    iEmail   =ci(['email','e-mail']);
+    iTel     =ci(['telefon','tel','phone']);
+    iWeb     =ci(['web','website']);
+    iZajem   =ci(['zájem','zajem','zájem o','interest']);
+    iProb    =ci(['bolest / poznámka','bolest','poznámka','problem','note','notes']);
+    iLokace  =-1;
+    iPlatform=ci(['utm source','utm_source']);
+    iCamp    =ci(['utm campaign','utm_campaign']);
+    iAdName  =ci(['utm content','utm_content']);
+  }
 
   if(iEmail<0)return{newLeads:[],skipped:[],err:'Nenašel jsem sloupec Email'};
 
@@ -1934,7 +2026,7 @@ function parseSheetRows(rows,existingEmails){
     const r=rows[i];
     const email=(r[iEmail]||'').trim().toLowerCase();
     if(!email)continue;
-    // Skip test leads from Meta
+    // Přeskočit Meta test leady
     if(email==='test@meta.com'||(r[iEmail]||'').includes('<test lead'))continue;
     if(existingEmails.has(email)){skipped.push(email);continue;}
     existingEmails.add(email);
@@ -1945,22 +2037,25 @@ function parseSheetRows(rows,existingEmails){
     const mesic=dObj.getFullYear()*100+(dObj.getMonth()+1);
 
     let telefon=(iTel>=0?r[iTel]||'':'').trim();
-    // Strip Meta's "p:" prefix
     if(telefon.startsWith('p:'))telefon=telefon.slice(2).trim();
     if(telefon&&!telefon.startsWith('+'))telefon='+'+telefon;
 
     const web=(iWeb>=0?r[iWeb]||'':'').trim();
-    const zajem=iZajem>=0?r[iZajem]||'':'';
+    const zajem=iZajem>=0?(r[iZajem]||''):'';
     const prob=(iProb>=0?r[iProb]||'':'').trim();
+    const lokace=(iLokace>=0?r[iLokace]||'':'').trim();
     const platform=(iPlatform>=0?(r[iPlatform]||'').trim().toLowerCase():'');
 
-    newLeads.push({
+    // Tabulka 2: vše je AI videa 2; tabulka 1: mapuj z políčka zájem
+    const sluzba=isMetaFmt?'tvorba_ai_videi_2':mapSluzbaFromZajem(zajem);
+
+    const lead={
       jmeno:(iJmeno>=0?r[iJmeno]||'':'').trim(),
       email,
       telefon,
       website:web,
       firma:web,
-      sluzba:mapSluzbaFromZajem(zajem),
+      sluzba,
       problem:prob,
       platform:platform||'facebook',
       campaign_name:(iCamp>=0?r[iCamp]||'':'').trim(),
@@ -1968,9 +2063,33 @@ function parseSheetRows(rows,existingEmails){
       datum,
       mesic,
       stav:'',
-    });
+    };
+    if(lokace)lead.lokace=lokace;
+    newLeads.push(lead);
   }
   return{newLeads,skipped};
+}
+
+// Fetch Google Sheet CSV — přes CORS proxy kvůli cross-origin omezení prohlížeče
+async function fetchSheetCSV(url){
+  // Zkus přímý fetch nejdřív (funguje pokud má server CORS hlavičky)
+  try{
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(),12000);
+    try{
+      const r=await fetch(url,{signal:ctrl.signal,mode:'cors'});
+      if(r.ok){const txt=await r.text();if(txt&&txt.includes(','))return txt;}
+    }finally{clearTimeout(t);}
+  }catch(e){/* přímý fetch selhal, zkusíme proxy */}
+  // Fallback: CORS proxy
+  const proxy='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),25000);
+  try{
+    const r=await fetch(proxy,{signal:ctrl.signal});
+    if(!r.ok)throw new Error('Proxy chyba: '+r.status);
+    return r.text();
+  }finally{clearTimeout(t);}
 }
 
 async function syncGSheets(){
@@ -1978,20 +2097,20 @@ async function syncGSheets(){
   if(!btn||btn.disabled)return;
   btn.disabled=true;btn.textContent='⏳';
   try{
-    // Fetch all sheets in parallel
-    const responses=await Promise.all(GSHEET_URLS.map(u=>sbFetch(u,{},20000)));
-    const texts=await Promise.all(responses.map((r,i)=>{
-      if(!r.ok)throw new Error(`Chyba tabulky ${i+1}: ${r.status}`);
-      return r.text();
-    }));
+    // Fetch all sheets (s CORS proxy fallback)
+    showSync('⏳ Načítám tabulky…','#d97706');
+    const texts=await Promise.all(GSHEET_URLS.map((u,i)=>
+      fetchSheetCSV(u).catch(e=>{throw new Error(`Tabulka ${i+1}: ${e.message}`);})
+    ));
 
     const existingEmails=new Set(leads.map(l=>(l.email||'').toLowerCase()).filter(Boolean));
     let allNew=[];let allSkipped=[];
 
-    for(const text of texts){
+    for(let si=0;si<texts.length;si++){
+      const text=texts[si];
       const rows=parseCSV(text);
       if(rows.length<2)continue;
-      const{newLeads,skipped,err}=parseSheetRows(rows,existingEmails);
+      const{newLeads,skipped,err}=parseSheetRows(rows,existingEmails,si);
       if(err){console.warn(err);continue;}
       allNew=allNew.concat(newLeads);
       allSkipped=allSkipped.concat(skipped);
