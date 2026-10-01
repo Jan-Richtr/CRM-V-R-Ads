@@ -1873,36 +1873,95 @@ async function renderKampane(){
 
   // ── TAB: PŘEHLED ──────────────────────────────────────────────
   if(kampaneSubTab==='prehled'){
-    const roas=totalSpend>0?(totalRev/totalSpend).toFixed(2):null;
-    const zisk=totalRev-totalSpend;
-    const curRoas=curSpend>0?(curRev/curSpend).toFixed(2):null;
+    // ── Build monthly data for chart (last 12 months) ──
+    const now2=new Date();
+    const chartMonths=[];
+    for(let i=11;i>=0;i--){
+      const d=new Date(now2.getFullYear(),now2.getMonth()-i,1);
+      const yyyymm=d.getFullYear()*100+(d.getMonth()+1);
+      const yr=d.getFullYear();const mo=d.getMonth()+1;
+      const label=`${mo}/${String(yr).slice(2)}`;
+      // One-time revenue: CRM leads with prodej_castka in this month
+      const onetime=allRevLeads.filter(l=>l.mesic===yyyymm).reduce((s,l)=>s+(parseFloat(l.prodej_castka)||0),0);
+      // Recurring: sum monthly_amount for contracts active in this month
+      const monthStart=new Date(yr,mo-1,1);
+      const monthEnd=new Date(yr,mo,0);
+      const recurring=allContracts.filter(c=>{
+        if(!c.start_date)return false;
+        const cs=new Date(c.start_date);
+        const ce=c.end_date?new Date(c.end_date):new Date(9999,0,1);
+        return cs<=monthEnd&&ce>=monthStart;
+      }).reduce((s,c)=>s+(parseFloat(c.monthly_amount)||0),0);
+      chartMonths.push({yyyymm,label,onetime,recurring,total:onetime+recurring,mo,yr});
+    }
+    const chartMax=Math.max(...chartMonths.map(m=>m.total),1);
+    const chartH=140;
+    // ── Summary cards row ──
+    const curMonth2=chartMonths[chartMonths.length-1];
+    const curOnetime=curMonth2.onetime;const curRecurring=curMonth2.recurring;
+    const totalContractRev=allContracts.reduce((s,c)=>s+cTotal(c),0);
+    const grandTotal=totalRev+totalContractRev;
     h+=`
-    <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📅 Aktuální měsíc</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px">
-      ${card('Spend',curSpend?fmtE(curSpend):'—','var(--red)')}
-      ${card('Obrat',curRev?fmtE(curRev):'—','var(--green)')}
-      ${card('Zisk',curSpend||curRev?fmtE(curRev-curSpend):(curRev?fmtE(curRev):'—'),(curRev-curSpend)>=0?'var(--green)':'var(--red)')}
-      ${card('ROAS',curRoas?curRoas+'x':'—','var(--accent2)')}
-      ${card('Leady',leads.filter(l=>l.mesic===curMesic).length,'var(--text)')}
-      ${card('Prodeje',curRevLeads.length,'var(--green)')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+        <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">Tento měsíc</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--green)">${fmtE(curOnetime+curRecurring)}</div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <span style="font-size:.65rem"><span style="color:#22c55e">●</span> ${fmtE(curRecurring)} op.</span>
+          <span style="font-size:.65rem"><span style="color:#3b82f6">●</span> ${fmtE(curOnetime)} jed.</span>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+        <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">MRR (aktivní smlouvy)</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#22c55e">${fmtE(mrr)}</div>
+        <div style="font-size:.65rem;color:var(--text3);margin-top:4px">ARR ${fmtE(mrr*12)} · ${activeContracts.length} klientů</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+        <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">Celkový obrat (CRM)</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--green)">${fmtE(totalRev)}</div>
+        <div style="font-size:.65rem;color:var(--text3);margin-top:4px">${allRevLeads.length} jednorázových plateb</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+        <div style="font-size:.65rem;color:var(--text3);margin-bottom:2px">Celkový příjem (vše)</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--green)">${fmtE(grandTotal)}</div>
+        <div style="font-size:.65rem;color:var(--text3);margin-top:4px">CRM + smlouvy celkem</div>
+      </div>
     </div>
-    <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📈 Celkem (all-time)</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px">
-      ${card('Celkový spend',totalSpend?fmtE(totalSpend):'—','var(--red)')}
-      ${card('Celkový obrat',fmtE(totalRev),'var(--green)')}
-      ${card('Celkový zisk',fmtE(zisk),zisk>=0?'var(--green)':'var(--red)')}
-      ${card('ROAS',roas?roas+'x':'—','var(--accent2)')}
-      ${card('Prodeje',allRevLeads.length,'var(--green)')}
-      ${card('Leady celkem',leads.length,'var(--text)')}
+
+    <!-- ── BAR CHART ── -->
+    <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+      📊 Měsíční obrat
+      <span style="float:right;font-weight:400;text-transform:none;letter-spacing:0">
+        <span style="color:#22c55e">■</span> Opakující &nbsp; <span style="color:#3b82f6">■</span> Jednorázové
+      </span>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 8px 8px;margin-bottom:16px">
+      <div style="display:flex;align-items:flex-end;gap:3px;height:${chartH+20}px;padding-bottom:20px">
+        ${chartMonths.map(m=>{
+          const totalPx=chartMax>0?Math.round(m.total/chartMax*chartH):0;
+          const recurPx=chartMax>0?Math.round(m.recurring/chartMax*chartH):0;
+          const onetimePx=Math.max(0,totalPx-recurPx);
+          const isCurrentMonth=m.yyyymm===curMesic;
+          return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0;position:relative" title="${m.label}: ${fmtE(m.total)} (${fmtE(m.recurring)} op. + ${fmtE(m.onetime)} jed.)">
+            <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:${chartH}px;gap:0;border-radius:3px 3px 0 0;overflow:hidden;${isCurrentMonth?'outline:1px solid rgba(255,255,255,.25);':''}">
+              ${onetimePx>0?`<div style="height:${onetimePx}px;background:#3b82f6;opacity:.85"></div>`:''}
+              ${recurPx>0?`<div style="height:${recurPx}px;background:#22c55e"></div>`:''}
+              ${totalPx===0?`<div style="height:2px;background:var(--border)"></div>`:''}
+            </div>
+            <div style="font-size:.55rem;color:${isCurrentMonth?'var(--text)':'var(--text3)'};margin-top:4px;white-space:nowrap;font-weight:${isCurrentMonth?'700':'400'}">${m.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>`;
-    // Services breakdown
+
+    // ── Obrat podle služby (keep) ──
     const svcArr=Object.entries(svcs).sort((a,b)=>b[1].rev-a[1].rev);
     if(svcArr.length){
-      const maxRev=Math.max(...svcArr.map(([,v])=>v.rev));
+      const maxRevS=Math.max(...svcArr.map(([,v])=>v.rev));
       h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🛠 Obrat podle služby</div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
       svcArr.forEach(([,v])=>{
-        const pct=maxRev>0?Math.round(v.rev/maxRev*100):0;
+        const pct=maxRevS>0?Math.round(v.rev/maxRevS*100):0;
         h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--border)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
             <span style="font-size:.82rem;font-weight:600">${esc(v.label)}</span>
@@ -1916,52 +1975,55 @@ async function renderKampane(){
       });
       h+='</div>';
     }
-    // MRR card
-    if(mrr>0||activeContracts.length>0){
-      h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📆 Opakující se příjmy</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px">
-        ${card('MRR (aktivní)',mrr>0?fmtE(mrr):'—','var(--green)')}
-        ${card('ARR (roční)',mrr>0?fmtE(mrr*12):'—','var(--accent2)')}
-        ${card('Aktivní spolupráce',activeContracts.length,'var(--text)')}
-        ${card('Ukončené',allContracts.length-activeContracts.length,'var(--text3)')}
-      </div>`;
-      // Avg retention per service for ended contracts
-      const retBySvc={};
-      allContracts.filter(c=>c.end_date).forEach(c=>{
-        const k=c.sluzba||'jine';
-        if(!retBySvc[k])retBySvc[k]={label:SLUZBA[k]||k,totalMonths:0,count:0};
-        retBySvc[k].totalMonths+=cMonths(c);retBySvc[k].count++;
+
+    // ── Aktivní klienti (clickable) ──
+    if(activeContracts.length>0){
+      // Group by email, show each active client
+      const activeByEmail={};
+      activeContracts.forEach(c=>{
+        if(!activeByEmail[c.email])activeByEmail[c.email]={firma:c.firma||c.email,email:c.email,contracts:[]};
+        activeByEmail[c.email].contracts.push(c);
       });
-      const retArr=Object.values(retBySvc).filter(r=>r.count>0);
-      if(retArr.length){
-        h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⏱ Průměrná délka spolupráce (ukončené)</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
-        retArr.sort((a,b)=>b.totalMonths/b.count-a.totalMonths/a.count).forEach(r=>{
-          const avg=(r.totalMonths/r.count).toFixed(1);
-          h+=`<div style="padding:9px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:.82rem;font-weight:600">${esc(r.label)}</span>
-            <span style="font-size:.82rem;color:var(--accent2)">${avg} měs. <span style="color:var(--text3);font-size:.7rem">(${r.count} klientů)</span></span>
-          </div>`;
-        });
-        h+='</div>';
-      }
-    }
-    // Top 5 clients
-    if(clientArr.length){
-      h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏆 Top klienti</div>
+      const activeList=Object.values(activeByEmail).sort((a,b)=>{
+        const am=a.contracts.reduce((s,c)=>s+(parseFloat(c.monthly_amount)||0),0);
+        const bm=b.contracts.reduce((s,c)=>s+(parseFloat(c.monthly_amount)||0),0);
+        return bm-am;
+      });
+      h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🟢 Aktivní klienti (${activeList.length})</div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
-      clientArr.slice(0,5).forEach((c,i)=>{
-        const contracts=contractsByEmail[c.email]||[];
-        const contractLTV=contracts.reduce((s,ct)=>s+cTotal(ct),0);
-        const ltv=c.totalRev+contractLTV;
-        const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ');
+      activeList.forEach(ac=>{
+        const monthlyTotal=ac.contracts.reduce((s,c)=>s+(parseFloat(c.monthly_amount)||0),0);
+        const svcsLabel=ac.contracts.map(c=>SLUZBA[c.sluzba]||c.sluzba||'').filter(Boolean).join(', ');
+        const earliestStart=ac.contracts.map(c=>c.start_date).filter(Boolean).sort()[0]||'';
+        const sinceStr=earliestStart?earliestStart.slice(0,7).replace('-','/'):'';
         h+=`<div style="padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer" onclick="kampaneSubTab='klienti';renderKampane()">
-          <span style="font-size:.9rem;font-weight:700;color:var(--text3);width:20px;text-align:center">${i+1}</span>
+          <span style="color:#22c55e;font-size:.75rem">●</span>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.firma)}</div>
-            <div style="font-size:.67rem;color:var(--text3)">${esc(svcLabels)}</div>
+            <div style="font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ac.firma)}</div>
+            <div style="font-size:.65rem;color:var(--text3)">${esc(svcsLabel)}${sinceStr?' · od '+sinceStr:''}</div>
           </div>
-          <span style="color:var(--green);font-weight:700;font-size:.82rem;white-space:nowrap">${fmtE(ltv)}</span>
+          <span style="color:#22c55e;font-weight:700;font-size:.85rem;white-space:nowrap">${fmtE(monthlyTotal)}/měs.</span>
+        </div>`;
+      });
+      h+='</div>';
+    }
+
+    // ── Retention avg ──
+    const retBySvc2={};
+    allContracts.filter(c=>c.end_date).forEach(c=>{
+      const k=c.sluzba||'jine';
+      if(!retBySvc2[k])retBySvc2[k]={label:SLUZBA[k]||k,totalMonths:0,count:0};
+      retBySvc2[k].totalMonths+=cMonths(c);retBySvc2[k].count++;
+    });
+    const retArr2=Object.values(retBySvc2).filter(r=>r.count>0);
+    if(retArr2.length){
+      h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⏱ Průměrná délka spolupráce (ukončené)</div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
+      retArr2.sort((a,b)=>b.totalMonths/b.count-a.totalMonths/a.count).forEach(r=>{
+        const avg=(r.totalMonths/r.count).toFixed(1);
+        h+=`<div style="padding:9px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.82rem;font-weight:600">${esc(r.label)}</span>
+          <span style="font-size:.82rem;color:var(--accent2)">${avg} měs. <span style="color:var(--text3);font-size:.7rem">(${r.count} klientů)</span></span>
         </div>`;
       });
       h+='</div>';
