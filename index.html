@@ -244,7 +244,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <button class="tab" onclick="setTab('email')">📧 Email</button>
     <button class="tab" onclick="setTab('kampane')">📈 Analytika</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
-    <button class="tab" onclick="setTab('klienti')">🏢 Klienti</button>
     <button class="tab" onclick="setTab('reklamy')">📣 Reklamy</button>
     <button class="tab" onclick="setTab('sales')" style="border-left:1px solid var(--border);margin-left:4px;padding-left:10px">👤 Obchodník</button>
   </div>
@@ -542,7 +541,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="bn-btn" id="bn-email" onclick="setTab('email')"><span class="bn-ic">📧</span>Email</button>
   <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📈</span>Analytika</button>
   <button class="bn-btn" id="bn-denni" onclick="setTab('denni')"><span class="bn-ic">📅</span>Denní</button>
-  <button class="bn-btn" id="bn-klienti" onclick="setTab('klienti')"><span class="bn-ic">🏢</span>Klienti</button>
   <button class="bn-btn" id="bn-reklamy" onclick="setTab('reklamy')"><span class="bn-ic">📣</span>Reklamy</button>
 </nav>
 
@@ -953,8 +951,9 @@ function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
+  if(t==='klienti'){t='kampane';kampaneSubTab='klienti';} // Klienti now live in Analytika
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni','klienti','reklamy','sales'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni','reklamy','sales'][i]===t));
   ['table','stats','email','kampane','denni','klienti','reklamy'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   document.getElementById('view-klienti').style.display=t==='klienti'?'block':'none';
   document.getElementById('view-reklamy').style.display=t==='reklamy'?'block':'none';
@@ -1958,6 +1957,21 @@ function renderDenniContent(rows){
 // ── Kampaně view (seskupeno po kreativách / ad_name) ──────────
 // ── Kampaně — analytics hub ────────────────────────────────────
 let kampaneSubTab='prehled';
+// Analytika → Klienti: client-side filter (no refetch)
+let anKlF='aktivni',anKlQ='';
+function anKlApply(){
+  document.querySelectorAll('.ankl-card').forEach(el=>{
+    const okF=anKlF==='vsichni'||el.dataset.active==='1';
+    const okQ=!anKlQ||el.dataset.name.includes(anKlQ);
+    el.style.display=okF&&okQ?'':'none';
+  });
+  document.querySelectorAll('.ankl-f').forEach(b=>{
+    const on=b.dataset.f===anKlF;
+    b.style.background=on?'var(--accent)':'var(--bg3)';b.style.color=on?'#fff':'var(--text2)';b.style.borderColor=on?'var(--accent)':'var(--border)';
+  });
+}
+function anKlFilter(f){anKlF=f;anKlApply();}
+function anKlSearch(q){anKlQ=String(q||'').toLowerCase().trim();if(anKlQ)anKlF='vsichni';anKlApply();}
 
 async function renderKampane(){
   const kv=document.getElementById('view-kampane');
@@ -2304,50 +2318,87 @@ async function renderKampane(){
         clientMap[email]={firma:first.firma||email,jmeno:'',email,leads:[],totalRev:0,svcs:{},months:{}};
       }
     });
+    // ── Merge Jakub's crm_klienti (panel + invoices) ──
+    let jkRows=[];
+    try{jkRows=await sbGet('/rest/v1/crm_klienti?select=*&limit=1000')||[];}catch(e){}
+    const normN=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/https?:\/\/|www\.|\.(sk|cz|com|eu|net|org)\b|s\.?r\.?o\.?|a\.?s\.?\b|spol\.?/g,'').replace(/[^a-z0-9]/g,'');
+    Object.values(clientMap).forEach(c=>{c._keys=[normN(c.firma),normN((c.email||'').split('@')[1]||'')].filter(k=>k.length>=4);});
+    jkRows.forEach(j=>{
+      const keys=[normN(j.nazov),normN(j.faktura_nazov),normN(j.id)].filter(k=>k.length>=4);
+      const hit=Object.values(clientMap).find(c=>!c.jk&&c._keys.some(a=>keys.some(b=>a===b||a.includes(b)||b.includes(a))));
+      if(hit){hit.jk=j;}
+      else{clientMap['jk:'+j.id]={firma:j.nazov||j.id,jmeno:'',email:'',leads:[],totalRev:0,svcs:{},months:{},jk:j};}
+    });
+    // Invoice total – use whichever amount column the view provides (Jakub can add it later)
+    const jkSum=j=>{if(!j)return 0;for(const k of['suma_faktur','obrat_celkem','fakturovane_celkem','suma','obrat']){if(j[k]!=null&&!isNaN(parseFloat(j[k])))return parseFloat(j[k]);}return 0;};
     // Enrich each client with contract stats
     const enriched=Object.values(clientMap).map(c=>{
       const contracts=contractsByEmail[c.email]||[];
       const contractLTV=contracts.reduce((s,ct)=>s+cTotal(ct),0);
-      const ltv=c.totalRev+contractLTV;
-      const hasActive=contracts.some(cActive);
+      const invoiceSum=jkSum(c.jk);
+      const crmPlusContracts=c.totalRev+contractLTV;
+      // Invoices are the real record; if we have them, take the larger number (avoid double counting)
+      const ltv=Math.max(invoiceSum,crmPlusContracts);
+      const ltvSource=invoiceSum>0&&invoiceSum>=crmPlusContracts?'faktury':(crmPlusContracts>0?'CRM + smlouvy':'');
+      const hasActive=contracts.some(cActive)||!!(c.jk&&c.jk.aktivny);
       const activeConts=contracts.filter(cActive);
       const currentMRR=activeConts.reduce((s,ct)=>s+(parseFloat(ct.monthly_amount)||0),0);
-      const totalMonths=contracts.reduce((s,ct)=>s+cMonths(ct),0);
+      const totalMonths=Math.max(contracts.reduce((s,ct)=>s+cMonths(ct),0),(c.jk&&c.jk.trvanie_mesiace)||0);
       // Earliest start date across all contracts
       const startDates=contracts.map(ct=>ct.start_date).filter(Boolean).sort();
       const firstStart=startDates[0]||null;
-      return{...c,contracts,contractLTV,ltv,hasActive,currentMRR,totalMonths,firstStart};
+      return{...c,contracts,contractLTV,ltv,ltvSource,invoiceSum,hasActive,currentMRR,totalMonths,firstStart};
     });
-    // Sort: active first, then by totalMonths desc, then by ltv desc
+    // Sort: active first, then by money left with us, then by months
     enriched.sort((a,b)=>{
       if(a.hasActive!==b.hasActive)return a.hasActive?-1:1;
-      if(b.totalMonths!==a.totalMonths)return b.totalMonths-a.totalMonths;
-      return b.ltv-a.ltv;
+      if(b.ltv!==a.ltv)return b.ltv-a.ltv;
+      return b.totalMonths-a.totalMonths;
     });
     const totalLTVAll=enriched.reduce((s,c)=>s+c.ltv,0);
     const totalMRR=enriched.reduce((s,c)=>s+c.currentMRR,0);
-    // Header
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="font-size:.72rem;color:var(--text3)">${enriched.length} klientů · LTV <span style="color:var(--green);font-weight:600">${fmtE(totalLTVAll)}</span> · MRR <span style="color:var(--accent2);font-weight:600">${fmtE(totalMRR)}</span></div>
-      <button onclick="showContractModal('','',null,true)" style="background:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-size:.75rem;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap">➕ Nový klient</button>
+    const nActive=enriched.filter(c=>c.hasActive).length;
+    const catCount={};enriched.forEach(c=>{const k=(c.jk&&c.jk.kategoria)||'';if(k)catCount[k]=(catCount[k]||0)+1;});
+    const noMoney=enriched.filter(c=>c.ltv<=0).length;
+    // Summary cards
+    h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px">
+      ${card('Klientů celkem',enriched.length,'var(--text)')}
+      ${card('Aktivních',nActive,'var(--green)')}
+      ${card('Nechali u nás celkem',fmtE(totalLTVAll),'var(--green)')}
+      ${card('MRR',fmtE(totalMRR),'var(--accent2)')}
+    </div>
+    ${Object.keys(catCount).length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${Object.entries(catCount).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<span style="font-size:.66rem;padding:3px 8px;border-radius:5px;background:var(--bg3);color:var(--text2)">${esc(k)}: <b>${n}</b></span>`).join('')}</div>`:''}
+    ${noMoney?`<div style="font-size:.68rem;color:#f59e0b;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:7px 10px;margin-bottom:10px">⚠️ U ${noMoney} klientů zatím chybí částky (jsou jen v Jakubových fakturách). Jakmile přibudou do databáze, sečtou se tu automaticky – nebo je doplň přes „Přidat spolupráci“.</div>`:''}
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <button class="ankl-f" data-f="aktivni" onclick="anKlFilter('aktivni')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:.76rem;font-weight:600;cursor:pointer">🟢 Aktivní (${nActive})</button>
+      <button class="ankl-f" data-f="vsichni" onclick="anKlFilter('vsichni')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.76rem;font-weight:600;cursor:pointer">Všichni (${enriched.length})</button>
+      <input type="search" placeholder="🔍 Hledat klienta…" oninput="anKlSearch(this.value)" style="flex:1;min-width:150px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.8rem">
+      <button onclick="showContractModal('','',null,true)" style="background:var(--accent);border:none;border-radius:6px;padding:6px 12px;font-size:.75rem;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap">➕ Nový klient</button>
     </div>`;
     enriched.forEach((c,ci)=>{
       const cid='ck'+ci;
+      const j=c.jk||null;
       const statusColor=c.hasActive?'var(--green)':'var(--text3)';
       const statusDot=c.hasActive?'●':'○';
       // Retention label
       const retLabel=c.totalMonths>0?`${c.totalMonths} měs.`:(c.firstStart?'<1 měs.':'—');
       // First start year/month
-      const sinceLabel=c.firstStart?c.firstStart.slice(0,7).replace('-','/'):'';
+      const sinceLabel=c.firstStart?c.firstStart.slice(0,7).replace('-','/'):(j&&j.prva_faktura?j.prva_faktura:'');
       const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ')||c.contracts.map(ct=>SLUZBA[ct.sluzba]||ct.sluzba||'').filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ');
-      h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid ${statusColor};border-radius:8px;margin-bottom:7px;overflow:hidden">
+      const subLine=[sinceLabel?'od '+sinceLabel:'',j&&j.kategoria?j.kategoria:'',j&&j.garant?'👤 '+j.garant:'',svcLabels].filter(Boolean).join(' · ');
+      let kroky=j?j.dalsie_kroky:null;
+      if(typeof kroky==='string'){try{kroky=JSON.parse(kroky);}catch(e){kroky=[];}}
+      if(!Array.isArray(kroky))kroky=[];
+      const infoRow=(l,v)=>v?`<div style="margin-bottom:8px"><div style="font-size:.64rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">${l}</div><div style="font-size:.78rem;line-height:1.45;color:var(--text2);white-space:pre-wrap">${esc(String(v))}</div></div>`:'';
+      h+=`<div class="ankl-card" data-active="${c.hasActive?1:0}" data-name="${esc(normN(c.firma)+' '+(c.firma||'').toLowerCase())}" style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid ${statusColor};border-radius:8px;margin-bottom:7px;overflow:hidden;${c.hasActive?'':'display:none'}">
         <div style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="document.getElementById('${cid}').style.display=document.getElementById('${cid}').style.display==='none'?'block':'none'">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="color:${statusColor};font-size:.7rem">${statusDot}</span>
               <span style="font-weight:700;font-size:.87rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.firma)}</span>
             </div>
-            <div style="font-size:.68rem;color:var(--text3);margin-top:2px">${sinceLabel?`od ${sinceLabel} · `:''}${esc(svcLabels)||'bez záznamu'}</div>
+            <div style="font-size:.68rem;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(subLine)||'bez záznamu'}</div>
           </div>
           <div style="display:flex;gap:12px;align-items:center;flex-shrink:0">
             ${c.currentMRR>0?`<div style="text-align:right">
@@ -2358,15 +2409,34 @@ async function renderKampane(){
               <div style="font-weight:700;color:var(--text3);font-size:.82rem">${retLabel}</div>
               <div style="font-size:.6rem;color:var(--text3)">s námi</div>
             </div>
-            <div style="text-align:right">
-              <div style="font-weight:700;color:var(--green);font-size:.88rem">${fmtE(c.ltv)}</div>
-              <div style="font-size:.6rem;color:var(--text3)">LTV</div>
+            <div style="text-align:right;min-width:74px">
+              <div style="font-weight:700;color:${c.ltv>0?'var(--green)':'var(--text3)'};font-size:.88rem">${c.ltv>0?fmtE(c.ltv):'— €'}</div>
+              <div style="font-size:.6rem;color:var(--text3)">nechal u nás</div>
             </div>
           </div>
           <span style="color:var(--text3);font-size:.75rem;margin-left:2px">▼</span>
         </div>
         <div id="${cid}" style="display:none;border-top:1px solid var(--border);padding:10px 12px">
-          ${c.totalRev>0?`<div style="font-size:.72rem;color:var(--text3);margin-bottom:8px">💰 Jednorázové z CRM: <span style="color:var(--green);font-weight:600">${fmtE(c.totalRev)}</span></div>`:''}
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:10px">
+            ${card('Nechal u nás',c.ltv>0?fmtE(c.ltv):'—',c.ltv>0?'var(--green)':'var(--text3)')}
+            ${card('Z faktur',c.invoiceSum>0?fmtE(c.invoiceSum):'—','var(--text)')}
+            ${card('Jednorázové (CRM)',c.totalRev>0?fmtE(c.totalRev):'—','var(--text)')}
+            ${card('Smlouvy',c.contractLTV>0?fmtE(c.contractLTV):'—','var(--text)')}
+            ${card('S námi',retLabel,'var(--text)')}
+            ${card('Faktur',j&&j.pocet_faktur!=null?j.pocet_faktur:'—','var(--text)')}
+          </div>
+          ${j?`<div style="background:var(--bg3);border-radius:7px;padding:10px 12px;margin-bottom:10px">
+            ${infoRow('Stav',j.stav)}
+            ${infoRow('Rozsah',j.rozsah)}
+            ${kroky.length?`<div style="margin-bottom:8px"><div style="font-size:.64rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Další kroky</div>
+              ${kroky.map(s=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 9px;margin-bottom:4px">
+                <div style="font-size:.76rem;font-weight:600">${esc(s.co||'')}</div>
+                <div style="font-size:.68rem;color:var(--text3);margin-top:1px">${s.kto?'👤 '+esc(s.kto):''}${s.kto&&s.rozsah?' · ':''}${esc(s.rozsah||'')}</div>
+              </div>`).join('')}</div>`:''}
+            ${infoRow('Garant / zastřešuje',[j.garant,j.zastresuje].filter(Boolean).join(' · '))}
+            ${infoRow('Faktury',[(j.prva_faktura||'—')+' → '+(j.posledna_faktura||'—'),j.fakturujuca_firma].filter(Boolean).join(' · '))}
+            ${infoRow('Poznámka',j.poznamka)}
+          </div>`:''}
           ${c.contracts.length?`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📅 Záznamy spolupráce</div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
           ${c.contracts.map(ct=>{
@@ -2391,7 +2461,7 @@ async function renderKampane(){
           }).join('')}
           </div>`:`<div style="font-size:.75rem;color:var(--text3);margin-bottom:10px">Zatím žádný záznam spolupráce.</div>`}
           <div style="display:flex;gap:6px">
-            <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}')" style="background:rgba(233,30,140,.12);border:1px solid rgba(233,30,140,.4);border-radius:5px;padding:5px 12px;font-size:.75rem;color:var(--accent);font-weight:600;cursor:pointer">➕ Přidat spolupráci</button>
+            <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}',null,${c.email?'false':'true'})" style="background:rgba(233,30,140,.12);border:1px solid rgba(233,30,140,.4);border-radius:5px;padding:5px 12px;font-size:.75rem;color:var(--accent);font-weight:600;cursor:pointer">➕ Přidat spolupráci</button>
             ${c.leads[0]?`<button onclick="openLead(${c.leads[0]._id})" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:.73rem;color:var(--text2);cursor:pointer">🔍 Lead</button>`:''}
           </div>
         </div>
