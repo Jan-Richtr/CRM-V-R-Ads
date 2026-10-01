@@ -242,7 +242,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
     <button class="tab" onclick="setTab('email')">📧 Email</button>
-    <button class="tab" onclick="setTab('kampane')">📣 Kampaně</button>
+    <button class="tab" onclick="setTab('kampane')">📈 Analytika</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
     <button class="tab" onclick="setTab('sales')" style="border-left:1px solid var(--border);margin-left:4px;padding-left:10px">👤 Obchodník</button>
   </div>
@@ -536,7 +536,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <button class="bn-btn active" id="bn-table" onclick="setTab('table')"><span class="bn-ic">📋</span>Tabulka</button>
   <button class="bn-btn" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span>Statistiky</button>
   <button class="bn-btn" id="bn-email" onclick="setTab('email')"><span class="bn-ic">📧</span>Email</button>
-  <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📣</span>Kampaně</button>
+  <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📈</span>Analytika</button>
   <button class="bn-btn" id="bn-denni" onclick="setTab('denni')"><span class="bn-ic">📅</span>Denní</button>
 </nav>
 
@@ -1970,86 +1970,109 @@ async function renderKampane(){
 
   // ── TAB: KLIENTI ──────────────────────────────────────────────
   else if(kampaneSubTab==='klienti'){
-    // Also include clients who only have contracts (no CRM sale)
-    const allClientEmails=new Set([...clientArr.map(c=>c.email),...Object.keys(contractsByEmail)]);
-    // Build unified client list
+    // Build unified client map (CRM leads + contract-only clients)
     const clientMap={};
     clientArr.forEach(c=>{clientMap[c.email]=c;});
-    // Add any contract-only clients
     Object.entries(contractsByEmail).forEach(([email,contracts])=>{
       if(!clientMap[email]){
         const first=contracts[0];
         clientMap[email]={firma:first.firma||email,jmeno:'',email,leads:[],totalRev:0,svcs:{},months:{}};
       }
     });
-    const allClientArr=Object.values(clientMap).sort((a,b)=>{
-      const aLTV=a.totalRev+(contractsByEmail[a.email]||[]).reduce((s,c)=>s+cTotal(c),0);
-      const bLTV=b.totalRev+(contractsByEmail[b.email]||[]).reduce((s,c)=>s+cTotal(c),0);
-      return bLTV-aLTV;
-    });
-    const totalLTVAll=allClientArr.reduce((s,c)=>{
-      return s+c.totalRev+(contractsByEmail[c.email]||[]).reduce((ss,ct)=>ss+cTotal(ct),0);
-    },0);
-    h+=`<div style="font-size:.72rem;color:var(--text3);margin-bottom:10px">${allClientArr.length} klientů · LTV celkem <span style="color:var(--green);font-weight:600">${fmtE(totalLTVAll)}</span></div>`;
-    allClientArr.forEach((c,ci)=>{
-      const cid='ck'+ci;
+    // Enrich each client with contract stats
+    const enriched=Object.values(clientMap).map(c=>{
       const contracts=contractsByEmail[c.email]||[];
       const contractLTV=contracts.reduce((s,ct)=>s+cTotal(ct),0);
       const ltv=c.totalRev+contractLTV;
       const hasActive=contracts.some(cActive);
-      const activeTag=hasActive?`<span style="background:rgba(34,197,94,.15);color:var(--green);border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:600">● aktivní</span>`:'';
-      const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ')||contracts.map(ct=>SLUZBA[ct.sluzba]||ct.sluzba||'').filter(Boolean).join(', ');
-      h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
-        <div style="padding:11px 12px;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="document.getElementById('${cid}').style.display=document.getElementById('${cid}').style.display==='none'?'block':'none'">
+      const activeConts=contracts.filter(cActive);
+      const currentMRR=activeConts.reduce((s,ct)=>s+(parseFloat(ct.monthly_amount)||0),0);
+      const totalMonths=contracts.reduce((s,ct)=>s+cMonths(ct),0);
+      // Earliest start date across all contracts
+      const startDates=contracts.map(ct=>ct.start_date).filter(Boolean).sort();
+      const firstStart=startDates[0]||null;
+      return{...c,contracts,contractLTV,ltv,hasActive,currentMRR,totalMonths,firstStart};
+    });
+    // Sort: active first, then by totalMonths desc, then by ltv desc
+    enriched.sort((a,b)=>{
+      if(a.hasActive!==b.hasActive)return a.hasActive?-1:1;
+      if(b.totalMonths!==a.totalMonths)return b.totalMonths-a.totalMonths;
+      return b.ltv-a.ltv;
+    });
+    const totalLTVAll=enriched.reduce((s,c)=>s+c.ltv,0);
+    const totalMRR=enriched.reduce((s,c)=>s+c.currentMRR,0);
+    // Header
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:.72rem;color:var(--text3)">${enriched.length} klientů · LTV <span style="color:var(--green);font-weight:600">${fmtE(totalLTVAll)}</span> · MRR <span style="color:var(--accent2);font-weight:600">${fmtE(totalMRR)}</span></div>
+      <button onclick="showContractModal('','',null,true)" style="background:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-size:.75rem;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap">➕ Nový klient</button>
+    </div>`;
+    enriched.forEach((c,ci)=>{
+      const cid='ck'+ci;
+      const statusColor=c.hasActive?'var(--green)':'var(--text3)';
+      const statusDot=c.hasActive?'●':'○';
+      // Retention label
+      const retLabel=c.totalMonths>0?`${c.totalMonths} měs.`:(c.firstStart?'<1 měs.':'—');
+      // First start year/month
+      const sinceLabel=c.firstStart?c.firstStart.slice(0,7).replace('-','/'):'';
+      const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ')||c.contracts.map(ct=>SLUZBA[ct.sluzba]||ct.sluzba||'').filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ');
+      h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid ${statusColor};border-radius:8px;margin-bottom:7px;overflow:hidden">
+        <div style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="document.getElementById('${cid}').style.display=document.getElementById('${cid}').style.display==='none'?'block':'none'">
           <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <span style="font-weight:700;font-size:.88rem">${esc(c.firma)}</span>
-              ${activeTag}
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:${statusColor};font-size:.7rem">${statusDot}</span>
+              <span style="font-weight:700;font-size:.87rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.firma)}</span>
             </div>
-            <div style="font-size:.7rem;color:var(--text3);margin-top:2px">${esc(svcLabels)||'—'} · ${esc(c.jmeno||c.email||'')}</div>
+            <div style="font-size:.68rem;color:var(--text3);margin-top:2px">${sinceLabel?`od ${sinceLabel} · `:''}${esc(svcLabels)||'bez záznamu'}</div>
           </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-weight:700;color:var(--green);font-size:.92rem">${fmtE(ltv)}</div>
-            <div style="font-size:.63rem;color:var(--text3)">LTV celkem</div>
+          <div style="display:flex;gap:12px;align-items:center;flex-shrink:0">
+            ${c.currentMRR>0?`<div style="text-align:right">
+              <div style="font-weight:700;color:var(--accent2);font-size:.88rem">${fmtE(c.currentMRR)}<span style="font-size:.6rem;font-weight:400">/měs.</span></div>
+              <div style="font-size:.6rem;color:var(--text3)">aktuálně</div>
+            </div>`:''}
+            <div style="text-align:right">
+              <div style="font-weight:700;color:var(--text3);font-size:.82rem">${retLabel}</div>
+              <div style="font-size:.6rem;color:var(--text3)">s námi</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:700;color:var(--green);font-size:.88rem">${fmtE(c.ltv)}</div>
+              <div style="font-size:.6rem;color:var(--text3)">LTV</div>
+            </div>
           </div>
-          <span style="color:var(--text3);font-size:.8rem">▼</span>
+          <span style="color:var(--text3);font-size:.75rem;margin-left:2px">▼</span>
         </div>
-        <div id="${cid}" style="display:none;border-top:1px solid var(--border)">
-          <div style="padding:10px 12px">
-            ${c.totalRev>0?`<div style="font-size:.72rem;color:var(--text3);margin-bottom:6px">💰 Jednorázové platby z CRM: <span style="color:var(--green);font-weight:600">${fmtE(c.totalRev)}</span></div>`:''}
-            ${contracts.length?`
-            <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;margin-top:${c.totalRev>0?'8':'0'}px">📅 Spolupráce</div>
-            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
-            ${contracts.map(ct=>{
-              const mo=cMonths(ct);
-              const tot=cTotal(ct);
-              const active=cActive(ct);
-              const startStr=ct.start_date?ct.start_date.slice(0,7).replace('-','/'):'';
-              const endStr=ct.end_date?ct.end_date.slice(0,7).replace('-','/'):'nyní';
-              const svcLabel=SLUZBA[ct.sluzba]||ct.sluzba||'';
-              return`<div style="background:var(--bg3);border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px">
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:.78rem;font-weight:600">${esc(svcLabel)} <span style="font-weight:400;color:var(--text3)">${fmtE(parseFloat(ct.monthly_amount)||0)}/měs.</span></div>
-                  <div style="font-size:.67rem;color:var(--text3)">${startStr} → ${endStr} · ${mo} měs. · ${fmtE(tot)} celkem ${active?'<span style="color:var(--green)">● aktivní</span>':''}</div>
-                  ${ct.poznamka?`<div style="font-size:.65rem;color:var(--text3);margin-top:2px">${esc(ct.poznamka)}</div>`:''}
+        <div id="${cid}" style="display:none;border-top:1px solid var(--border);padding:10px 12px">
+          ${c.totalRev>0?`<div style="font-size:.72rem;color:var(--text3);margin-bottom:8px">💰 Jednorázové z CRM: <span style="color:var(--green);font-weight:600">${fmtE(c.totalRev)}</span></div>`:''}
+          ${c.contracts.length?`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📅 Záznamy spolupráce</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+          ${c.contracts.map(ct=>{
+            const mo=cMonths(ct);const tot=cTotal(ct);const active=cActive(ct);
+            const s=ct.start_date?ct.start_date.slice(0,7).replace('-','/'):'?';
+            const e=ct.end_date?ct.end_date.slice(0,7).replace('-','/'):'nyní';
+            return`<div style="background:var(--bg3);border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px">
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <span style="font-size:.78rem;font-weight:600">${esc(SLUZBA[ct.sluzba]||ct.sluzba||'—')}</span>
+                  <span style="font-size:.78rem;color:var(--accent2);font-weight:600">${fmtE(parseFloat(ct.monthly_amount)||0)}/měs.</span>
+                  ${active?`<span style="background:rgba(34,197,94,.15);color:var(--green);border-radius:3px;padding:1px 5px;font-size:.62rem">aktivní</span>`:`<span style="background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;font-size:.62rem">ukončeno</span>`}
                 </div>
-                <div style="display:flex;gap:5px;flex-shrink:0">
-                  <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}',${ct.id})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:.68rem;color:var(--text3);cursor:pointer">✏️</button>
-                  <button onclick="deleteContract(${ct.id})" style="background:none;border:1px solid rgba(239,68,68,.4);border-radius:4px;padding:3px 7px;font-size:.68rem;color:#ef4444;cursor:pointer">🗑</button>
-                </div>
-              </div>`;
-            }).join('')}
-            </div>`:'<div style="font-size:.75rem;color:var(--text3);margin-bottom:8px">Zatím žádná spolupráce.</div>'}
-            <div style="display:flex;gap:6px">
-              <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}')" style="background:rgba(233,30,140,.12);border:1px solid rgba(233,30,140,.4);border-radius:5px;padding:5px 12px;font-size:.75rem;color:var(--accent);font-weight:600;cursor:pointer">➕ Přidat spolupráci</button>
-              ${c.leads[0]?`<button onclick="openLead(${c.leads[0]._id})" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:.73rem;color:var(--text2);cursor:pointer">🔍 Lead</button>`:''}
-            </div>
+                <div style="font-size:.67rem;color:var(--text3);margin-top:2px">${s} → ${e} · ${mo} měs. · ${fmtE(tot)} celkem</div>
+                ${ct.poznamka?`<div style="font-size:.65rem;color:var(--text3);margin-top:2px">📝 ${esc(ct.poznamka)}</div>`:''}
+              </div>
+              <div style="display:flex;gap:4px;flex-shrink:0">
+                <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}',${ct.id})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:.68rem;color:var(--text3);cursor:pointer">✏️</button>
+                <button onclick="deleteContract(${ct.id})" style="background:none;border:1px solid rgba(239,68,68,.4);border-radius:4px;padding:3px 7px;font-size:.68rem;color:#ef4444;cursor:pointer">🗑</button>
+              </div>
+            </div>`;
+          }).join('')}
+          </div>`:`<div style="font-size:.75rem;color:var(--text3);margin-bottom:10px">Zatím žádný záznam spolupráce.</div>`}
+          <div style="display:flex;gap:6px">
+            <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}')" style="background:rgba(233,30,140,.12);border:1px solid rgba(233,30,140,.4);border-radius:5px;padding:5px 12px;font-size:.75rem;color:var(--accent);font-weight:600;cursor:pointer">➕ Přidat spolupráci</button>
+            ${c.leads[0]?`<button onclick="openLead(${c.leads[0]._id})" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:.73rem;color:var(--text2);cursor:pointer">🔍 Lead</button>`:''}
           </div>
         </div>
       </div>`;
     });
-    // Button to add client not in leads
-    h+=`<button onclick="showContractModal('','',null,true)" style="width:100%;padding:10px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text3);font-size:.78rem;cursor:pointer;margin-top:4px">➕ Přidat klienta ručně</button>`;
+    if(!enriched.length){h+=`<div style="text-align:center;color:var(--text3);padding:40px">Žádní klienti.<br><br><button onclick="showContractModal('','',null,true)" style="background:var(--accent);border:none;border-radius:6px;padding:8px 18px;color:#fff;font-weight:600;cursor:pointer">➕ Přidat prvního klienta</button></div>`;}
   }
 
   // ── TAB: KAMPANĚ ──────────────────────────────────────────────
