@@ -1363,10 +1363,11 @@ function openLead(id){
   let acts='';
   if(tel)acts+=`<a class="btn" href="tel:${tel}">📞 Volat</a>`;
   if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
-  if(l.sales_assigned){
-    acts+=`<button class="btn" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.4);cursor:pointer" onclick="returnFromSalesPanel()">↩️ Vrátit od Kuby</button>`;
+  const isKubaLead=l.sales_assigned===true||l.sales_assigned===1||String(l.sales_assigned)==='true';
+  if(isKubaLead){
+    acts+=`<button class="btn" style="background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;border-radius:5px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer" onclick="returnFromSalesPanel()">↩️ Vrátit od Kuby</button>`;
   }else{
-    acts+=`<button class="btn" style="background:rgba(233,30,140,.15);color:var(--accent2);border:1px solid rgba(233,30,140,.4);cursor:pointer" onclick="transferSingleToSales()">👤 Předat Kubovi</button>`;
+    acts+=`<button class="btn" style="background:rgba(233,30,140,.15);color:var(--accent2);border:1px solid rgba(233,30,140,.5);border-radius:5px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer" onclick="transferSingleToSales()">👤 Předat Kubovi</button>`;
   }
   document.getElementById('pActions').innerHTML=acts;
   document.getElementById('overlay').classList.add('open');
