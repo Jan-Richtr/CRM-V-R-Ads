@@ -1832,6 +1832,25 @@ async function renderKampane(){
   });
   const campArr=Object.values(kreativy).sort((a,b)=>b.leads.length-a.leads.length);
 
+  // Contracts (client_contracts table)
+  let allContracts=[];
+  try{allContracts=await sbGet('/rest/v1/client_contracts?limit=1000&order=start_date.asc')||[];}catch(e){}
+  const contractsByEmail={};
+  allContracts.forEach(c=>{
+    if(!contractsByEmail[c.email])contractsByEmail[c.email]=[];
+    contractsByEmail[c.email].push(c);
+  });
+  const todayDate=new Date();todayDate.setHours(0,0,0,0);
+  function cMonths(c){
+    const s=new Date(c.start_date);
+    const e=c.end_date?new Date(c.end_date):new Date();
+    return Math.max(0,(e.getFullYear()-s.getFullYear())*12+(e.getMonth()-s.getMonth()));
+  }
+  function cTotal(c){return cMonths(c)*(parseFloat(c.monthly_amount)||0);}
+  function cActive(c){return!c.end_date||new Date(c.end_date)>=todayDate;}
+  const activeContracts=allContracts.filter(cActive);
+  const mrr=activeContracts.reduce((s,c)=>s+(parseFloat(c.monthly_amount)||0),0);
+
   // ── Render ───────────────────────────────────────────────────
   const nb=(t,label)=>`<button onclick="kampaneSubTab='${t}';renderKampane()" style="padding:6px 14px;border-radius:6px;border:1px solid ${kampaneSubTab===t?'var(--accent)':'var(--border)'};background:${kampaneSubTab===t?'var(--accent)':'var(--bg3)'};color:${kampaneSubTab===t?'#fff':'var(--text2)'};font-size:.78rem;font-weight:600;cursor:pointer">${label}</button>`;
   const fmt=n=>Number(n).toLocaleString('cs');
@@ -1897,11 +1916,44 @@ async function renderKampane(){
       });
       h+='</div>';
     }
+    // MRR card
+    if(mrr>0||activeContracts.length>0){
+      h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📆 Opakující se příjmy</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px">
+        ${card('MRR (aktivní)',mrr>0?fmtE(mrr):'—','var(--green)')}
+        ${card('ARR (roční)',mrr>0?fmtE(mrr*12):'—','var(--accent2)')}
+        ${card('Aktivní spolupráce',activeContracts.length,'var(--text)')}
+        ${card('Ukončené',allContracts.length-activeContracts.length,'var(--text3)')}
+      </div>`;
+      // Avg retention per service for ended contracts
+      const retBySvc={};
+      allContracts.filter(c=>c.end_date).forEach(c=>{
+        const k=c.sluzba||'jine';
+        if(!retBySvc[k])retBySvc[k]={label:SLUZBA[k]||k,totalMonths:0,count:0};
+        retBySvc[k].totalMonths+=cMonths(c);retBySvc[k].count++;
+      });
+      const retArr=Object.values(retBySvc).filter(r=>r.count>0);
+      if(retArr.length){
+        h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⏱ Průměrná délka spolupráce (ukončené)</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
+        retArr.sort((a,b)=>b.totalMonths/b.count-a.totalMonths/a.count).forEach(r=>{
+          const avg=(r.totalMonths/r.count).toFixed(1);
+          h+=`<div style="padding:9px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.82rem;font-weight:600">${esc(r.label)}</span>
+            <span style="font-size:.82rem;color:var(--accent2)">${avg} měs. <span style="color:var(--text3);font-size:.7rem">(${r.count} klientů)</span></span>
+          </div>`;
+        });
+        h+='</div>';
+      }
+    }
     // Top 5 clients
     if(clientArr.length){
       h+=`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏆 Top klienti</div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">`;
       clientArr.slice(0,5).forEach((c,i)=>{
+        const contracts=contractsByEmail[c.email]||[];
+        const contractLTV=contracts.reduce((s,ct)=>s+cTotal(ct),0);
+        const ltv=c.totalRev+contractLTV;
         const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ');
         h+=`<div style="padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer" onclick="kampaneSubTab='klienti';renderKampane()">
           <span style="font-size:.9rem;font-weight:700;color:var(--text3);width:20px;text-align:center">${i+1}</span>
@@ -1909,7 +1961,7 @@ async function renderKampane(){
             <div style="font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.firma)}</div>
             <div style="font-size:.67rem;color:var(--text3)">${esc(svcLabels)}</div>
           </div>
-          <span style="color:var(--green);font-weight:700;font-size:.82rem;white-space:nowrap">${fmtE(c.totalRev)}</span>
+          <span style="color:var(--green);font-weight:700;font-size:.82rem;white-space:nowrap">${fmtE(ltv)}</span>
         </div>`;
       });
       h+='</div>';
@@ -1918,41 +1970,86 @@ async function renderKampane(){
 
   // ── TAB: KLIENTI ──────────────────────────────────────────────
   else if(kampaneSubTab==='klienti'){
-    if(!clientArr.length){
-      h+=`<div style="text-align:center;color:var(--text3);padding:40px">Žádní klienti s prodejem.</div>`;
-    }else{
-      h+=`<div style="font-size:.72rem;color:var(--text3);margin-bottom:10px">${clientArr.length} klientů · celkem ${fmtE(totalRev)}</div>`;
-      clientArr.forEach((c,ci)=>{
-        const cid='c'+ci;
-        const svcLabels=Object.entries(c.svcs).map(([k,v])=>`${SLUZBA[k]||k} <span style="color:var(--green)">${fmtE(v)}</span>`).join(' · ');
-        const monthEntries=Object.entries(c.months).sort((a,b)=>b[0]-a[0]);
-        h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
-          <div style="padding:11px 12px;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="document.getElementById('${cid}').style.display=document.getElementById('${cid}').style.display==='none'?'block':'none'">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:.88rem">${esc(c.firma)}</div>
-              <div style="font-size:.7rem;color:var(--text3);margin-top:1px">${c.leads.length} lead${c.leads.length===1?'':'ů'} · ${esc(c.jmeno||c.email||'')}</div>
+    // Also include clients who only have contracts (no CRM sale)
+    const allClientEmails=new Set([...clientArr.map(c=>c.email),...Object.keys(contractsByEmail)]);
+    // Build unified client list
+    const clientMap={};
+    clientArr.forEach(c=>{clientMap[c.email]=c;});
+    // Add any contract-only clients
+    Object.entries(contractsByEmail).forEach(([email,contracts])=>{
+      if(!clientMap[email]){
+        const first=contracts[0];
+        clientMap[email]={firma:first.firma||email,jmeno:'',email,leads:[],totalRev:0,svcs:{},months:{}};
+      }
+    });
+    const allClientArr=Object.values(clientMap).sort((a,b)=>{
+      const aLTV=a.totalRev+(contractsByEmail[a.email]||[]).reduce((s,c)=>s+cTotal(c),0);
+      const bLTV=b.totalRev+(contractsByEmail[b.email]||[]).reduce((s,c)=>s+cTotal(c),0);
+      return bLTV-aLTV;
+    });
+    const totalLTVAll=allClientArr.reduce((s,c)=>{
+      return s+c.totalRev+(contractsByEmail[c.email]||[]).reduce((ss,ct)=>ss+cTotal(ct),0);
+    },0);
+    h+=`<div style="font-size:.72rem;color:var(--text3);margin-bottom:10px">${allClientArr.length} klientů · LTV celkem <span style="color:var(--green);font-weight:600">${fmtE(totalLTVAll)}</span></div>`;
+    allClientArr.forEach((c,ci)=>{
+      const cid='ck'+ci;
+      const contracts=contractsByEmail[c.email]||[];
+      const contractLTV=contracts.reduce((s,ct)=>s+cTotal(ct),0);
+      const ltv=c.totalRev+contractLTV;
+      const hasActive=contracts.some(cActive);
+      const activeTag=hasActive?`<span style="background:rgba(34,197,94,.15);color:var(--green);border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:600">● aktivní</span>`:'';
+      const svcLabels=Object.entries(c.svcs).map(([k])=>SLUZBA[k]||k).join(', ')||contracts.map(ct=>SLUZBA[ct.sluzba]||ct.sluzba||'').filter(Boolean).join(', ');
+      h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
+        <div style="padding:11px 12px;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="document.getElementById('${cid}').style.display=document.getElementById('${cid}').style.display==='none'?'block':'none'">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-weight:700;font-size:.88rem">${esc(c.firma)}</span>
+              ${activeTag}
             </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-weight:700;color:var(--green);font-size:.92rem">${fmtE(c.totalRev)}</div>
-              <div style="font-size:.65rem;color:var(--text3)">celkem</div>
+            <div style="font-size:.7rem;color:var(--text3);margin-top:2px">${esc(svcLabels)||'—'} · ${esc(c.jmeno||c.email||'')}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-weight:700;color:var(--green);font-size:.92rem">${fmtE(ltv)}</div>
+            <div style="font-size:.63rem;color:var(--text3)">LTV celkem</div>
+          </div>
+          <span style="color:var(--text3);font-size:.8rem">▼</span>
+        </div>
+        <div id="${cid}" style="display:none;border-top:1px solid var(--border)">
+          <div style="padding:10px 12px">
+            ${c.totalRev>0?`<div style="font-size:.72rem;color:var(--text3);margin-bottom:6px">💰 Jednorázové platby z CRM: <span style="color:var(--green);font-weight:600">${fmtE(c.totalRev)}</span></div>`:''}
+            ${contracts.length?`
+            <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;margin-top:${c.totalRev>0?'8':'0'}px">📅 Spolupráce</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+            ${contracts.map(ct=>{
+              const mo=cMonths(ct);
+              const tot=cTotal(ct);
+              const active=cActive(ct);
+              const startStr=ct.start_date?ct.start_date.slice(0,7).replace('-','/'):'';
+              const endStr=ct.end_date?ct.end_date.slice(0,7).replace('-','/'):'nyní';
+              const svcLabel=SLUZBA[ct.sluzba]||ct.sluzba||'';
+              return`<div style="background:var(--bg3);border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:.78rem;font-weight:600">${esc(svcLabel)} <span style="font-weight:400;color:var(--text3)">${fmtE(parseFloat(ct.monthly_amount)||0)}/měs.</span></div>
+                  <div style="font-size:.67rem;color:var(--text3)">${startStr} → ${endStr} · ${mo} měs. · ${fmtE(tot)} celkem ${active?'<span style="color:var(--green)">● aktivní</span>':''}</div>
+                  ${ct.poznamka?`<div style="font-size:.65rem;color:var(--text3);margin-top:2px">${esc(ct.poznamka)}</div>`:''}
+                </div>
+                <div style="display:flex;gap:5px;flex-shrink:0">
+                  <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}',${ct.id})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:.68rem;color:var(--text3);cursor:pointer">✏️</button>
+                  <button onclick="deleteContract(${ct.id})" style="background:none;border:1px solid rgba(239,68,68,.4);border-radius:4px;padding:3px 7px;font-size:.68rem;color:#ef4444;cursor:pointer">🗑</button>
+                </div>
+              </div>`;
+            }).join('')}
+            </div>`:'<div style="font-size:.75rem;color:var(--text3);margin-bottom:8px">Zatím žádná spolupráce.</div>'}
+            <div style="display:flex;gap:6px">
+              <button onclick="showContractModal('${esc(c.email)}','${esc(c.firma)}')" style="background:rgba(233,30,140,.12);border:1px solid rgba(233,30,140,.4);border-radius:5px;padding:5px 12px;font-size:.75rem;color:var(--accent);font-weight:600;cursor:pointer">➕ Přidat spolupráci</button>
+              ${c.leads[0]?`<button onclick="openLead(${c.leads[0]._id})" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:.73rem;color:var(--text2);cursor:pointer">🔍 Lead</button>`:''}
             </div>
-            <span style="color:var(--text3);font-size:.8rem">▼</span>
           </div>
-          <div id="${cid}" style="display:none;padding:0 12px 12px">
-            <div style="font-size:.72rem;color:var(--text3);margin-bottom:6px;padding-top:4px;border-top:1px solid var(--border)">${svcLabels}</div>
-            ${monthEntries.length>1?`<div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;margin-top:8px">📅 Platby po měsících</div>
-            <div style="display:flex;flex-direction:column;gap:3px">
-            ${monthEntries.map(([mk,rev])=>{
-              const yr=Math.floor(mk/100);const mo=mk%100;
-              const label=`${mo}/${yr}`;
-              return`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:4px 8px;background:var(--bg3);border-radius:4px"><span>${label}</span><span style="color:var(--green);font-weight:600">${fmtE(rev)}</span></div>`;
-            }).join('')}</div>`:
-            `<div style="font-size:.78rem;color:var(--text3)">Jedna platba ${fmtE(monthEntries[0]?.[1]||0)}</div>`}
-            <button onclick="openLead(${c.leads[0]?._id})" style="margin-top:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 10px;font-size:.73rem;cursor:pointer">🔍 Otevřít lead</button>
-          </div>
-        </div>`;
-      });
-    }
+        </div>
+      </div>`;
+    });
+    // Button to add client not in leads
+    h+=`<button onclick="showContractModal('','',null,true)" style="width:100%;padding:10px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text3);font-size:.78rem;cursor:pointer;margin-top:4px">➕ Přidat klienta ručně</button>`;
   }
 
   // ── TAB: KAMPANĚ ──────────────────────────────────────────────
@@ -1997,6 +2094,79 @@ async function renderKampane(){
 
   h+='</div>';
   kv.innerHTML=h;
+}
+
+// ── Contract modal ──────────────────────────────────────────────
+async function showContractModal(email,firma,contractId,manualClient){
+  let existing={};
+  if(contractId){
+    try{const r=await sbGet('/rest/v1/client_contracts?id=eq.'+contractId+'&limit=1');existing=r?.[0]||{};}catch(e){}
+  }
+  const svcOptions=Object.entries(SLUZBA).filter(([k])=>k).map(([k,v])=>`<option value="${k}"${(existing.sluzba||'')===k?' selected':''}>${v}</option>`).join('');
+  const ov=document.createElement('div');
+  ov.id='contract-modal-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:400px;padding:20px">
+    <div style="font-size:1rem;font-weight:700;margin-bottom:16px">${contractId?'✏️ Upravit':'➕ Přidat'} spolupráci</div>
+    ${manualClient?`<label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Email klienta</label>
+    <input id="ct-email" type="email" placeholder="klient@firma.cz" value="${esc(email)}"
+      style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:10px">
+    <label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Firma / jméno</label>
+    <input id="ct-firma" type="text" placeholder="Název firmy" value="${esc(firma)}"
+      style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:10px">`:`<div style="font-size:.82rem;font-weight:600;margin-bottom:12px;color:var(--text2)">${esc(firma||email)}</div>
+    <input type="hidden" id="ct-email" value="${esc(email)}">
+    <input type="hidden" id="ct-firma" value="${esc(firma)}">`}
+    <label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Služba</label>
+    <select id="ct-sluzba" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:10px">${svcOptions}</select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Datum od</label>
+      <input id="ct-start" type="date" value="${existing.start_date||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box"></div>
+      <div><label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Datum do <span style="color:var(--text3)">(prázdné = stále aktivní)</span></label>
+      <input id="ct-end" type="date" value="${existing.end_date||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box"></div>
+    </div>
+    <label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Měsíční platba (€)</label>
+    <input id="ct-amount" type="number" step="0.01" min="0" placeholder="500" value="${existing.monthly_amount||''}"
+      style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:10px">
+    <label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:3px">Poznámka</label>
+    <input id="ct-note" type="text" placeholder="Volitelná poznámka…" value="${esc(existing.poznamka||'')}"
+      style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:16px">
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('contract-modal-overlay').remove()" style="flex:1;padding:9px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-size:.82rem">Zrušit</button>
+      <button onclick="saveContractFromModal(${contractId||'null'})" style="flex:2;padding:9px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-size:.82rem;font-weight:600">💾 Uložit</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+
+async function saveContractFromModal(contractId){
+  const email=document.getElementById('ct-email')?.value.trim();
+  const firma=document.getElementById('ct-firma')?.value.trim();
+  const sluzba=document.getElementById('ct-sluzba')?.value||'';
+  const start=document.getElementById('ct-start')?.value;
+  const end=document.getElementById('ct-end')?.value||null;
+  const amount=parseFloat(document.getElementById('ct-amount')?.value)||0;
+  const note=document.getElementById('ct-note')?.value.trim()||null;
+  if(!email){alert('Zadej email klienta.');return;}
+  if(!start){alert('Zadej datum začátku.');return;}
+  if(!amount){alert('Zadej měsíční částku.');return;}
+  const payload={email,firma:firma||null,sluzba:sluzba||null,start_date:start,end_date:end,monthly_amount:amount,poznamka:note,updated_at:new Date().toISOString()};
+  try{
+    if(contractId){
+      await fetch(`${SB}/rest/v1/client_contracts?id=eq.${contractId}`,{method:'PATCH',headers:H,body:JSON.stringify(payload)});
+    }else{
+      await fetch(`${SB}/rest/v1/client_contracts`,{method:'POST',headers:H,body:JSON.stringify(payload)});
+    }
+    document.getElementById('contract-modal-overlay')?.remove();
+    renderKampane();
+  }catch(e){alert('Chyba ukládání: '+e.message);}
+}
+
+async function deleteContract(id){
+  if(!confirm('Opravdu smazat tuto spolupráci?'))return;
+  try{
+    await fetch(`${SB}/rest/v1/client_contracts?id=eq.${id}`,{method:'DELETE',headers:H});
+    renderKampane();
+  }catch(e){alert('Chyba mazání: '+e.message);}
 }
 
 function card(label,val,color){
