@@ -1836,9 +1836,20 @@ async function renderKampane(){
   const nb=(t,label)=>`<button onclick="kampaneSubTab='${t}';renderKampane()" style="padding:6px 14px;border-radius:6px;border:1px solid ${kampaneSubTab===t?'var(--accent)':'var(--border)'};background:${kampaneSubTab===t?'var(--accent)':'var(--bg3)'};color:${kampaneSubTab===t?'#fff':'var(--text2)'};font-size:.78rem;font-weight:600;cursor:pointer">${label}</button>`;
   const fmt=n=>Number(n).toLocaleString('cs');
   const fmtE=n=>fmt(n)+' €';
+  const fbCfg=getFbConfig();
+  const fbConnected=!!(fbCfg.accountId&&fbCfg.token);
 
-  let h=`<div style="position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 10px;border-bottom:1px solid var(--border);display:flex;gap:5px">
-    ${nb('prehled','📊 Přehled')}${nb('klienti','👥 Klienti')}${nb('kampane','📣 Kampaně')}
+  let h=`<div style="position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 10px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      ${nb('prehled','📊 Přehled')}${nb('klienti','👥 Klienti')}${nb('kampane','📣 Kampaně')}
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        ${fbConnected
+          ?`<span style="font-size:.65rem;color:var(--green)">● FB připojeno</span>`
+          :`<span style="font-size:.65rem;color:var(--text3)">● FB nepropojeno</span>`}
+        <button id="fb-sync-btn" onclick="syncFbAds()" style="padding:5px 11px;border-radius:6px;border:1px solid rgba(24,119,242,.6);background:rgba(24,119,242,.15);color:#4a9eff;font-size:.73rem;font-weight:600;cursor:pointer">🔄 Sync FB</button>
+        <button onclick="showFbSetup()" style="padding:5px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);font-size:.73rem;cursor:pointer" title="Nastavení Facebook API">⚙️</button>
+      </div>
+    </div>
   </div><div style="padding:10px 10px 80px">`;
 
   // ── TAB: PŘEHLED ──────────────────────────────────────────────
@@ -2013,6 +2024,100 @@ async function saveFbSpend(ad_name,spend){
     if(!d||!d.length){await fetch(`${SB}/rest/v1/fb_spend`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({ad_name,spend,month,updated_at:new Date().toISOString()})});}
     renderKampane();
   }catch(e){alert('Chyba uložení: '+e.message);}
+}
+
+// ── Facebook Ads Sync ──────────────────────────────────────────
+function getFbConfig(){return JSON.parse(localStorage.getItem('fb_config')||'{}');}
+function saveFbConfig(cfg){localStorage.setItem('fb_config',JSON.stringify(cfg));}
+
+function showFbSetup(){
+  const cfg=getFbConfig();
+  const ov=document.createElement('div');
+  ov.id='fb-setup-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:420px;padding:20px">
+    <div style="font-size:1rem;font-weight:700;margin-bottom:4px">🔗 Propojit Facebook Ads</div>
+    <div style="font-size:.72rem;color:var(--text3);margin-bottom:16px">Zadej přístupové údaje k Facebook Marketing API</div>
+    <label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:4px">Ad Account ID <span style="color:var(--text3)">(číslo bez "act_", najdeš v Ads Manageru)</span></label>
+    <input id="fb-account-id" type="text" placeholder="123456789012345" value="${esc(cfg.accountId||'')}"
+      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:12px">
+    <label style="font-size:.72rem;color:var(--text3);display:block;margin-bottom:4px">Access Token <span style="color:var(--text3)">(dlouhodobý token s <code>ads_read</code>)</span></label>
+    <input id="fb-token" type="password" placeholder="EAA..." value="${esc(cfg.token||'')}"
+      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:.85rem;box-sizing:border-box;margin-bottom:4px">
+    <div style="font-size:.67rem;color:var(--text3);margin-bottom:16px">
+      Token získáš na <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent)">Graph API Exploreru</a> — zvol svou App, přidej oprávnění <code>ads_read</code> a <code>ads_management</code>, vygeneruj token a prodluž ho na 60 dní přes <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank" style="color:var(--accent)">Access Token Tool</a>.
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('fb-setup-overlay').remove()" style="flex:1;padding:9px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-size:.82rem">Zrušit</button>
+      <button onclick="saveFbConfigFromModal()" style="flex:2;padding:9px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-size:.82rem;font-weight:600">💾 Uložit & Synchronizovat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>document.getElementById('fb-account-id')?.focus(),100);
+}
+
+function saveFbConfigFromModal(){
+  const accountId=document.getElementById('fb-account-id')?.value.trim().replace(/^act_/,'');
+  const token=document.getElementById('fb-token')?.value.trim();
+  if(!accountId||!token){alert('Vyplň obě pole.');return;}
+  saveFbConfig({accountId,token});
+  document.getElementById('fb-setup-overlay')?.remove();
+  syncFbAds();
+}
+
+async function syncFbAds(){
+  const cfg=getFbConfig();
+  if(!cfg.accountId||!cfg.token){showFbSetup();return;}
+  const btn=document.getElementById('fb-sync-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Načítám…';}
+  const curMonth=new Date().getMonth()+1;
+  const curYear=new Date().getFullYear();
+  const firstDay=`${curYear}-${String(curMonth).padStart(2,'0')}-01`;
+  const today=new Date().toISOString().split('T')[0];
+  try{
+    // Fetch all pages from FB Insights API at ad level
+    let allRows=[];
+    let url=`https://graph.facebook.com/v19.0/act_${cfg.accountId}/insights?`+
+      `fields=campaign_name,adset_name,ad_name,spend&`+
+      `level=ad&`+
+      `time_range=${encodeURIComponent(JSON.stringify({since:firstDay,until:today}))}&`+
+      `limit=500&`+
+      `access_token=${encodeURIComponent(cfg.token)}`;
+    while(url){
+      const r=await fetch(url);
+      const d=await r.json();
+      if(d.error){throw new Error(d.error.message+'  (code '+d.error.code+')');}
+      allRows=allRows.concat(d.data||[]);
+      url=(d.paging&&d.paging.next)||null;
+    }
+    if(!allRows.length){alert('Facebook vrátil 0 výsledků pro '+firstDay+' – '+today+'.\nZkontroluj Ad Account ID a token.');if(btn){btn.disabled=false;btn.textContent='🔄 Sync FB';}return;}
+    // Aggregate by ad_name (same ad can appear in multiple date rows if paginated by day)
+    const agg={};
+    allRows.forEach(row=>{
+      const k=(row.ad_name||row.adset_name||row.campaign_name||'').trim();
+      if(!k)return;
+      if(!agg[k])agg[k]={ad_name:k,campaign_name:row.campaign_name||'',spend:0};
+      agg[k].spend+=parseFloat(row.spend)||0;
+    });
+    const rows=Object.values(agg).filter(r=>r.spend>0);
+    // Delete existing month records, then bulk insert
+    await fetch(`${SB}/rest/v1/fb_spend?month=eq.${curMonth}`,{method:'DELETE',headers:H});
+    if(rows.length){
+      const payload=rows.map(r=>({ad_name:r.ad_name,campaign_name:r.campaign_name,spend:parseFloat(r.spend.toFixed(2)),month:curMonth,updated_at:new Date().toISOString()}));
+      await fetch(`${SB}/rest/v1/fb_spend`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(payload)});
+    }
+    // Update local fbSpend map
+    Object.keys(fbSpend).forEach(k=>{delete fbSpend[k];});
+    rows.forEach(r=>{fbSpend[r.ad_name]=r.spend;});
+    const totalSp=rows.reduce((s,r)=>s+r.spend,0);
+    if(btn){btn.disabled=false;btn.textContent='✅ '+rows.length+' kreativ | '+totalSp.toFixed(0)+' €';}
+    setTimeout(()=>{if(btn){btn.textContent='🔄 Sync FB';}},4000);
+    renderKampane();
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='❌ Chyba';}
+    setTimeout(()=>{if(btn)btn.textContent='🔄 Sync FB';},3000);
+    alert('Facebook API chyba:\n'+e.message);
+  }
 }
 
 // ── Obchodník view ─────────────────────────────────────────────
