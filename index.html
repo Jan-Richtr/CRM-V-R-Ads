@@ -240,7 +240,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <div class="logo">V&R Ads</div>
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
-    <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
     <button class="tab" onclick="setTab('kampane')">📈 Analytika</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
     <button class="tab" onclick="setTab('reklamy')">📣 Reklamy</button>
@@ -536,7 +535,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="bn-btn active" id="bn-table" onclick="setTab('table')"><span class="bn-ic">📋</span>Tabulka</button>
-  <button class="bn-btn" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span>Statistiky</button>
   <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📈</span>Analytika</button>
   <button class="bn-btn" id="bn-denni" onclick="setTab('denni')"><span class="bn-ic">📅</span>Denní</button>
   <button class="bn-btn" id="bn-reklamy" onclick="setTab('reklamy')"><span class="bn-ic">📣</span>Reklamy</button>
@@ -922,9 +920,23 @@ function showLoading(on){
 function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){el.textContent=msg;el.style.color=color;}}
 
 // ── Filters ───────────────────────────────────────────────────
+// Follow-up filter ('' | 'dnes' | 'prosle')
+let filterFu='';
+const FU_DONE=['konec','nerelevantni','nezvedan3','uzavreno','uzavreno_emailem'];
+function localToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fuDay(l){return l.followup?String(l.followup).slice(0,10):'';}
+function isFuOpen(l){return !!l.followup&&!FU_DONE.includes(l.stav);}
+function setFilterFu(f){
+  filterFu=filterFu===f?'':f;
+  if(filterFu)filterPoz='';
+  if(currentTab!=='table')setTab('table');else render();
+}
 function getFiltered(){
+  const today=localToday();
   return leads.filter(l=>{
     const poz=l.poz||getPoz(l.stav);
+    if(filterFu==='dnes'&&!(isFuOpen(l)&&fuDay(l)===today))return false;
+    if(filterFu==='prosle'&&!(isFuOpen(l)&&fuDay(l)<today))return false;
     if(filterPoz&&poz!==filterPoz)return false;
     if(filterFaze&&l.stav!==filterFaze)return false;
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
@@ -945,14 +957,15 @@ function applyFilters(){
   filterProdej=(mob?document.getElementById('prodejFilterM'):document.getElementById('prodejFilter')).value;
   render();
 }
-function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
+function setFilterPoz(p){filterPoz=filterPoz===p?'':p;filterFu='';if(currentTab!=='table')setTab('table');else render();}
 
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   if(t==='klienti'){t='kampane';kampaneSubTab='klienti';} // Klienti now live in Analytika
   if(t==='email')t='table'; // Email tab hidden for now (code kept)
+  if(t==='stats'){t='kampane';kampaneSubTab='statistiky';} // Statistiky now live in Analytika
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','kampane','denni','reklamy','sales'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','kampane','denni','reklamy','sales'][i]===t));
   ['table','stats','email','kampane','denni','klienti','reklamy'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   document.getElementById('view-klienti').style.display=t==='klienti'?'block':'none';
   document.getElementById('view-reklamy').style.display=t==='reklamy'?'block':'none';
@@ -1166,17 +1179,19 @@ function renderStatsBar(){
   const uz=leads.filter(l=>(l.poz||getPoz(l.stav))==='uzavreno').length;
   const ko=leads.filter(l=>(l.poz||getPoz(l.stav))==='konec').length;
   const no=leads.filter(l=>!(l.poz||getPoz(l.stav))).length;
-  const today=new Date().toISOString().slice(0,10);
-  const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3'&&l.stav!=='uzavreno'&&l.stav!=='uzavreno_emailem').length;
-  const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
+  const today=localToday();
+  const fuToday=leads.filter(l=>isFuOpen(l)&&fuDay(l)===today).length;
+  const fuLate=leads.filter(l=>isFuOpen(l)&&fuDay(l)<today).length;
+  const mk=(label,count,f,color)=>`<div class="stt${!filterFu&&filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
-    <div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
+    <div class="stt${!filterPoz&&!filterFu?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
     ${mk('Otevřeno',ot,'otevreno','#eab308')}
     ${mk('Uzavřeno',uz,'uzavreno','#22c55e')}
     ${mk('Konec',ko,'konec','#ef4444')}
     ${no>0?mk('Bez statusu',no,'','#64748b'):''}
     <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
-    <div class="stt" onclick="setTab('table')" title="Leady s prošlým follow-up"><span class="stt-n" style="color:${fuRed>0?'#ef4444':'var(--text3)'}">${fuRed}</span><span class="stt-l">⏰ Follow-up</span></div>
+    <div class="stt${filterFu==='dnes'?' on':''}" onclick="setFilterFu('dnes')" title="Leady, kterým máš dnes zavolat"><span class="stt-n" style="color:${fuToday>0?'#f97316':'var(--text3)'}">${fuToday}</span><span class="stt-l">⏰ Follow-up dnes</span></div>
+    ${fuLate>0?`<div class="stt${filterFu==='prosle'?' on':''}" onclick="setFilterFu('prosle')" title="Follow-up měl být už dřív"><span class="stt-n" style="color:#ef4444">${fuLate}</span><span class="stt-l">⚠️ Prošlé</span></div>`:''}
   `;
 }
 
@@ -1296,7 +1311,8 @@ function getLeadMonth(l){return l.mesic||null;}
 function getMonths(){const m=new Set();leads.forEach(l=>{const x=getLeadMonth(l);if(x)m.add(x);});return[...m].sort((a,b)=>a-b);}
 
 function renderStatsView(){
-  const sv=document.getElementById('view-stats');
+  const sv=document.getElementById('anStatsHost')||document.getElementById('view-stats');
+  if(!sv)return;
   const months=getMonths();
   const today=new Date().toISOString().slice(0,10);
   const allProd=leads.filter(l=>l.prodej_castka&&parseFloat(l.prodej_castka)>0);
@@ -1975,6 +1991,15 @@ function anKlSearch(q){anKlQ=String(q||'').toLowerCase().trim();if(anKlQ)anKlF='
 async function renderKampane(){
   const kv=document.getElementById('view-kampane');
   if(!kv)return;
+  // Statistiky sub-tab: no Supabase fetch needed, render instantly from local leads
+  if(kampaneSubTab==='statistiky'){
+    const nb0=(t,label)=>`<button onclick="kampaneSubTab='${t}';renderKampane()" style="padding:6px 14px;border-radius:6px;border:1px solid ${kampaneSubTab===t?'var(--accent)':'var(--border)'};background:${kampaneSubTab===t?'var(--accent)':'var(--bg3)'};color:${kampaneSubTab===t?'#fff':'var(--text2)'};font-size:.78rem;font-weight:600;cursor:pointer">${label}</button>`;
+    kv.innerHTML=`<div style="position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 10px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">${nb0('prehled','📊 Přehled')}${nb0('statistiky','📈 Statistiky')}${nb0('klienti','👥 Klienti')}${nb0('kampane','📣 Kampaně')}</div>
+    </div><div id="anStatsHost" style="padding:16px 12px 80px"></div>`;
+    renderStatsView();
+    return;
+  }
   kv.innerHTML=`<div style="padding:40px;text-align:center;color:var(--text3)">⏳ Načítám analytiku…</div>`;
   // Fetch all fb_spend (all time)
   let allSpend=[];
@@ -2087,7 +2112,7 @@ async function renderKampane(){
 
   let h=`<div style="position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 10px;border-bottom:1px solid var(--border)">
     <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      ${nb('prehled','📊 Přehled')}${nb('klienti','👥 Klienti')}${nb('kampane','📣 Kampaně')}
+      ${nb('prehled','📊 Přehled')}${nb('statistiky','📈 Statistiky')}${nb('klienti','👥 Klienti')}${nb('kampane','📣 Kampaně')}
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
         ${fbConnected
           ?`<span style="font-size:.65rem;color:var(--green)">● FB připojeno</span>`
