@@ -241,7 +241,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   <div class="tabs d-desktop">
     <button class="tab active" onclick="setTab('table')">📋 Tabulka</button>
     <button class="tab" onclick="setTab('stats')">📊 Statistiky</button>
-    <button class="tab" onclick="setTab('email')">📧 Email</button>
     <button class="tab" onclick="setTab('kampane')">📈 Analytika</button>
     <button class="tab" onclick="setTab('denni')">📅 Denní</button>
     <button class="tab" onclick="setTab('reklamy')">📣 Reklamy</button>
@@ -538,7 +537,6 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
 <nav class="bottom-nav">
   <button class="bn-btn active" id="bn-table" onclick="setTab('table')"><span class="bn-ic">📋</span>Tabulka</button>
   <button class="bn-btn" id="bn-stats" onclick="setTab('stats')"><span class="bn-ic">📊</span>Statistiky</button>
-  <button class="bn-btn" id="bn-email" onclick="setTab('email')"><span class="bn-ic">📧</span>Email</button>
   <button class="bn-btn" id="bn-kampane" onclick="setTab('kampane')"><span class="bn-ic">📈</span>Analytika</button>
   <button class="bn-btn" id="bn-denni" onclick="setTab('denni')"><span class="bn-ic">📅</span>Denní</button>
   <button class="bn-btn" id="bn-reklamy" onclick="setTab('reklamy')"><span class="bn-ic">📣</span>Reklamy</button>
@@ -952,8 +950,9 @@ function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
   if(t==='klienti'){t='kampane';kampaneSubTab='klienti';} // Klienti now live in Analytika
+  if(t==='email')t='table'; // Email tab hidden for now (code kept)
   currentTab=t;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','email','kampane','denni','reklamy','sales'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['table','stats','kampane','denni','reklamy','sales'][i]===t));
   ['table','stats','email','kampane','denni','klienti','reklamy'].forEach(id=>{const el=document.getElementById('bn-'+id);if(el)el.classList.toggle('active',id===t);});
   document.getElementById('view-klienti').style.display=t==='klienti'?'block':'none';
   document.getElementById('view-reklamy').style.display=t==='reklamy'?'block':'none';
