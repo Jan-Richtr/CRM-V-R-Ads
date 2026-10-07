@@ -250,10 +250,10 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <input type="text" id="searchInput" placeholder="Hledat…" oninput="applyFilters()">
   </div>
   <span id="syncLbl" style="font-size:.68rem;color:#64748b;flex-shrink:0;white-space:nowrap;display:none" class="d-desktop"></span>
-  <button class="icon-btn" onclick="init()" title="Obnovit">🔄</button>
+  <button class="icon-btn sync-leads-btn" onclick="syncGSheets()" title="Synchronizovat leady (stáhne nové z obou Google tabulek, bez duplikátů)">🔄</button>
   <button class="icon-btn" onclick="doLogout()" title="Odhlásit" style="font-size:.7rem;color:var(--text3);border-color:transparent;background:none">🚪</button>
   <button class="icon-btn d-desktop" onclick="openImport()" title="Import XLS" style="background:var(--accent);border-color:var(--accent);color:#fff">📥</button>
-  <button class="icon-btn d-desktop" id="gsheetBtn" onclick="syncGSheets()" title="Sync Google Sheets" style="background:#16a34a;border-color:#16a34a;color:#fff">📊</button>
+  <button class="icon-btn d-desktop sync-leads-btn" id="gsheetBtn" onclick="syncGSheets()" title="Sync Google Sheets" style="background:#16a34a;border-color:#16a34a;color:#fff">📊</button>
   <button class="icon-btn" onclick="openEmailLead()" title="Přidat lead z emailu" style="background:var(--bg3);border-color:var(--border);color:var(--text2)">📧</button>
   <div id="selBar" style="display:none;align-items:center;gap:7px;flex-shrink:0">
     <span id="selCount" style="font-size:.78rem;color:var(--text2)"></span>
@@ -2831,22 +2831,41 @@ const GSHEET_URLS=[
   'https://docs.google.com/spreadsheets/d/19_1AspUpd-FoGGtEq52KhE5VAEYuaBBs6sZpwy2Wb1k/export?format=csv&gid=0'
 ];
 
+// RFC-4180 CSV parser — handles quoted fields with commas AND line breaks inside
 function parseCSV(text){
-  const rows=[];
-  const lines=text.split('\n');
-  for(const line of lines){
-    if(!line.trim())continue;
-    const cols=[];let cur='';let inQ=false;
-    for(let i=0;i<line.length;i++){
-      const c=line[i];
-      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
-      else if(c===','&&!inQ){cols.push(cur);cur='';}
-      else cur+=c;
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){if(text[i+1]==='"'){f+='"';i++;}else q=false;}
+      else f+=c;
+    }else{
+      if(c==='"')q=true;
+      else if(c===','){row.push(f);f='';}
+      else if(c==='\n'||c==='\r'){
+        if(c==='\r'&&text[i+1]==='\n')i++;
+        row.push(f);f='';
+        if(row.some(x=>String(x).trim()))rows.push(row);
+        row=[];
+      }else f+=c;
     }
-    cols.push(cur);
-    rows.push(cols);
   }
+  if(f!==''||row.length){row.push(f);if(row.some(x=>String(x).trim()))rows.push(row);}
   return rows;
+}
+// Phone normalizer: 9-digit SK (9xx) → +421, CZ (6xx/7xx) → +420
+function normPhone(t){
+  let p=String(t||'').trim();
+  if(p.toLowerCase().startsWith('p:'))p=p.slice(2).trim();
+  p=p.replace(/[\s\-()\/]/g,'');
+  if(!p)return'';
+  if(p.startsWith('00'))p='+'+p.slice(2);
+  if(p.startsWith('+'))return p;
+  if(/^0\d{9}$/.test(p))p=p.slice(1);           // 0905… → 905…
+  if(/^9\d{8}$/.test(p))return'+421'+p;
+  if(/^[67]\d{8}$/.test(p))return'+420'+p;
+  if(/^42[01]\d{9}$/.test(p))return'+'+p;
+  return p;
 }
 
 function mapSluzbaFromZajem(z){
@@ -2864,7 +2883,7 @@ function parseSheetRows(rows,existingEmails,sheetIndex){
   const ci=(names)=>{for(const n of names){const i=hdr.indexOf(n);if(i>=0)return i;}return-1;};
 
   // Detekce formátu: tabulka 2 = Meta Leads export (má sloupec full_name nebo created_time)
-  const isMetaFmt=sheetIndex===1||hdr.includes('full_name')||hdr.includes('created_time');
+  const isMetaFmt=hdr.includes('full_name')||hdr.includes('created_time')||hdr.includes('phone_number');
 
   let iDatum,iJmeno,iEmail,iTel,iWeb,iZajem,iProb,iLokace,iPlatform,iCamp,iAdName;
   if(isMetaFmt){
@@ -2912,9 +2931,7 @@ function parseSheetRows(rows,existingEmails,sheetIndex){
     const dObj=new Date(datum);
     const mesic=dObj.getFullYear()*100+(dObj.getMonth()+1);
 
-    let telefon=(iTel>=0?r[iTel]||'':'').trim();
-    if(telefon.startsWith('p:'))telefon=telefon.slice(2).trim();
-    if(telefon&&!telefon.startsWith('+'))telefon='+'+telefon;
+    const telefon=normPhone(iTel>=0?r[iTel]:'');
 
     const web=(iWeb>=0?r[iWeb]||'':'').trim();
     const zajem=iZajem>=0?(r[iZajem]||''):'';
@@ -2941,6 +2958,8 @@ function parseSheetRows(rows,existingEmails,sheetIndex){
       stav:'',
     };
     if(lokace)lead.lokace=lokace;
+    const iAdset=ci(['adset_name']);
+    if(iAdset>=0&&(r[iAdset]||'').trim())lead.adset_name=(r[iAdset]||'').trim();
     newLeads.push(lead);
   }
   return{newLeads,skipped};
@@ -2968,18 +2987,26 @@ async function fetchSheetCSV(url){
   }finally{clearTimeout(t);}
 }
 
+let gsSyncRunning=false;
 async function syncGSheets(){
-  const btn=document.getElementById('gsheetBtn');
-  if(!btn||btn.disabled)return;
-  btn.disabled=true;btn.textContent='⏳';
+  if(gsSyncRunning)return;
+  gsSyncRunning=true;
+  const btns=[...document.querySelectorAll('.sync-leads-btn')];
+  btns.forEach(b=>{b.disabled=true;b.dataset.lbl=b.textContent;b.textContent='⏳';});
   try{
-    // Fetch all sheets (s CORS proxy fallback)
+    // Fetch all sheets (s CORS proxy fallback); a failing sheet doesn't block the others
     showSync('⏳ Načítám tabulky…','#d97706');
+    const errs=[];
     const texts=await Promise.all(GSHEET_URLS.map((u,i)=>
-      fetchSheetCSV(u).catch(e=>{throw new Error(`Tabulka ${i+1}: ${e.message}`);})
+      fetchSheetCSV(u).catch(e=>{errs.push(`Tabulka ${i+1}: ${e.message}`);return'';})
     ));
 
-    const existingEmails=new Set(leads.map(l=>(l.email||'').toLowerCase()).filter(Boolean));
+    // Duplicates: check against the DB (not just memory) — my leads AND Kuba's leads
+    const [dbL,dbS]=await Promise.all([
+      sbGet('/rest/v1/leads?select=email&limit=20000'),
+      sbGet('/rest/v1/sales_leads?select=email&limit=20000').catch(()=>[])
+    ]);
+    const existingEmails=new Set([...leads,...(dbL||[]),...(dbS||[])].map(l=>(l.email||'').toLowerCase().trim()).filter(Boolean));
     let allNew=[];let allSkipped=[];
 
     for(let si=0;si<texts.length;si++){
@@ -2993,24 +3020,28 @@ async function syncGSheets(){
     }
 
     if(!allNew.length){
-      showSync(`✅ Vše aktuální — 0 nových (${allSkipped.length} duplikátů přeskočeno)`,'#16a34a');
-      btn.disabled=false;btn.textContent='📊';
+      await init();
+      showSync(errs.length?'⚠️ '+errs.join(' · '):'✅ Vše aktuální — žádné nové leady','#16a34a');
       return;
     }
 
-    // Import in batches of 100
-    let done=0;
+    // Import in batches of 100; if a batch fails, retry one by one so one bad row doesn't block the rest
+    let done=0;const failed=[];
     for(let i=0;i<allNew.length;i+=100){
-      await sbPost('/rest/v1/leads',allNew.slice(i,i+100));
-      done+=Math.min(100,allNew.length-i);
+      const batch=allNew.slice(i,i+100);
+      try{await sbPost('/rest/v1/leads',batch);done+=batch.length;}
+      catch(e){
+        for(const one of batch){try{await sbPost('/rest/v1/leads',[one]);done++;}catch(e2){failed.push(one.email+': '+e2.message.slice(0,80));}}
+      }
     }
-
-    showSync(`✅ Importováno ${done} nových leadů${allSkipped.length?` · ${allSkipped.length} duplikátů přeskočeno`:''}`, '#16a34a');
     await init();
+    showSync(`✅ Staženo ${done} nových leadů`+(failed.length?` · ⚠️ ${failed.length} se nepodařilo uložit`:'')+(errs.length?' · ⚠️ '+errs.join(' · '):''), failed.length||errs.length?'#d97706':'#16a34a');
+    if(failed.length)console.warn('Sync – neuložené leady:',failed);
   }catch(e){
     showSync('❌ '+e.message,'#ef4444');
   }finally{
-    btn.disabled=false;btn.textContent='📊';
+    gsSyncRunning=false;
+    btns.forEach(b=>{b.disabled=false;b.textContent=b.dataset.lbl||'🔄';});
   }
 }
 
