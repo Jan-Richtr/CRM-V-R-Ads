@@ -640,7 +640,7 @@ function toggleSelAll(checked){
   updateSelBar();
   renderTable();
 }
-function clearSel(){selected.clear();updateSelBar();renderTable();}
+function clearSel(){selected.clear();updateSelBar();render();}
 function updateSelBar(){
   const n=selected.size;
   const bar=document.getElementById('selBar');
@@ -715,7 +715,7 @@ async function transferToSales(){
       });
     }
     leads.forEach(l=>{if(selected.has(l.email)){l.sales_assigned=true;l.sales_assigned_at=new Date().toISOString();}});
-    selected.clear();updateSelBar();renderTable();
+    selected.clear();updateSelBar();render();
     showSync('✅ Předáno Kubovi ('+toTransfer.length+')','#16a34a');
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
@@ -753,7 +753,7 @@ async function transferSingleToSales(){
     const idx=leads.findIndex(x=>x.email===l.email);
     if(idx>=0){leads[idx].sales_assigned=true;leads[idx].sales_assigned_at=new Date().toISOString();}
     currentLead.sales_assigned=true;
-    closePanel();renderTable();
+    closePanel();render();
     showSync('✅ Předáno Kubovi','#16a34a');
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
@@ -780,12 +780,15 @@ async function returnFromSalesPanel(){
     // 3. Aktualizovat lokální stav
     const idx=leads.findIndex(x=>x.email===l.email);
     if(idx>=0){leads[idx].sales_assigned=false;leads[idx].sales_assigned_at=null;}
-    closePanel();renderTable();
+    closePanel();render();
     showSync('✅ Vráceno od Kuby','#16a34a');
   }catch(e){showSync('⚠️ '+e.message,'#dc2626');}
 }
 
 // ── Phone fix ─────────────────────────────────────────────────
+// Badge "předáno Kubovi" – always shown BEFORE the lead name
+function isKuba(l){return l&&(l.sales_assigned===true||l.sales_assigned===1||String(l.sales_assigned)==='true');}
+function kubaBadge(l){return`<span title="Předáno Kubovi${l.sales_assigned_at?' '+new Date(l.sales_assigned_at).toLocaleDateString('cs'):''}" style="display:inline-block;font-size:.65rem;background:rgba(108,99,255,.2);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-right:5px;vertical-align:1px">👤</span>`;}
 function fixPhone(s){
   s=String(s||'').trim();
   // Fix scientific notation e.g. "4.20722E+11"
@@ -1213,7 +1216,7 @@ function renderTable(){
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
     const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
-    const salesBadge=l.sales_assigned?`<span title="Předáno Kubovi ${l.sales_assigned_at?new Date(l.sales_assigned_at).toLocaleDateString('cs'):''}" style="font-size:.65rem;background:rgba(108,99,255,.2);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">👤</span>`:'';
+    const salesBadge=isKuba(l)?kubaBadge(l):'';
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
     const fazeOpts=FAZE.map(f=>`<option value="${f.id}"${l.stav===f.id?' selected':''}>${f.label}</option>`).join('');
@@ -1224,7 +1227,7 @@ function renderTable(){
     return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
       <td style="color:var(--text3);min-width:55px">${formatDatum(l.datum)}</td>
-      <td style="font-weight:600;max-width:130px">${esc(l.jmeno||'')}${salesBadge}</td>
+      <td style="font-weight:600;max-width:130px">${salesBadge}${esc(l.jmeno||'')}</td>
       <td style="color:var(--text2);max-width:120px">${l.firma?`<a class="link" href="${l.website&&l.website.startsWith('http')?esc(l.website):'https://www.google.com/search?q='+encodeURIComponent(l.firma)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(l.firma)}</a>`:''}</td>
       <td style="min-width:110px">${tel?`<a class="link" href="tel:${tel}" onclick="event.stopPropagation()">${esc(phoneDisplay)}</a>`:esc(phoneDisplay)}</td>
       <td style="max-width:150px"><a class="link" href="mailto:${esc(l.email||'')}" onclick="event.stopPropagation()">${esc(l.email||'')}</a></td>
@@ -1260,7 +1263,7 @@ function renderCards(){
     return`<div class="lead-card" onclick="openLead(${l._id})">
       <div class="lead-card-top">
         <div>
-          <div class="lead-card-name">${esc(l.jmeno||'Neznámý')}</div>
+          <div class="lead-card-name">${isKuba(l)?kubaBadge(l):''}${esc(l.jmeno||'Neznámý')}</div>
           ${l.firma?`<div class="lead-card-firma"><a class="link" href="${l.website&&l.website.startsWith('http')?esc(l.website):'https://www.google.com/search?q='+encodeURIComponent(l.firma)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(l.firma)}</a></div>`:''}
           ${(l.ad_name||l.campaign_name)?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${l.platform?`<span class="plat-tag plat-${l.platform}">${l.platform.toUpperCase()}</span>`:''}<span class="camp-tag" title="${esc(l.campaign_name||'')}">${esc(l.ad_name||l.campaign_name)}</span></div>`:''}
         </div>
@@ -1522,7 +1525,7 @@ function renderEmail(){
 function openLead(id){
   const l=leads.find(x=>x._id===id);if(!l)return;
   currentLead=l;
-  document.getElementById('pName').textContent=l.jmeno||'Neznámý';
+  document.getElementById('pName').innerHTML=(isKuba(l)?kubaBadge(l):'')+esc(l.jmeno||'Neznámý');
   document.getElementById('pFirma').textContent=l.firma||(l.datum?'Datum: '+l.datum:'');
   document.getElementById('pStage').value=l.stav||'';
   document.getElementById('pPoz').value=l.poz||getPoz(l.stav)||'';
