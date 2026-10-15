@@ -788,7 +788,7 @@ async function returnFromSalesPanel(){
 // ── Phone fix ─────────────────────────────────────────────────
 // Badge "předáno Kubovi" – always shown BEFORE the lead name
 function isKuba(l){return l&&(l.sales_assigned===true||l.sales_assigned===1||String(l.sales_assigned)==='true');}
-function kubaBadge(l){return`<span title="Předáno Kubovi${l.sales_assigned_at?' '+new Date(l.sales_assigned_at).toLocaleDateString('cs'):''}" style="display:inline-block;font-size:.65rem;background:rgba(108,99,255,.2);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-right:5px;vertical-align:1px">👤</span>`;}
+function kubaBadge(l){return`<span title="Lead má Kuba${l.sales_assigned_at?' (předáno '+new Date(l.sales_assigned_at).toLocaleDateString('cs')+')':''}" style="display:inline-flex;align-items:center;gap:3px;font-size:.62rem;font-weight:700;background:linear-gradient(90deg,#f59e0b,#f97316);color:#111;padding:1px 6px;border-radius:10px;margin-right:6px;vertical-align:1px;box-shadow:0 0 8px rgba(249,115,22,.55);white-space:nowrap">👤 Kuba</span>`;}
 function fixPhone(s){
   s=String(s||'').trim();
   // Fix scientific notation e.g. "4.20722E+11"
@@ -925,10 +925,12 @@ function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){
 // ── Filters ───────────────────────────────────────────────────
 // Follow-up filter ('' | 'dnes' | 'prosle')
 let filterFu='';
+let filterKuba=false; // true = jen leady, které má Kuba
 const FU_DONE=['konec','nerelevantni','nezvedan3','uzavreno','uzavreno_emailem'];
 function localToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fuDay(l){return l.followup?String(l.followup).slice(0,10):'';}
 function isFuOpen(l){return !!l.followup&&!FU_DONE.includes(l.stav);}
+function toggleFilterKuba(){filterKuba=!filterKuba;if(currentTab!=='table')setTab('table');else render();}
 function setFilterFu(f){
   filterFu=filterFu===f?'':f;
   if(filterFu)filterPoz='';
@@ -938,6 +940,7 @@ function getFiltered(){
   const today=localToday();
   return leads.filter(l=>{
     const poz=l.poz||getPoz(l.stav);
+    if(filterKuba&&!isKuba(l))return false;
     if(filterFu==='dnes'&&!(isFuOpen(l)&&fuDay(l)===today))return false;
     if(filterFu==='prosle'&&!(isFuOpen(l)&&fuDay(l)<today))return false;
     if(filterPoz&&poz!==filterPoz)return false;
@@ -960,7 +963,7 @@ function applyFilters(){
   filterProdej=(mob?document.getElementById('prodejFilterM'):document.getElementById('prodejFilter')).value;
   render();
 }
-function setFilterPoz(p){filterPoz=filterPoz===p?'':p;filterFu='';if(currentTab!=='table')setTab('table');else render();}
+function setFilterPoz(p){filterPoz=filterPoz===p?'':p;filterFu='';if(!p)filterKuba=false;if(currentTab!=='table')setTab('table');else render();}
 
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
@@ -1187,13 +1190,15 @@ function renderStatsBar(){
   const fuLate=leads.filter(l=>isFuOpen(l)&&fuDay(l)<today).length;
   const mk=(label,count,f,color)=>`<div class="stt${!filterFu&&filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
-    <div class="stt${!filterPoz&&!filterFu?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
+    <div class="stt${!filterPoz&&!filterFu&&!filterKuba?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
     ${mk('Otevřeno',ot,'otevreno','#eab308')}
     ${mk('Uzavřeno',uz,'uzavreno','#22c55e')}
     ${mk('Konec',ko,'konec','#ef4444')}
     ${no>0?mk('Bez statusu',no,'','#64748b'):''}
     <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
     <div class="stt${filterFu==='dnes'?' on':''}" onclick="setFilterFu('dnes')" title="Leady, kterým máš dnes zavolat"><span class="stt-n" style="color:${fuToday>0?'#f97316':'var(--text3)'}">${fuToday}</span><span class="stt-l">⏰ Follow-up dnes</span></div>
+    <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
+    <div class="stt${filterKuba?' on':''}" onclick="toggleFilterKuba()" title="Zobrazit jen leady, které má Kuba" style="${filterKuba?'box-shadow:0 0 0 1px #f97316 inset;':''}"><span class="stt-n" style="color:#f97316">${leads.filter(isKuba).length}</span><span class="stt-l">👤 Kuba</span></div>
     ${fuLate>0?`<div class="stt${filterFu==='prosle'?' on':''}" onclick="setFilterFu('prosle')" title="Follow-up měl být už dřív"><span class="stt-n" style="color:#ef4444">${fuLate}</span><span class="stt-l">⚠️ Prošlé</span></div>`:''}
   `;
 }
@@ -1224,7 +1229,7 @@ function renderTable(){
     const fuColor=isKonec?'var(--text3)':l.followup&&l.followup<=today?'var(--red)':l.followup?'var(--accent2)':'var(--text3)';
     const fazeCell=`<div style="display:flex;flex-direction:column;gap:2px"><select class="cell-sel ${finfo.cls}" onchange="changeFaze('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" style="color:${finfo.color}">${fazeOpts}</select><div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:2px;font-size:.64rem;color:${fuColor};opacity:${isKonec?'0.25':'1'}">📅<input type="date" value="${l.followup||''}" onchange="changeFollowup('${esc(l.email)}',this.value)" onclick="event.stopPropagation()" title="Datum volání" style="background:transparent;border:none;color:${fuColor};font-size:.64rem;cursor:pointer;outline:none;font-family:inherit;width:88px;padding:0"></div></div>`;
     const phoneDisplay=fixPhone(l.telefon||'');
-    return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':''}">
+    return`<tr onclick="openLead(${l._id})" style="${selected.has(l.email)?'background:rgba(220,38,38,.08)':(isKuba(l)?'background:rgba(249,115,22,.07);box-shadow:inset 3px 0 0 #f97316':'')}">
       <td style="text-align:center;width:36px" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(l.email)?'checked':''} onchange="toggleSel('${esc(l.email)}',this.checked)" style="cursor:pointer;accent-color:var(--accent)"></td>
       <td style="color:var(--text3);min-width:55px">${formatDatum(l.datum)}</td>
       <td style="font-weight:600;max-width:130px">${salesBadge}${esc(l.jmeno||'')}</td>
@@ -1260,7 +1265,7 @@ function renderCards(){
     const isKonecCard=l.stav==='konec'||l.stav==='nerelevantni'||l.stav==='nezvedan3';
     const fuC=isKonecCard?'var(--text3)':(l.stav==='uzavreno'||l.stav==='uzavreno_emailem')?'var(--green)':l.followup<=today?'var(--red)':'var(--text3)';
     const fu=l.followup?`<span style="font-size:.7rem;color:${fuC};opacity:${isKonecCard?'0.35':'1'}">📅 ${l.followup}</span>`:'';
-    return`<div class="lead-card" onclick="openLead(${l._id})">
+    return`<div class="lead-card" onclick="openLead(${l._id})" style="${isKuba(l)?'border-left:3px solid #f97316;background:rgba(249,115,22,.06)':''}">
       <div class="lead-card-top">
         <div>
           <div class="lead-card-name">${isKuba(l)?kubaBadge(l):''}${esc(l.jmeno||'Neznámý')}</div>
