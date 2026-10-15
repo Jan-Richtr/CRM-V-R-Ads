@@ -619,6 +619,7 @@ const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','tvorba_ai_videi_2':'🤖 AI vid
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
 let leads=[],currentLead=null,currentTab='table';
+let kubaOnly=[]; // leady, které jsou jen v Kubově CRM (sales_leads), ne v mých leads
 let sortCol='datum',sortDir=1;
 let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
 let statsMonth=null,impD=[];
@@ -652,6 +653,8 @@ function updateSelBar(){
 }
 async function deleteSelected(){
   if(!selected.size)return;
+  kubaOnly.forEach(k=>selected.delete(k.email)); // leady jen u Kuby se odsud mazat nedají
+  if(!selected.size){showSync('⚠️ Kubovy leady se mažou v jeho CRM','#d97706');updateSelBar();return;}
   if(!confirm('Opravdu smazat '+selected.size+' leadů? Tato akce je nevratná.'))return;
   showSync('🗑️ Mažu…','#dc2626');
   try{
@@ -801,11 +804,12 @@ function telNum(raw){return fixPhone(raw).replace(/[^+0-9]/g,'');}
 async function init(){
   showLoading(true);showSync('⏳ Načítám…','#64748b');
   try{
-    const[ls,cs,fs,scd]=await Promise.all([
+    const[ls,cs,fs,scd,sls]=await Promise.all([
       sbGet('/rest/v1/leads?order=mesic.asc,id.asc&limit=5000'),
       sbGet('/rest/v1/crm_data?limit=5000'),
       sbGet('/rest/v1/fb_spend?month=eq.'+(new Date().getMonth()+1)+'&limit=1000'),
-      sbGet('/rest/v1/sales_crm_data?limit=5000')
+      sbGet('/rest/v1/sales_crm_data?limit=5000'),
+      sbGet('/rest/v1/sales_leads?limit=10000').catch(()=>[])
     ]);
     const cm={};(cs||[]).forEach(r=>{cm[r.email]=r;});
     const scm={};(scd||[]).forEach(r=>{scm[r.email]=r;});
@@ -824,6 +828,15 @@ async function init(){
         myNotes:d.my_notes||'',
         poz,
       };
+    });
+    // Kubovy leady, které nejsou v mém seznamu (např. importované jen jemu)
+    const myEmails=new Set(leads.map(l=>(l.email||'').toLowerCase()));
+    kubaOnly=(sls||[]).filter(s=>s.email&&!myEmails.has(s.email.toLowerCase())).map(s=>{
+      const d=scm[s.email]||{};
+      return{...s,_id:-s.id,_kubaOnly:true,sales_assigned:true,
+        stav:migrateStav(d.stav||''),poz:d.poz||'',
+        prodej_castka:d.prodej_castka||'',prodej_produkt:d.prodej_produkt||'',prodej_note:d.prodej_note||'',
+        followup:d.followup||'',myNotes:d.my_notes||''};
     });
     showSync('✅ '+leads.length+' leadů · '+new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}),'#16a34a');
     render();
@@ -861,7 +874,7 @@ async function logActivity(lead,action,opts={}){
       new_stav:opts.new_stav||'',
       note:opts.note||null
     };
-    await fetch(SB+'/rest/v1/activity_log',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(entry)});
+    await fetch(SB+'/rest/v1/'+(lead._kubaOnly?'sales_activity_log':'activity_log'),{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(entry)});
   }catch(e){/* log silently */}
 }
 
@@ -925,22 +938,34 @@ function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){
 // ── Filters ───────────────────────────────────────────────────
 // Follow-up filter ('' | 'dnes' | 'prosle')
 let filterFu='';
-let filterKuba=false; // true = jen leady, které má Kuba
+let filterOwner=''; // '' | 'kuba' | 'honza' — jen leady daného člověka, kterým je potřeba zavolat (follow-up dnes nebo dřív)
 const FU_DONE=['konec','nerelevantni','nezvedan3','uzavreno','uzavreno_emailem'];
 function localToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fuDay(l){return l.followup?String(l.followup).slice(0,10):'';}
 function isFuOpen(l){return !!l.followup&&!FU_DONE.includes(l.stav);}
-function toggleFilterKuba(){filterKuba=!filterKuba;if(currentTab!=='table')setTab('table');else render();}
+function setFilterOwner(o){filterOwner=filterOwner===o?'':o;if(filterOwner){filterFu='';filterPoz='';}if(currentTab!=='table')setTab('table');else render();}
+function ownerTile(o,label,color){
+  const n=ownerToCall(o),total=ownerLeads(o).length,on=filterOwner===o;
+  return`<div class="stt${on?' on':''}" onclick="setFilterOwner('${o}')" title="${label.replace(/^\S+\s/,'')}: ${n} k provolání (follow-up dnes nebo prošlý) z ${total} leadů – klikni pro seznam" style="${on?'box-shadow:0 0 0 1px '+color+' inset;':''}">
+    <span class="stt-n" style="color:${n>0?color:'var(--text3)'}">${n}<span style="font-size:.6rem;color:var(--text3);font-weight:500"> / ${total}</span></span>
+    <span class="stt-l">${label} · provolat</span></div>`;
+}
+function ownerLeads(o){return o==='kuba'?leads.filter(isKuba).concat(kubaOnly):leads.filter(l=>!isKuba(l));}
+function ownerToCall(o){const t=localToday();return ownerLeads(o).filter(l=>isFuOpen(l)&&fuDay(l)<=t).length;}
 function setFilterFu(f){
   filterFu=filterFu===f?'':f;
-  if(filterFu)filterPoz='';
+  if(filterFu){filterPoz='';filterOwner='';}
   if(currentTab!=='table')setTab('table');else render();
 }
 function getFiltered(){
   const today=localToday();
-  return leads.filter(l=>{
+  return (filterOwner==='kuba'?leads.concat(kubaOnly):leads).filter(l=>{
     const poz=l.poz||getPoz(l.stav);
-    if(filterKuba&&!isKuba(l))return false;
+    if(filterOwner){
+      if(filterOwner==='kuba'&&!isKuba(l))return false;
+      if(filterOwner==='honza'&&isKuba(l))return false;
+      if(!(isFuOpen(l)&&fuDay(l)<=today))return false;
+    }
     if(filterFu==='dnes'&&!(isFuOpen(l)&&fuDay(l)===today))return false;
     if(filterFu==='prosle'&&!(isFuOpen(l)&&fuDay(l)<today))return false;
     if(filterPoz&&poz!==filterPoz)return false;
@@ -963,7 +988,7 @@ function applyFilters(){
   filterProdej=(mob?document.getElementById('prodejFilterM'):document.getElementById('prodejFilter')).value;
   render();
 }
-function setFilterPoz(p){filterPoz=filterPoz===p?'':p;filterFu='';if(!p)filterKuba=false;if(currentTab!=='table')setTab('table');else render();}
+function setFilterPoz(p){filterPoz=filterPoz===p?'':p;filterFu='';if(!p)filterOwner='';if(currentTab!=='table')setTab('table');else render();}
 
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
@@ -1190,7 +1215,7 @@ function renderStatsBar(){
   const fuLate=leads.filter(l=>isFuOpen(l)&&fuDay(l)<today).length;
   const mk=(label,count,f,color)=>`<div class="stt${!filterFu&&filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
-    <div class="stt${!filterPoz&&!filterFu&&!filterKuba?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
+    <div class="stt${!filterPoz&&!filterFu&&!filterOwner?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
     ${mk('Otevřeno',ot,'otevreno','#eab308')}
     ${mk('Uzavřeno',uz,'uzavreno','#22c55e')}
     ${mk('Konec',ko,'konec','#ef4444')}
@@ -1198,8 +1223,8 @@ function renderStatsBar(){
     <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
     <div class="stt${filterFu==='dnes'?' on':''}" onclick="setFilterFu('dnes')" title="Leady, kterým máš dnes zavolat"><span class="stt-n" style="color:${fuToday>0?'#f97316':'var(--text3)'}">${fuToday}</span><span class="stt-l">⏰ Follow-up dnes</span></div>
     <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
-    <div class="stt${filterKuba?' on':''}" onclick="toggleFilterKuba()" title="Zobrazit jen leady, které má Kuba" style="${filterKuba?'box-shadow:0 0 0 1px #f97316 inset;':''}"><span class="stt-n" style="color:#f97316">${leads.filter(isKuba).length}</span><span class="stt-l">👤 Kuba</span></div>
-    ${fuLate>0?`<div class="stt${filterFu==='prosle'?' on':''}" onclick="setFilterFu('prosle')" title="Follow-up měl být už dřív"><span class="stt-n" style="color:#ef4444">${fuLate}</span><span class="stt-l">⚠️ Prošlé</span></div>`:''}
+    ${ownerTile('kuba','👤 Kuba','#f97316')}
+    ${ownerTile('honza','🙋 Honza','#a78bfa')}
   `;
 }
 
@@ -1528,7 +1553,7 @@ function renderEmail(){
 
 // ── Panel ─────────────────────────────────────────────────────
 function openLead(id){
-  const l=leads.find(x=>x._id===id);if(!l)return;
+  const l=leads.find(x=>x._id===id)||kubaOnly.find(x=>x._id===id);if(!l)return;
   currentLead=l;
   document.getElementById('pName').innerHTML=(isKuba(l)?kubaBadge(l):'')+esc(l.jmeno||'Neznámý');
   document.getElementById('pFirma').textContent=l.firma||(l.datum?'Datum: '+l.datum:'');
@@ -1569,7 +1594,9 @@ function openLead(id){
   if(tel)acts+=`<a class="btn" href="tel:${tel}">📞 Volat</a>`;
   if(l.email)acts+=`<a class="btn" href="mailto:${esc(l.email)}">✉️ Email</a>`;
   const isKubaLead=l.sales_assigned===true||l.sales_assigned===1||String(l.sales_assigned)==='true';
-  if(isKubaLead){
+  if(l._kubaOnly){
+    acts+=`<span style="font-size:.72rem;color:#f97316;padding:5px 4px">👤 Lead je jen v Kubově CRM</span>`;
+  }else if(isKubaLead){
     acts+=`<button class="btn" style="background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;border-radius:5px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer" onclick="returnFromSalesPanel()">↩️ Vrátit od Kuby</button>`;
   }else{
     acts+=`<button class="btn" style="background:rgba(233,30,140,.15);color:var(--accent2);border:1px solid rgba(233,30,140,.5);border-radius:5px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer" onclick="transferSingleToSales()">👤 Předat Kubovi</button>`;
