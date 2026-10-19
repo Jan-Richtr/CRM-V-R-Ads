@@ -278,7 +278,7 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
       <option value="uzavreno">Uzavřeno 💚</option>
     </select>
     <select class="flt" id="sluzbaFilter" onchange="applyFilters()">
-      <option value="">Vše – služby</option>
+      <option value="">Vše – služby</option><option value="ai_produkce">🎬 Profesionální AI produkce</option><option value="sprava_reklam">📢 Správa reklamních kampaní</option><option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option><option value="ai_maskot">🧸 AI reklamní maskot</option>
       <option value="tvorba_ai_videi">🎬 AI videa</option>
       <option value="reklama_marketing">📢 Reklama</option>
       <option value="video_produkce">📹 Video</option>
@@ -420,6 +420,7 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
           <span class="p-label">Produkt</span>
           <select class="p-select" id="pProdukt" onchange="savePanel()">
             <option value="">— nevybráno —</option>
+            <option value="ai_produkce">🎬 Profesionální AI produkce</option><option value="sprava_reklam">📢 Správa reklamních kampaní</option><option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option><option value="ai_maskot">🧸 AI reklamní maskot</option>
             <option value="tvorba_ai_videi">🎬 AI videa</option>
             <option value="reklama_marketing">📢 Reklama</option>
             <option value="video_produkce">📹 Video</option>
@@ -511,7 +512,7 @@ tr:hover td{background:rgba(74,31,74,.5);cursor:pointer}
     <option value="uzavreno">Uzavřeno 💚</option>
   </select>
   <select class="flt" id="sluzbaFilterM" onchange="applyFilters()">
-    <option value="">Vše – služby</option>
+    <option value="">Vše – služby</option><option value="ai_produkce">🎬 Profesionální AI produkce</option><option value="sprava_reklam">📢 Správa reklamních kampaní</option><option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option><option value="ai_maskot">🧸 AI reklamní maskot</option>
     <option value="tvorba_ai_videi">🎬 AI videa</option>
     <option value="reklama_marketing">📢 Reklama</option>
     <option value="video_produkce">📹 Video</option>
@@ -609,12 +610,17 @@ const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
 // When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'nerelevantni','konec':'domluvena_schuzka','':''};
 
-const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
+const SLUZBA={'ai_produkce':'🎬 Profesionální AI produkce','sprava_reklam':'📢 Správa reklamních kampaní','kombinace_ai_reklama':'🤝 Kombinace AI + reklama','ai_maskot':'🧸 AI reklamní maskot','tvorba_ai_videi':'🎬 AI videa','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
 let leads=[],currentLead=null,currentTab='table';
 let sortCol='datum',sortDir=1;
 let filterPoz='',filterFaze='',filterSluzba='',filterSearch='',filterProdej='';
+let filterFu=false; // true = jen leady s červeným follow-upem (dnes nebo prošlý) – komu je potřeba zavolat
+const FU_DONE=['konec','nerelevantni','nezvedan3','uzavreno','uzavreno_emailem'];
+function localToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function isFuRed(l){return !!l.followup&&String(l.followup).slice(0,10)<=localToday()&&!FU_DONE.includes(l.stav);}
+function toggleFilterFu(){filterFu=!filterFu;if(filterFu)filterPoz='';if(currentTab!=='table')setTab('table');else render();}
 let statsMonth=null,impD=[];
 let selected=new Set();
 let fbSpend={};
@@ -805,8 +811,9 @@ function showSync(msg,color){const el=document.getElementById('syncLbl');if(el){
 
 // ── Filters ───────────────────────────────────────────────────
 function getFiltered(){
-  return leads.filter(l=>{
+  const res=leads.filter(l=>{
     const poz=l.poz||getPoz(l.stav);
+    if(filterFu&&!isFuRed(l))return false;
     if(filterPoz&&poz!==filterPoz)return false;
     if(filterFaze&&l.stav!==filterFaze)return false;
     if(filterSluzba&&l.sluzba!==filterSluzba)return false;
@@ -818,7 +825,10 @@ function getFiltered(){
     }
     return true;
   });
+  return res;
 }
+// Při filtru follow-upů: nejstarší (nejvíc prošlý) follow-up nahoře
+function fuSort(arr){return filterFu?[...arr].sort((a,b)=>String(a.followup||'').localeCompare(String(b.followup||''))):null;}
 function applyFilters(){
   filterSearch=document.getElementById('searchInput').value.trim();
   const mob=isMobile();
@@ -827,7 +837,7 @@ function applyFilters(){
   filterProdej=(mob?document.getElementById('prodejFilterM'):document.getElementById('prodejFilter')).value;
   render();
 }
-function setFilterPoz(p){filterPoz=filterPoz===p?'':p;render();}
+function setFilterPoz(p){filterPoz=filterPoz===p?'':p;filterFu=false;render();}
 
 // ── Tabs & Sort ───────────────────────────────────────────────
 function setTab(t){
@@ -868,24 +878,23 @@ function renderStatsBar(){
   const uz=leads.filter(l=>getPoz(l.stav)==='uzavreno').length;
   const ko=leads.filter(l=>getPoz(l.stav)==='konec').length;
   const no=leads.filter(l=>!getPoz(l.stav)).length;
-  const today=new Date().toISOString().slice(0,10);
-  const fuRed=leads.filter(l=>l.followup&&l.followup<=today&&l.stav!=='konec'&&l.stav!=='nerelevantni'&&l.stav!=='nezvedan3'&&l.stav!=='uzavreno'&&l.stav!=='uzavreno_emailem').length;
-  const mk=(label,count,f,color)=>`<div class="stt${filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
+  const fuRed=leads.filter(isFuRed).length;
+  const mk=(label,count,f,color)=>`<div class="stt${!filterFu&&filterPoz===f?' on':''}" onclick="setFilterPoz('${f}')"><span class="stt-n" style="color:${color}">${count}</span><span class="stt-l">${label}</span></div>`;
   bar.innerHTML=`
-    <div class="stt${!filterPoz?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
+    <div class="stt${!filterPoz&&!filterFu?' on':''}" onclick="setFilterPoz('')"><span class="stt-n" style="color:var(--text)">${leads.length}</span><span class="stt-l">Celkem</span></div>
     ${mk('Otevřeno',ot,'otevreno','#eab308')}
     ${mk('Uzavřeno',uz,'uzavreno','#22c55e')}
     ${mk('Konec',ko,'konec','#ef4444')}
     ${no>0?mk('Bez statusu',no,'','#64748b'):''}
     <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
-    <div class="stt" onclick="setTab('table')" title="Leady s prošlým follow-up"><span class="stt-n" style="color:${fuRed>0?'#ef4444':'var(--text3)'}">${fuRed}</span><span class="stt-l">⏰ Follow-up</span></div>
+    <div class="stt${filterFu?' on':''}" onclick="toggleFilterFu()" title="Ukázat jen leady, kterým je potřeba zavolat (červený follow-up)"><span class="stt-n" style="color:${fuRed>0?'#ef4444':'var(--text3)'}">${fuRed}</span><span class="stt-l">⏰ Follow-up</span></div>
   `;
 }
 
 // ── Table ─────────────────────────────────────────────────────
 function renderTable(){
   const filtered=getFiltered();
-  const sorted=[...filtered].sort((a,b)=>{
+  const sorted=fuSort(filtered)||[...filtered].sort((a,b)=>{
     let va=a[sortCol]||'',vb=b[sortCol]||'';
     if(sortCol==='prodej_castka'){va=parseFloat(va)||0;vb=parseFloat(vb)||0;return(va-vb)*sortDir;}
     return String(va).localeCompare(String(vb),'cs')*sortDir;
@@ -931,7 +940,7 @@ function renderTable(){
 // ── Mobile cards ──────────────────────────────────────────────
 function renderCards(){
   const filtered=getFiltered();
-  const sorted=[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs'));
+  const sorted=fuSort(filtered)||[...filtered].sort((a,b)=>String(a.datum||'').localeCompare(String(b.datum||''),'cs'));
   const cb=document.getElementById('view-cards');
   if(!sorted.length){cb.innerHTML=`<div style="text-align:center;color:var(--text3);padding:48px 20px;font-size:.88rem">Žádné výsledky</div>`;return;}
   const today=new Date().toISOString().slice(0,10);
@@ -1757,12 +1766,16 @@ function parseCSV(text){
 }
 
 function mapSluzbaFromZajem(z){
-  const s=(z||'').toLowerCase();
-  if(s.includes('ai')&&(s.includes('video')||s.includes('produkc')))return'tvorba_ai_videi';
+  const s=(z||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  if(!s||s==='0'||s.includes('vyberte'))return'';
+  if(s.includes('maskot'))return'ai_maskot';
+  if(s.includes('kombinac'))return'kombinace_ai_reklama';
+  if(s.includes('sprava')||s.includes('kampan'))return'sprava_reklam';
+  if(s.includes('ai')&&s.includes('produkc'))return'ai_produkce';
+  if(s.includes('ai')&&s.includes('vide'))return'tvorba_ai_videi';
   if(s.includes('reklam')||s.includes('market'))return'reklama_marketing';
   if(s.includes('video')||s.includes('produkc'))return'video_produkce';
-  if(s&&s!=='0')return'jine';
-  return'';
+  return'jine';
 }
 
 async function syncGSheets(){
