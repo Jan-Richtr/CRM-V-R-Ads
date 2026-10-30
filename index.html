@@ -281,6 +281,10 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     </select>
     <select class="flt" id="sluzbaFilter" onchange="applyFilters()">
       <option value="">Vše – služby</option>
+      <option value="ai_produkce">🎬 Profesionální AI produkce</option>
+      <option value="sprava_reklam">📢 Správa reklamních kampaní</option>
+      <option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option>
+      <option value="ai_maskot">🧸 AI reklamní maskot</option>
       <option value="tvorba_ai_videi">🎬 AI videa</option>
       <option value="tvorba_ai_videi_2">🤖 AI videa 2</option>
       <option value="reklama_marketing">📢 Reklama</option>
@@ -426,6 +430,10 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
           <span class="p-label">Produkt</span>
           <select class="p-select" id="pProdukt" onchange="savePanel()">
             <option value="">— nevybráno —</option>
+            <option value="ai_produkce">🎬 Profesionální AI produkce</option>
+            <option value="sprava_reklam">📢 Správa reklamních kampaní</option>
+            <option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option>
+            <option value="ai_maskot">🧸 AI reklamní maskot</option>
             <option value="tvorba_ai_videi">🎬 AI videa</option>
             <option value="reklama_marketing">📢 Reklama</option>
             <option value="video_produkce">📹 Video</option>
@@ -518,7 +526,11 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </select>
   <select class="flt" id="sluzbaFilterM" onchange="applyFilters()">
     <option value="">Vše – služby</option>
-    <option value="tvorba_ai_videi">🎬 AI videa</option>
+    <option value="ai_produkce">🎬 Profesionální AI produkce</option>
+      <option value="sprava_reklam">📢 Správa reklamních kampaní</option>
+      <option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option>
+      <option value="ai_maskot">🧸 AI reklamní maskot</option>
+      <option value="tvorba_ai_videi">🎬 AI videa</option>
     <option value="tvorba_ai_videi_2">🤖 AI videa 2</option>
     <option value="reklama_marketing">📢 Reklama</option>
     <option value="video_produkce">📹 Video</option>
@@ -556,7 +568,7 @@ function doLogin(){
     sessionStorage.setItem(AUTH_KEY,'1');
     document.getElementById('loginModal').classList.remove('open');
     err.style.display='none';
-    init();setTab('table');
+    init();setTab('table');startAutoSync();
   }else{err.style.display='';}
 }
 function doLogout(){sessionStorage.removeItem(AUTH_KEY);location.reload();}
@@ -615,7 +627,7 @@ const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
 // When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'nerelevantni','konec':'domluvena_schuzka','':''};
 
-const SLUZBA={'tvorba_ai_videi':'🎬 AI videa','tvorba_ai_videi_2':'🤖 AI videa 2','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
+const SLUZBA={'ai_produkce':'🎬 Profesionální AI produkce','sprava_reklam':'📢 Správa reklamních kampaní','kombinace_ai_reklama':'🤝 Kombinace AI + reklama','ai_maskot':'🧸 AI reklamní maskot','tvorba_ai_videi':'🎬 AI videa','tvorba_ai_videi_2':'🤖 AI videa 2','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
 let leads=[],currentLead=null,currentTab='table';
@@ -2904,12 +2916,18 @@ function normPhone(t){
 }
 
 function mapSluzbaFromZajem(z){
-  const s=(z||'').toLowerCase();
-  if(s.includes('ai')&&(s.includes('video')||s.includes('produkc')))return'tvorba_ai_videi';
+  // Přesně podle volby z webového formuláře „Mám zájem o:“
+  const s=(z||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  if(!s||s==='0'||s.includes('vyberte'))return'';
+  if(s.includes('maskot'))return'ai_maskot';
+  if(s.includes('kombinac'))return'kombinace_ai_reklama';
+  if(s.includes('sprava')||s.includes('kampan'))return'sprava_reklam';
+  if(s.includes('ai')&&s.includes('produkc'))return'ai_produkce';
+  // starší / jiné formuláře
+  if(s.includes('ai')&&s.includes('vide'))return'tvorba_ai_videi';
   if(s.includes('reklam')||s.includes('market'))return'reklama_marketing';
   if(s.includes('video')||s.includes('produkc'))return'video_produkce';
-  if(s&&s!=='0')return'jine';
-  return'';
+  return'jine';
 }
 
 function parseSheetRows(rows,existingEmails,sheetIndex){
@@ -3023,14 +3041,14 @@ async function fetchSheetCSV(url){
 }
 
 let gsSyncRunning=false;
-async function syncGSheets(){
+async function syncGSheets(silent){
   if(gsSyncRunning)return;
   gsSyncRunning=true;
   const btns=[...document.querySelectorAll('.sync-leads-btn')];
   btns.forEach(b=>{b.disabled=true;b.dataset.lbl=b.textContent;b.textContent='⏳';});
   try{
     // Fetch all sheets (s CORS proxy fallback); a failing sheet doesn't block the others
-    showSync('⏳ Načítám tabulky…','#d97706');
+    if(!silent)showSync('⏳ Načítám tabulky…','#d97706');
     const errs=[];
     const texts=await Promise.all(GSHEET_URLS.map((u,i)=>
       fetchSheetCSV(u).catch(e=>{errs.push(`Tabulka ${i+1}: ${e.message}`);return'';})
@@ -3055,8 +3073,7 @@ async function syncGSheets(){
     }
 
     if(!allNew.length){
-      await init();
-      showSync(errs.length?'⚠️ '+errs.join(' · '):'✅ Vše aktuální — žádné nové leady','#16a34a');
+      if(!silent){await init();showSync(errs.length?'⚠️ '+errs.join(' · '):'✅ Vše aktuální — žádné nové leady','#16a34a');}
       return;
     }
 
@@ -3073,7 +3090,7 @@ async function syncGSheets(){
     showSync(`✅ Staženo ${done} nových leadů`+(failed.length?` · ⚠️ ${failed.length} se nepodařilo uložit`:'')+(errs.length?' · ⚠️ '+errs.join(' · '):''), failed.length||errs.length?'#d97706':'#16a34a');
     if(failed.length)console.warn('Sync – neuložené leady:',failed);
   }catch(e){
-    showSync('❌ '+e.message,'#ef4444');
+    if(!silent)showSync('❌ '+e.message,'#ef4444');else console.warn('Auto-sync:',e);
   }finally{
     gsSyncRunning=false;
     btns.forEach(b=>{b.disabled=false;b.textContent=b.dataset.lbl||'🔄';});
@@ -3157,7 +3174,15 @@ async function doEmailLead(){
 window.addEventListener('resize',()=>{if(currentTab==='table')render();});
 
 checkAuth();
-if(sessionStorage.getItem(AUTH_KEY)==='1'){init();setTab('table');}
+// Automatická synchronizace leadů z Google tabulek: hned po otevření CRM a pak každých 5 minut (jen když je okno vidět)
+let autoSyncTimer=null;
+function startAutoSync(){
+  if(autoSyncTimer)return;
+  setTimeout(()=>syncGSheets(true),4000);
+  autoSyncTimer=setInterval(()=>{if(!document.hidden)syncGSheets(true);},5*60*1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncGSheets(true);});
+}
+if(sessionStorage.getItem(AUTH_KEY)==='1'){init();setTab('table');startAutoSync();}
 </script>
 </body>
 </html>
