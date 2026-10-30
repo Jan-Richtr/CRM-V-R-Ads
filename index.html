@@ -2976,8 +2976,10 @@ function parseSheetRows(rows,existingEmails,sheetIndex){
     if(!email)continue;
     // Přeskočit Meta test leady
     if(email==='test@meta.com'||(r[iEmail]||'').includes('<test lead'))continue;
-    if(existingEmails.has(email)){skipped.push(email);continue;}
-    existingEmails.add(email);
+    if(existingEmails){
+      if(existingEmails.has(email)){skipped.push(email);continue;}
+      existingEmails.add(email);
+    }
 
     const rawDatum=iDatum>=0?(r[iDatum]||''):'';
     const datum=rawDatum?rawDatum.slice(0,10):new Date().toISOString().slice(0,10);
@@ -3054,30 +3056,36 @@ async function syncGSheets(silent){
       fetchSheetCSV(u).catch(e=>{errs.push(`Tabulka ${i+1}: ${e.message}`);return'';})
     ));
 
-    // Duplicates: check against the DB (not just memory) — my leads AND Kuba's leads
+    // Co už je v databázi — moje leady i Kubovy (kvůli duplikátům a aktualizacím)
     const [dbL,dbS]=await Promise.all([
-      sbGet('/rest/v1/leads?select=email&limit=20000'),
-      sbGet('/rest/v1/sales_leads?select=email&limit=20000').catch(()=>[])
+      sbGet('/rest/v1/leads?select=id,email,datum,problem&limit=20000'),
+      sbGet('/rest/v1/sales_leads?select=id,email,datum,problem&limit=20000').catch(()=>[])
     ]);
-    const existingEmails=new Set([...leads,...(dbL||[]),...(dbS||[])].map(l=>(l.email||'').toLowerCase().trim()).filter(Boolean));
-    let allNew=[];let allSkipped=[];
+    const norm=e=>(e||'').toLowerCase().trim();
+    const inLeads={},inSales={};
+    (dbL||[]).forEach(r=>{if(r.email)inLeads[norm(r.email)]=r;});
+    (dbS||[]).forEach(r=>{if(r.email)inSales[norm(r.email)]=r;});
 
+    // Všechny řádky ze všech tabulek; u každého e-mailu nech nejnovější vyplnění
+    const latest={};
     for(let si=0;si<texts.length;si++){
-      const text=texts[si];
-      const rows=parseCSV(text);
+      const rows=parseCSV(texts[si]);
       if(rows.length<2)continue;
-      const{newLeads,skipped,err}=parseSheetRows(rows,existingEmails,si);
+      const{newLeads,err}=parseSheetRows(rows,null,si);
       if(err){console.warn(err);continue;}
-      allNew=allNew.concat(newLeads);
-      allSkipped=allSkipped.concat(skipped);
+      for(const n of newLeads){const k=n.email;if(!latest[k]||String(n.datum)>String(latest[k].datum))latest[k]=n;}
     }
 
-    if(!allNew.length){
-      if(!silent){await init();showSync(errs.length?'⚠️ '+errs.join(' · '):'✅ Vše aktuální — žádné nové leady','#16a34a');}
-      return;
+    const allNew=[],updates=[];
+    for(const n of Object.values(latest)){
+      const L=inLeads[n.email],S=inSales[n.email];
+      if(!L&&!S){allNew.push(n);continue;}
+      // Lead už máme — vyplnil formulář znovu (novější datum)? → přepiš údaje z tabulky
+      const dbDatum=String((L||S).datum||'').slice(0,10);
+      if(n.datum&&dbDatum&&n.datum>dbDatum)updates.push({n,L,S});
     }
 
-    // Import in batches of 100; if a batch fails, retry one by one so one bad row doesn't block the rest
+    // 1) Nové leady (dávky po 100; když dávka spadne, zkus po jednom)
     let done=0;const failed=[];
     for(let i=0;i<allNew.length;i+=100){
       const batch=allNew.slice(i,i+100);
@@ -3086,8 +3094,45 @@ async function syncGSheets(silent){
         for(const one of batch){try{await sbPost('/rest/v1/leads',[one]);done++;}catch(e2){failed.push(one.email+': '+e2.message.slice(0,80));}}
       }
     }
+
+    // 2) Aktualizace leadů, které vyplnily formulář znovu (fáze a poznámky obchodníka se nemění)
+    let upd=0;
+    for(const {n,L,S} of updates){
+      const d=new Date(n.datum);
+      const when=d.toLocaleDateString('cs');
+      const zajem=SLUZBA[n.sluzba]?SLUZBA[n.sluzba].replace(/^\S+\s/,''):'';
+      const note=`🔁 Znovu vyplnil formulář ${when}${zajem?' – zájem: '+zajem:''}`;
+      const webOk=n.website&&!/^(nem[aá]m|nemame|ne|-|0)$/i.test(n.website.trim());
+      const patch={datum:n.datum,mesic:n.mesic};
+      if(n.sluzba)patch.sluzba=n.sluzba;
+      if(n.telefon)patch.telefon=n.telefon;
+      if(n.jmeno)patch.jmeno=n.jmeno;
+      if(webOk){patch.website=n.website;patch.firma=n.website;}
+      const mkProblem=old=>{old=String(old||'');if(old.includes(note))return old;return note+(n.problem?'\n'+n.problem:'')+(old?'\n\n'+old:'');};
+      try{
+        if(L){
+          const r=await sbFetch(SB+'/rest/v1/leads?email=eq.'+encodeURIComponent(L.email),{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({...patch,problem:mkProblem(L.problem)})});
+          if(!r.ok)throw new Error(await r.text());
+        }
+        if(S){
+          const sp={datum:n.datum,problem:mkProblem(S.problem)};
+          ['sluzba','telefon','jmeno','firma'].forEach(k=>{if(patch[k])sp[k]=patch[k];});
+          const r=await sbFetch(SB+'/rest/v1/sales_leads?email=eq.'+encodeURIComponent(S.email),{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(sp)});
+          if(!r.ok)throw new Error(await r.text());
+        }
+        upd++;
+      }catch(e){failed.push(n.email+': '+String(e.message||e).slice(0,80));}
+    }
+
+    if(!done&&!upd&&!failed.length){
+      if(!silent){await init();showSync(errs.length?'⚠️ '+errs.join(' · '):'✅ Vše aktuální — žádné nové ani změněné leady','#16a34a');}
+      return;
+    }
     await init();
-    showSync(`✅ Staženo ${done} nových leadů`+(failed.length?` · ⚠️ ${failed.length} se nepodařilo uložit`:'')+(errs.length?' · ⚠️ '+errs.join(' · '):''), failed.length||errs.length?'#d97706':'#16a34a');
+    const parts=[];
+    if(done)parts.push(`${done} nových`);
+    if(upd)parts.push(`${upd} přepsáno (znovu vyplnili formulář)`);
+    showSync('✅ '+(parts.join(' · ')||'Hotovo')+(failed.length?` · ⚠️ ${failed.length} se nepodařilo uložit`:'')+(errs.length?' · ⚠️ '+errs.join(' · '):''), failed.length||errs.length?'#d97706':'#16a34a');
     if(failed.length)console.warn('Sync – neuložené leady:',failed);
   }catch(e){
     if(!silent)showSync('❌ '+e.message,'#ef4444');else console.warn('Auto-sync:',e);
