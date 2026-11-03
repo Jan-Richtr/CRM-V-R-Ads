@@ -281,6 +281,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     </select>
     <select class="flt" id="sluzbaFilter" onchange="applyFilters()">
       <option value="">Vše – služby</option>
+      <option value="marketing_funnel">📣 Marketing / branding</option>
       <option value="ai_produkce">🎬 Profesionální AI produkce</option>
       <option value="sprava_reklam">📢 Správa reklamních kampaní</option>
       <option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option>
@@ -400,6 +401,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
     <div class="p-grid">
       <div class="info-box"><div class="lbl">Email</div><div class="val" id="pEmail"></div></div>
       <div class="info-box"><div class="lbl">Telefon</div><div class="val" id="pTel"></div></div>
+      <div class="info-box p-full" id="pFormWrap" style="display:none"><div class="lbl">📝 Z formuláře <span id="pFunnel"></span></div><div class="val" id="pFormInfo" style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.8rem"></div></div>
       <div class="info-box p-full"><div class="lbl">Problém / Zájem</div><div class="val" id="pProblem"></div></div>
       <div class="info-box"><div class="lbl">Lokalita</div><div class="val" id="pLokace"></div></div>
       <div class="info-box"><div class="lbl">Datum přijetí</div><div class="val" id="pDatum"></div></div>
@@ -430,6 +432,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
           <span class="p-label">Produkt</span>
           <select class="p-select" id="pProdukt" onchange="savePanel()">
             <option value="">— nevybráno —</option>
+            <option value="marketing_funnel">📣 Marketing / branding</option>
             <option value="ai_produkce">🎬 Profesionální AI produkce</option>
             <option value="sprava_reklam">📢 Správa reklamních kampaní</option>
             <option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option>
@@ -526,6 +529,7 @@ tr:hover td{background:rgba(28,32,53,.8);cursor:pointer}
   </select>
   <select class="flt" id="sluzbaFilterM" onchange="applyFilters()">
     <option value="">Vše – služby</option>
+      <option value="marketing_funnel">📣 Marketing / branding</option>
     <option value="ai_produkce">🎬 Profesionální AI produkce</option>
       <option value="sprava_reklam">📢 Správa reklamních kampaní</option>
       <option value="kombinace_ai_reklama">🤝 Kombinace AI + reklama</option>
@@ -627,7 +631,7 @@ const POZ_CLS={'otevreno':'p-ot','uzavreno':'p-uz','konec':'p-ko','':''};
 // When user sets poznámka category directly → default fáze
 const POZ_DEFAULT={'otevreno':'nezvedan1','uzavreno':'nerelevantni','konec':'domluvena_schuzka','':''};
 
-const SLUZBA={'ai_produkce':'🎬 Profesionální AI produkce','sprava_reklam':'📢 Správa reklamních kampaní','kombinace_ai_reklama':'🤝 Kombinace AI + reklama','ai_maskot':'🧸 AI reklamní maskot','tvorba_ai_videi':'🎬 AI videa','tvorba_ai_videi_2':'🤖 AI videa 2','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
+const SLUZBA={'marketing_funnel':'📣 Marketing / branding','ai_produkce':'🎬 Profesionální AI produkce','sprava_reklam':'📢 Správa reklamních kampaní','kombinace_ai_reklama':'🤝 Kombinace AI + reklama','ai_maskot':'🧸 AI reklamní maskot','tvorba_ai_videi':'🎬 AI videa','tvorba_ai_videi_2':'🤖 AI videa 2','reklama_marketing':'📢 Reklama','video_produkce':'📹 Video','jine':'🔧 Jiné','':''};
 const MONTH_NAMES=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
 let leads=[],currentLead=null,currentTab='table';
@@ -1257,7 +1261,7 @@ function renderTable(){
     const tel=telNum(l.telefon);
     const castka=l.prodej_castka?`<span class="prodej-val">${Number(l.prodej_castka).toLocaleString('cs')} €</span>`:'<span style="color:var(--text3)">—</span>';
     const produkt=l.prodej_produkt?`<span style="font-size:.68rem">${SLUZBA[l.prodej_produkt]||l.prodej_produkt}</span>`:'<span style="color:var(--text3)">—</span>';
-    const slzBadge=l.sluzba&&SLUZBA[l.sluzba]?`<span style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'';
+    const slzBadge=(l.sluzba&&SLUZBA[l.sluzba]?`<span title="${esc(l.zajem||'')}" style="font-size:.68rem;background:rgba(108,99,255,.15);color:var(--accent2);padding:2px 5px;border-radius:3px">${SLUZBA[l.sluzba]}</span>`:'')+(l.funnel==='marketing'&&l.kvalifikovany!=null?` <span title="Kvalifikace z formuláře (obrat ${esc(l.obrat||'?')}, rozpočet ${esc(l.rozpocet||'?')})" style="font-size:.65rem">${l.kvalifikovany?'✅':'❌'}</span>`:'');
     const salesBadge=isKuba(l)?kubaBadge(l):'';
     const pozOpts=['','otevreno','uzavreno','konec'].map(v=>`<option value="${v}"${poz===v?' selected':''}>${POZ_LABEL[v]||'—'}</option>`).join('');
     const pozCell=`<select class="cell-sel ${POZ_CLS[poz]||''}" onchange="changePoz('${esc(l.email)}',this.value)" onclick="event.stopPropagation()">${pozOpts}</select>`;
@@ -1584,6 +1588,13 @@ function openLead(id){
   document.getElementById('pTel').innerHTML=tel?`<a class="link" href="tel:${tel}">${esc(phoneDisplay)}</a>`:(phoneDisplay||'—');
   document.getElementById('pProblem').textContent=l.problem||'—';
   document.getElementById('pLokace').textContent=l.lokace||'—';
+  // Všechno, co lead vyplnil ve formuláři na funnelu
+  {const fw=document.getElementById('pFormWrap');
+   const rows=[['Zájem o',l.zajem],['Měsíční obrat',l.obrat],['Rozpočet',l.rozpocet],['Kdy začít',l.zacatek],
+     ['Kvalifikovaný',l.kvalifikovany===true?'✅ ano':l.kvalifikovany===false?'❌ ne':''],['Web',l.website]].filter(r=>r[1]);
+   document.getElementById('pFunnel').innerHTML=l.funnel?funnelBadge(l.funnel):'';
+   document.getElementById('pFormInfo').innerHTML=rows.map(r=>`<span style="color:var(--text3)">${r[0]}</span><span>${esc(String(r[1]))}</span>`).join('');
+   fw.style.display=rows.length||l.funnel?'':'none';}
   document.getElementById('pDatum').textContent=l.datum||'—';
   // Campaign info
   const cw=document.getElementById('pCampaignWrap');
@@ -2901,8 +2912,20 @@ function parseCSV(text){
   return rows;
 }
 // Phone normalizer: 9-digit SK (9xx) → +421, CZ (6xx/7xx) → +420
+function funnelBadge(f){
+  const m={ai:['🤖 AI produkce','rgba(108,99,255,.18)','var(--accent2)'],marketing:['📣 Marketing','rgba(249,115,22,.18)','#f97316']}[String(f).toLowerCase()];
+  if(!m)return'';
+  return`<span style="font-size:.62rem;font-weight:600;background:${m[1]};color:${m[2]};padding:1px 6px;border-radius:8px;white-space:nowrap">${m[0]}</span>`;
+}
+// Testovací leady – sync je nikdy nestáhne
+const TEST_EMAILS=['test-agent@example.com','jan.richtrby@gmail.com','jan@firma.cz','test@overeni.cz','test@meta.com'];
+function isTestLead(n){
+  const e=String(n.email||'').toLowerCase(),j=String(n.jmeno||'').trim().toLowerCase();
+  return TEST_EMAILS.includes(e)||/@example\.(com|org)$/.test(e)||/^test[@.\-_]/.test(e)||/^test(\b|$)/.test(j)||e.includes('<test lead');
+}
 function normPhone(t){
   let p=String(t||'').trim();
+  if(/^#|error|n\/a/i.test(p))return'';   // Google Sheets chyba (#ERROR!) – telefon chybí
   if(p.toLowerCase().startsWith('p:'))p=p.slice(2).trim();
   p=p.replace(/[\s\-()\/]/g,'');
   if(!p)return'';
@@ -2994,8 +3017,12 @@ function parseSheetRows(rows,existingEmails,sheetIndex){
     const lokace=(iLokace>=0?r[iLokace]||'':'').trim();
     const platform=(iPlatform>=0?(r[iPlatform]||'').trim().toLowerCase():'');
 
-    // Tabulka 2: vše je AI videa 2; tabulka 1: mapuj z políčka zájem
-    const sluzba=isMetaFmt?'tvorba_ai_videi_2':mapSluzbaFromZajem(zajem);
+    // Funnel z landing page (AI produkce / Marketing) – sloupec „Funnel“ nebo 14. sloupec bez hlavičky
+    let iFunnel=ci(['funnel']);if(iFunnel<0&&!isMetaFmt&&hdr.length<=13)iFunnel=13;
+    const funnel=iFunnel>=0?String(r[iFunnel]||'').trim().toLowerCase():'';
+    // Tabulka 2: vše je AI videa 2; tabulka 1: mapuj z políčka zájem (marketing funnel má vlastní kategorii)
+    const sluzba=isMetaFmt?'tvorba_ai_videi_2':(funnel==='marketing'?'marketing_funnel':mapSluzbaFromZajem(zajem));
+    const gx=names=>{const i=ci(names);return i>=0?String(r[i]||'').trim():'';};
 
     const lead={
       jmeno:(iJmeno>=0?r[iJmeno]||'':'').trim(),
@@ -3013,6 +3040,13 @@ function parseSheetRows(rows,existingEmails,sheetIndex){
       stav:'',
     };
     if(lokace)lead.lokace=lokace;
+    if(!isMetaFmt){
+      if(String(zajem).trim())lead.zajem=String(zajem).trim();
+      if(funnel)lead.funnel=funnel;
+      const ob=gx(['obrat','měsíční obrat','revenue']),bu=gx(['rozpočet','rozpocet','budget']),st=gx(['začátek','zacatek','kdy začít','start']),kv=gx(['kvalifikovaný','kvalifikovany','qualified']);
+      if(ob)lead.obrat=ob;if(bu)lead.rozpocet=bu;if(st)lead.zacatek=st;
+      if(kv)lead.kvalifikovany=/^(ano|true|yes|1)$/i.test(kv);
+    }else lead.funnel='meta';
     const iAdset=ci(['adset_name']);
     if(iAdset>=0&&(r[iAdset]||'').trim())lead.adset_name=(r[iAdset]||'').trim();
     newLeads.push(lead);
@@ -3058,8 +3092,8 @@ async function syncGSheets(silent){
 
     // Co už je v databázi — moje leady i Kubovy (kvůli duplikátům a aktualizacím)
     const [dbL,dbS]=await Promise.all([
-      sbGet('/rest/v1/leads?select=id,email,datum,problem&limit=20000'),
-      sbGet('/rest/v1/sales_leads?select=id,email,datum,problem&limit=20000').catch(()=>[])
+      sbGet('/rest/v1/leads?select=id,email,datum,problem,telefon,zajem,funnel,obrat,rozpocet,zacatek,kvalifikovany&limit=20000'),
+      sbGet('/rest/v1/sales_leads?select=id,email,datum,problem,telefon,zajem,funnel,obrat,rozpocet,zacatek,kvalifikovany&limit=20000').catch(()=>[])
     ]);
     const norm=e=>(e||'').toLowerCase().trim();
     const inLeads={},inSales={};
@@ -3073,16 +3107,25 @@ async function syncGSheets(silent){
       if(rows.length<2)continue;
       const{newLeads,err}=parseSheetRows(rows,null,si);
       if(err){console.warn(err);continue;}
-      for(const n of newLeads){const k=n.email;if(!latest[k]||String(n.datum)>String(latest[k].datum))latest[k]=n;}
+      for(const n of newLeads){if(isTestLead(n))continue;const k=n.email;if(!latest[k]||String(n.datum)>String(latest[k].datum))latest[k]=n;}
     }
 
-    const allNew=[],updates=[];
+    const allNew=[],updates=[],fills=[];
     for(const n of Object.values(latest)){
       const L=inLeads[n.email],S=inSales[n.email];
       if(!L&&!S){allNew.push(n);continue;}
       // Lead už máme — vyplnil formulář znovu (novější datum)? → přepiš údaje z tabulky
       const dbDatum=String((L||S).datum||'').slice(0,10);
-      if(n.datum&&dbDatum&&n.datum>dbDatum)updates.push({n,L,S});
+      if(n.datum&&dbDatum&&n.datum>dbDatum){updates.push({n,L,S});continue;}
+      // Stejné vyplnění – jen doplň, co v CRM chybí (zájem, funnel, kvalifikace, telefon zkažený na #ERROR!)
+      for(const [row,table] of [[L,'leads'],[S,'sales_leads']]){
+        if(!row)continue;
+        const fill={};
+        ['zajem','funnel','obrat','rozpocet','zacatek'].forEach(k=>{if(n[k]&&!row[k])fill[k]=n[k];});
+        if(n.kvalifikovany!=null&&row.kvalifikovany==null)fill.kvalifikovany=n.kvalifikovany;
+        if(n.telefon&&(!row.telefon||/^#|error/i.test(row.telefon)))fill.telefon=n.telefon;
+        if(Object.keys(fill).length)fills.push({table,email:row.email,fill});
+      }
     }
 
     // 1) Nové leady (dávky po 100; když dávka spadne, zkus po jednom)
@@ -3108,6 +3151,8 @@ async function syncGSheets(silent){
       if(n.telefon)patch.telefon=n.telefon;
       if(n.jmeno)patch.jmeno=n.jmeno;
       if(webOk){patch.website=n.website;patch.firma=n.website;}
+      ['zajem','funnel','obrat','rozpocet','zacatek'].forEach(k=>{if(n[k])patch[k]=n[k];});
+      if(n.kvalifikovany!=null)patch.kvalifikovany=n.kvalifikovany;
       const mkProblem=old=>{old=String(old||'');if(old.includes(note))return old;return note+(n.problem?'\n'+n.problem:'')+(old?'\n\n'+old:'');};
       try{
         if(L){
@@ -3116,7 +3161,7 @@ async function syncGSheets(silent){
         }
         if(S){
           const sp={datum:n.datum,problem:mkProblem(S.problem)};
-          ['sluzba','telefon','jmeno','firma'].forEach(k=>{if(patch[k])sp[k]=patch[k];});
+          ['sluzba','telefon','jmeno','firma','zajem','funnel','obrat','rozpocet','zacatek','kvalifikovany'].forEach(k=>{if(patch[k]!=null)sp[k]=patch[k];});
           const r=await sbFetch(SB+'/rest/v1/sales_leads?email=eq.'+encodeURIComponent(S.email),{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(sp)});
           if(!r.ok)throw new Error(await r.text());
         }
@@ -3124,7 +3169,13 @@ async function syncGSheets(silent){
       }catch(e){failed.push(n.email+': '+String(e.message||e).slice(0,80));}
     }
 
+    // 3) Doplnění chybějících údajů u existujících leadů
+    let filled=0;
+    for(const f of fills){
+      try{const r=await sbFetch(SB+'/rest/v1/'+f.table+'?email=eq.'+encodeURIComponent(f.email),{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(f.fill)});if(r.ok)filled++;}catch(e){}
+    }
     if(!done&&!upd&&!failed.length){
+      if(filled&&!silent){await init();showSync(`✅ Doplněny údaje z formuláře u ${filled} leadů`,'#16a34a');return;}
       if(!silent){await init();showSync(errs.length?'⚠️ '+errs.join(' · '):'✅ Vše aktuální — žádné nové ani změněné leady','#16a34a');}
       return;
     }
@@ -3132,6 +3183,7 @@ async function syncGSheets(silent){
     const parts=[];
     if(done)parts.push(`${done} nových`);
     if(upd)parts.push(`${upd} přepsáno (znovu vyplnili formulář)`);
+    if(filled)parts.push(`${filled} doplněno z formuláře`);
     showSync('✅ '+(parts.join(' · ')||'Hotovo')+(failed.length?` · ⚠️ ${failed.length} se nepodařilo uložit`:'')+(errs.length?' · ⚠️ '+errs.join(' · '):''), failed.length||errs.length?'#d97706':'#16a34a');
     if(failed.length)console.warn('Sync – neuložené leady:',failed);
   }catch(e){
